@@ -1,0 +1,229 @@
+{
+  "language.en_US": "English (US)",
+  "language.pl_PL": "Polski",
+  "language.es_ES": "Español",
+  "language.pt_BR": "Português (Brasil)",
+  "language.ja_JP": "日本語",
+  "language.ru_RU": "Русский",
+  "language.zh_CN": "简体中文",
+  "language.de_DE": "Deutsch",
+  "language.tr_TR": "Türkçe",
+  "tab.recents": "RECENTS",
+  "tab.games": "GAMES",
+  "tab.apps": "APPS",
+  "tab.settings": "SETTINGS",
+  "legend.enter_back": " A-ENTER  B-BACK ",
+  "legend.favourite": " Y-FAV ",
+  "legend.unfavourite": " Y-UNFAV ",
+  "legend.options": " SEL-OPTIONS ",
+  "legend.search": " X-SEARCH ",
+  "settings.appearance": "APPEARANCE",
+  "settings.theme": "Theme",
+  "settings.background_theme_pack": "Background Theme Pack",
+  "settings.style": "Style",
+  "settings.icon_pack": "Icon Pack",
+  "settings.center_text": "Center Text",
+  "settings.friendly_system_names": "Friendly System Names",
+  "settings.font": "Font",
+  "settings.font_size": "Размер шрифта",
+  "settings.general": "GENERAL",
+  "settings.language": "Language",
+  "settings.brightness": "Brightness",
+  "settings.animations": "Animations",
+  "settings.menu_sounds": "Menu Sounds",
+  "settings.battery_colour_mode": "Battery Colour Mode",
+  "settings.stock_battery_indicator": "Стандартный индикатор батареи",
+  "settings.background_images": "Background Images",
+  "settings.background_dim": "Background Dim",
+  "settings.wallpaper": "Wallpaper",
+  "settings.background_image_fit": "Background Image Fit",
+  "settings.hide_extensions": "Hide Extensions",
+  "settings.hide_empty_folders": "Hide Empty Folders",
+  "settings.library": "LIBRARY",
+  "settings.rom_source": "ROM Source",
+  "settings.otg_storage": "OTG Storage",
+  "settings.game_switcher": "Game Switcher",
+  "settings.start_in_recents": "Start in Recents",
+  "settings.gameplay": "GAMEPLAY",
+  "settings.quick_resume": "Quick Resume",
+  "settings.autosave_autoload": "Auto-Save/Auto-Load",
+  "settings.system": "SYSTEM",
+  "settings.volume": "Volume",
+  "settings.file_cache": "File Cache",
+  "settings.rebuild_file_cache": "Rebuild File Cache",
+  "settings.disable_sleep": "Disable Sleep (restart)",
+  "settings.version": "TreeFrogUI Version",
+  "settings.button_mapping": "Button Mapping",
+  "value.on": "on",
+  "value.off": "off",
+  "value.connected": "connected",
+  "value.not_connected": "not connected",
+  "folder.settings": "Settings",
+  "folder.recents": "Recent Games",
+  "folder.favourites": "Favourites"
+  ,"header.button_mapping": "BUTTON MAPPING"
+  ,"header.select_core": "SELECT CORE"
+  ,"header.search": "SEARCH"
+  ,"header.add_extension": "ADD EXTENSION"
+  ,"header.usb_mode": "USB MODE"
+  ,"remap.skip": "[B] = skip / keep default"
+  ,"picker.cores": "Cores"
+  ,"picker.extensions": "EXTENSIONS"
+  ,"picker.filter_files": "Filter files"
+  ,"picker.add_extension": "Add extension..."
+  ,"keyboard.ok_cancel": "A OK   B cancel"
+  ,"usb.initiated": "USB MTP INITIATED"
+  ,"usb.connect_instruction": "Connect the console to a PC over USB-C"
+  ,"usb.back": "B  BACK"
+  ,"usb.connect_back": "A  CONNECT   B  BACK"
+  ,"usb.ready": "USB MTP READY"
+  ,"usb.transfer_warning": "Do not disconnect while files are transferring"
+  ,"app.activity": "Activity Tracker"
+  ,"app.frogshell": "FrogShell"
+  ,"app.usb_mode": "USB mode"
+  ,"app.ebook_reader": "Ebook Reader"
+  ,"app.image_viewer": "Image Viewer"
+  ,"app.videos": "Videos"
+  ,"app.music_mp3": "Music / MP3"
+  ,"app.rockbox": "Rockbox"
+  ,"app.shutdown": "Выключение"
+  ,"pico.menu.resume": "Resume game"
+  ,"pico.menu.save_state": "Save state"
+  ,"pico.menu.load_state": "Load state"
+  ,"pico.menu.disc_control": "Disc control"
+  ,"pico.menu.cheats": "Cheats"
+  ,"pico.menu.options": "Options"
+  ,"pico.menu.reset_game": "Reset game"
+  ,"pico.menu.load_new_game": "Load new game"
+  ,"pico.menu.exit": "Exit"
+  ,"pico.options.audio_video": "Audio and video"
+  ,"pico.options.emulator": "Emulator options"
+  ,"pico.options.player_controls": "Player controls"
+  ,"pico.options.emulator_controls": "Emulator controls"
+  ,"pico.options.save_config": "Save config"
+  ,"pico.video.show_fps": "Show FPS"
+  ,"pico.video.show_cpu": "Show CPU %"
+  ,"pico.video.fast_forward": "Fast forward (SELECT+R1)"
+  ,"pico.video.rewind": "Rewind (hold SELECT+B)"
+  ,"pico.video.aspect_ratio": "Aspect ratio"
+  ,"pico.video.filter": "Filter"
+  ,"pico.video.optimize_text": "Optimize text"
+  ,"pico.video.audio_buffer": "Audio buffer"
+  ,"pico.video.mono_output": "Mono output"
+  ,"pico.video.sharpness": "Sharpness"
+  ,"pico.video.volume": "Volume %"
+  ,"pico.config.save_global": "Save global config"
+  ,"pico.config.save_game": "Save game config"
+  ,"pico.config.delete_game": "Delete game config"
+  ,"pico.config.restore_defaults": "Restore defaults"
+  ,"pico.config.loaded_game": "Loaded: game config"
+  ,"pico.config.loaded_global": "Loaded: global config"
+  ,"pico.legend.back_ok": "B-BACK   A-OKAY",
+  "system.a26": "Atari 2600",
+  "system.a5200": "Atari 5200",
+  "system.a78": "Atari 7800",
+  "system.a800": "Atari 8-бит",
+  "system.lnx": "Atari Lynx",
+  "system.fc": "Nintendo Entertainment System",
+  "system.nes": "Nintendo Entertainment System",
+  "system.nesq": "NES - QuickNES",
+  "system.nest": "NES - Nestopia",
+  "system.fds": "Famicom Disk System",
+  "system.sfc": "Super Nintendo",
+  "system.snes": "Super Nintendo",
+  "system.snes02": "SNES — быстрый",
+  "system.gb": "Game Boy",
+  "system.gbc": "Game Boy Color",
+  "system.gbgb": "Game Boy - Gearboy",
+  "system.gbb": "Game Boy - TGB Dual",
+  "system.dblcherrygb": "Double Cherry GB",
+  "system.gba": "Game Boy Advance",
+  "system.gbac": "GBA - Multicore",
+  "system.gbav": "GBA - VBA Next",
+  "system.gbaf": "GBA - mGBA",
+  "system.mgba": "GBA - mGBA",
+  "system.md": "Mega Drive / Genesis",
+  "system.sms": "Master System",
+  "system.sega": "Mega Drive / Genesis",
+  "system.gg": "Game Gear",
+  "system.gpgx": "Genesis Plus GX",
+  "system.segacd": "Sega CD",
+  "system.32x": "Sega 32X",
+  "system.pce": "PC Engine",
+  "system.pcesgx": "PC Engine SuperGrafx",
+  "system.ngpc": "Neo Geo Pocket",
+  "system.neogeo": "Neo Geo",
+  "system.geolith": "Neo Geo",
+  "system.wswan": "WonderSwan",
+  "system.wsv": "WonderSwan - Potator",
+  "system.vb": "Virtual Boy",
+  "system.pcfx": "PC-FX",
+  "system.ps": "PlayStation",
+  "system.psx": "PlayStation",
+  "system.ps1": "PlayStation",
+  "system.ps1r": "PlayStation — ReARMed",
+  "system.psp": "PlayStation Portable",
+  "system.arcade": "Аркады",
+  "system.m2k": "Аркады — MAME 2000",
+  "system.cps1": "Аркады — Capcom CPS-1",
+  "system.cps2": "Аркады — Capcom CPS-2",
+  "system.cps3": "Аркады — Capcom CPS-3",
+  "system.c64": "Commodore 64",
+  "system.c64sc": "Commodore 64",
+  "system.c64f": "Commodore 64 - Frodo",
+  "system.c64fc": "Commodore 64 - Frodo",
+  "system.amiga": "Commodore Amiga",
+  "system.vic20": "Commodore VIC-20",
+  "system.atari-st": "Atari ST",
+  "system.msx": "MSX",
+  "system.msx2": "MSX2",
+  "system.spec": "ZX Spectrum",
+  "system.zx": "ZX Spectrum",
+  "system.zx81": "ZX81",
+  "system.col": "ColecoVision",
+  "system.amstrad": "Amstrad CPC",
+  "system.amstradb": "Amstrad CPC Plus",
+  "system.thom": "Thomson MO / TO",
+  "system.xmil": "Sharp X68000",
+  "system.pico286": "DOS / PC",
+  "system.j2me": "Java-игры",
+  "system.classicube": "ClassiCube / Minecraft",
+  "system.mcpe": "Minecraft PE",
+  "system.openclaw": "Captain Claw",
+  "system.dos": "DOS",
+  "system.prboom": "Doom",
+  "system.doom": "Doom",
+  "system.quake": "Quake",
+  "system.quake2": "Quake II",
+  "system.wolf3d": "Wolfenstein 3D",
+  "system.outrun": "Out Run",
+  "system.cavestory": "Cave Story",
+  "system.flashback": "Flashback",
+  "system.xrick": "Rick Dangerous",
+  "system.jnb": "Jump 'n Bump",
+  "system.gw": "Game & Watch",
+  "system.tic80": "TIC-80",
+  "system.pico8": "PICO-8",
+  "system.fake08": "PICO-8",
+  "system.retro8": "PICO-8 - Retro8",
+  "system.lowres-nx": "LowRes NX",
+  "system.pokem": "Pokemon Mini",
+  "system.int": "Intellivision",
+  "system.fcf": "Fairchild Channel F",
+  "system.cdg": "CD+G Karaoke",
+  "system.chip8": "CHIP-8",
+  "system.arduboy": "Arduboy",
+  "system.arduous": "Arduboy — точный",
+  "system.vec": "Vectrex",
+  "system.o2em": "Odyssey 2",
+  "system.gme": "Игровая музыка",
+  "system.gong": "Pong",
+  "system.vapor": "VaporSpec",
+  "system.rockbox": "Rockbox",
+  "system.music": "Музыкальный проигрыватель",
+  "system.audio": "Музыкальный проигрыватель",
+  "system.videos": "Видео",
+  "system.video": "Видео",
+  "system.images": "Изображения",
+  "system.photos": "Изображения"
+}

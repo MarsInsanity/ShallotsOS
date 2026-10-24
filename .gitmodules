@@ -1,4 +1,6 @@
-[submodule "frogui"]
-	path = frogui
-	url = git@github.com:tzubertowski/FrogUI.git
-	branch = treefrogui
+[submodule "frogui/external/harfbuzz"]
+	path = frogui/external/harfbuzz
+	url = https://github.com/harfbuzz/harfbuzz.git
+[submodule "frogui/external/SheenBidi"]
+	path = frogui/external/SheenBidi
+	url = https://github.com/Tehreer/SheenBidi.git

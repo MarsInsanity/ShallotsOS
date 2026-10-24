@@ -1,0 +1,7 @@
+venv/
+*.o
+*.lo
+_libretro*
+__pycache__/
+*.so
+out/
