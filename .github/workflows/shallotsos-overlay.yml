@@ -36,17 +36,18 @@ jobs:
           mkdir -p "$root"
           curl -fL --retry 4 -o "$RUNNER_TEMP/toolchain.tar.gz" "$TOOLCHAIN_URL"
           tar -xzf "$RUNNER_TEMP/toolchain.tar.gz" -C "$root"
-          sdk=$(dirname "$(find "$root" -maxdepth 3 -name relocate-sdk.sh | head -n 1)")
+          sdk="$root/mipsel-buildroot-linux-gnu_sdk-buildroot"
           (cd "$sdk" && ./relocate-sdk.sh)
-          gcc=$(find "$sdk" -path '*/bin/mips*-linux-gnu-gcc' \( -type f -o -type l \) | sort | head -n 1)
-          sysroot=$(find "$sdk" -maxdepth 3 -type d -name sysroot | head -n 1)
-          test -x "$gcc" && test -d "$sysroot"
-          echo "MIPS=${gcc%gcc}" >> "$GITHUB_ENV"
-          echo "SYSROOT=$sysroot" >> "$GITHUB_ENV"
-          "$gcc" --version | head -n 1
+          # The paths frogui/Makefile uses by default.
+          test -x "$sdk/opt/ext-toolchain/bin/mips-mti-linux-gnu-gcc"
+          test -d "$sdk/mipsel-buildroot-linux-gnu/sysroot/usr/include/freetype2"
+          "$sdk/opt/ext-toolchain/bin/mips-mti-linux-gnu-gcc" --version | head -n 1
 
+      # frogui/Makefile's first rule is init_submodules, so name the target.
       - name: Build frogui_libretro.so
-        run: make -C frogui -j"$(nproc)" MIPS="$MIPS" SYSROOT="$SYSROOT"
+        run: |
+          make -C frogui all -j"$(nproc)"
+          file frogui/out/frogui_libretro.so
 
       - name: Assemble the SD-card overlay
         run: |
