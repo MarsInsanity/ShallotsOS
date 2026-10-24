@@ -1,0 +1,45 @@
+{
+    "name": "ShallotsOS",
+    "author": "ShallotsOS",
+    "description": "ShallotsOS default theme (OnionOS format)",
+    "hideLabels": {
+        "icons": false,
+        "hints": false
+    },
+    "batteryPercentage": {
+        "visible": true,
+        "font": "/mnt/SDCARD/miyoo/app/Exo-2-Bold-Italic.ttf",
+        "size": 18,
+        "color": "#FFFFFF",
+        "offsetX": 26,
+        "fixed": true
+    },
+    "title": {
+        "font": "/mnt/SDCARD/miyoo/app/Exo-2-Bold-Italic.ttf",
+        "size": 27,
+        "color": "#FFFFFF"
+    },
+    "hint": {
+        "font": "/mnt/SDCARD/miyoo/app/Exo-2-Bold-Italic.ttf",
+        "size": 25,
+        "color": "#FFFFFF"
+    },
+    "currentpage": {
+        "color": "#E89662"
+    },
+    "total": {
+        "color": "#FFFFFF"
+    },
+    "grid": {
+        "font": "/mnt/SDCARD/miyoo/app/Exo-2-Bold-Italic.ttf",
+        "grid1x4": 25,
+        "grid3x4": 18,
+        "color": "#8A7A94",
+        "selectedcolor": "#FFFFFF"
+    },
+    "list": {
+        "font": "/mnt/SDCARD/miyoo/app/wqy-microhei.ttc",
+        "size": 25,
+        "color": "#FFFFFF"
+    }
+}

@@ -10,6 +10,16 @@ A free, custom game-menu (frontend) for a range of MIPS-based Hichip handhelds -
 
 ![UI Preview on SF3000 Console](console.jpg)
 
+> ### 🧅 ShallotsOS
+> ShallotsOS is a TreeFrogUI fork that looks and feels like
+> [OnionOS](https://github.com/OnionUI/Onion): an OnionOS-style home screen,
+> console grid, lists and GameSwitcher, and support for **OnionOS themes**. Copy
+> any OnionOS theme folder or `.zip` into `Themes/` on the SD card and pick it in
+> Settings → Appearance → **OnionOS Theme**. See
+> [OnionOS themes](theme.md#onionos-themes).
+>
+> ![ShallotsOS home screen](assets/onion/Themes/ShallotsOS/preview.png)
+
 > # ☕ Consider donating to extend device support: [ko-fi.com/proszty](https://ko-fi.com/proszty)
 > 💬 Join the [TreeFrogUI community server](https://discord.gg/JYFsmBYFBd) on Discord.
 > TreeFrogUI is free and made by one person. Every device I support, I bought with my own money. Donations are what let me buy the next handheld and add support for it (R36SX v2.7, SF3000 V3, SF3500, SF3100, GB350, HDMI clones, and more).
@@ -204,6 +214,8 @@ A few systems need more than "drop the ROM in the folder" - either extra compani
 
 Make it look how you want. Full step-by-step in the 📦 **[Customisation Guide](theme.md)**. The quick version:
 
+**OnionOS Theme** - Settings → Appearance → **OnionOS Theme**. Drop OnionOS theme folders or `.zip` files into `Themes/` on the SD card; the OnionOS layout and theme replace the options below until you choose **off**. Details in [OnionOS themes](theme.md#onionos-themes).
+
 **Theme** - in TreeFrogUI: Settings → Theme, press Left/Right. There are 30 built-in colour themes. **Style** offers the standard Vertical list, an animated Horizontal carousel, or an Onion-style System View with a paged console-icon grid. **Icon Pack** changes System View artwork without changing its background or colours. **Friendly System Names** expands folder codes such as `ps` and `gba` in every style.
 
 **Background Theme Pack** - Settings → Appearance → **Background Theme Pack**. Choose **Art Book NextUI** (adapted from [Leviathanium's NextUI-Themes](https://github.com/Leviathanium/NextUI-Themes/tree/main/Catalog/Themes/ArtBookNextUI.theme)), **Nao Black** (adapted from [Leviathanium's Nao-Black theme](https://github.com/Leviathanium/NextUI-Themes/tree/main/Catalog/Themes/Nao-Black.theme)), or another installed pack. **Background Images** must be on for the selected pack to appear.
@@ -250,6 +262,11 @@ original artists remain easy to find:
   Icons** (hanessh4), **Pixel** (Ben Jelter / Jeltron), and **Silhouette Black**
   and **Silhouette White** (Dreambrace). Full upstream links and terms are in
   [`assets/icon-packs/README.md`](assets/icon-packs/README.md).
+- OnionOS theme support follows the theme format and layout of
+  [OnionOS](https://github.com/OnionUI/Onion). The default **ShallotsOS** theme is
+  original artwork. It uses **Exo 2 Bold Italic** by Natanael Gama (SIL Open Font
+  License 1.1, [`assets/onion/fonts/`](assets/onion/fonts/)), OnionOS's fallback
+  font.
 
 **Background image** (per system / screen) - drop a `.png`, `.jpg`, `.jpeg`, or `.bmp` in **`frogui/`**, named after the screen or folder:
 ```
@@ -422,7 +439,8 @@ damaged" error. Hooking the autorun instead works on every supported device.
 
 ```
 treefrog-ui/
-├── frogui/          ← FrogUI source (git submodule, sf3000 branch)
+├── frogui/          ← FrogUI source (vendored from FrogUI's treefrogui branch)
+├── assets/onion/    ← default OnionOS-format theme and its fallback font
 ├── cores/           ← emulator core sources (populated by clone_cores.sh)
 ├── build/           ← compiled .so output (gitignored)
 ├── patches/         ← patches applied to externally-owned core repos at build time

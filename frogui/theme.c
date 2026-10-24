@@ -538,6 +538,11 @@ const int theme_count = sizeof(themes) / sizeof(themes[0]);
 
 static int current_theme_index = 0;
 static const Theme* current_theme = &themes[0];
+/* An OnionOS theme supplies its own palette. While one is active it replaces
+ * the built-in colours everywhere, but the user's built-in choice is kept so
+ * turning the Onion theme off restores it. */
+static Theme override_theme;
+static int override_active = 0;
 
 void theme_init(void) {
     current_theme_index = 0;
@@ -563,8 +568,24 @@ int theme_load_from_settings(const char* theme_name) {
 void theme_apply(int theme_index) {
     if (theme_index >= 0 && theme_index < theme_count) {
         current_theme_index = theme_index;
-        current_theme = &themes[theme_index];
+        if (!override_active)
+            current_theme = &themes[theme_index];
     }
+}
+
+void theme_set_override(const Theme* theme) {
+    if (theme) {
+        override_theme = *theme;
+        override_active = 1;
+        current_theme = &override_theme;
+    } else {
+        override_active = 0;
+        current_theme = &themes[current_theme_index];
+    }
+}
+
+int theme_has_override(void) {
+    return override_active;
 }
 
 const Theme* theme_get_current(void) {

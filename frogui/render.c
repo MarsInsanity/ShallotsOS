@@ -18,6 +18,7 @@
 int g_screen_w = 854;
 int g_screen_h = 480;
 int g_ui_scale = 150;
+int g_list_rows_override = 0;
 
 void render_set_geometry(int w, int h, int ui_scale) {
   if (w > 0)

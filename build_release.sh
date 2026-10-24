@@ -305,6 +305,18 @@ if [ -d "assets/icon-packs" ]; then
     mkdir -p "$OUT/frogui/icon-packs"
     cp -a assets/icon-packs/. "$OUT/frogui/icon-packs/"
 fi
+# OnionOS themes live in /Themes like on a Miyoo Mini. frogui/onion stands in
+# for Onion's /mnt/SDCARD/miyoo/app: the skin, app icons and Exo 2 font used
+# when a theme leaves something out.
+if [ -d "assets/onion" ]; then
+    mkdir -p "$OUT/Themes" "$OUT/frogui/onion/fonts"
+    cp -a assets/onion/Themes/. "$OUT/Themes/"
+    rm -rf "$OUT/frogui/onion/skin" "$OUT/frogui/onion/icons"
+    cp -a assets/onion/Themes/ShallotsOS/skin "$OUT/frogui/onion/skin"
+    cp -a assets/onion/Themes/ShallotsOS/icons "$OUT/frogui/onion/icons"
+    cp assets/onion/Themes/ShallotsOS/config.json "$OUT/frogui/onion/config.json"
+    cp -a assets/onion/fonts/. "$OUT/frogui/onion/fonts/"
+fi
 # roms/ folder structure (the system subfolders FrogUI expects: gba, nes, snes…).
 # Ships empty folders + their .res/filelist scaffolding; users drop ROMs in.
 [ -d "$STAGE/roms" ] && cp -a "$STAGE/roms" "$OUT/roms"

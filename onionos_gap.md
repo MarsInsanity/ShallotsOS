@@ -38,6 +38,7 @@ LowRes NX, GME, Cave Story, Flashback, plus the full home-computer set
 | Feature | OnionOS | TreeFrogUI | Notes |
 |---|---|---|---|
 | Themes (colors) | Yes | Yes | FrogUI themes; picoarch in-game menu now syncs theme colors |
+| OnionOS themes (skin, fonts, icons, sound) | Yes | Yes | ShallotsOS reads OnionOS theme folders and `.zip` files from `Themes/` and draws the OnionOS home screen, console grid, lists and GameSwitcher; see [theme.md](theme.md#onionos-themes) |
 | Custom fonts | Yes | Yes | picoarch menu uses the FrogUI font choice |
 | Per-folder backgrounds / box art | Yes | Yes (manual) | per-system/per-folder images; game thumbnails (.res/*.rgb565) |
 | Box-art scraper | Yes | No | needs WiFi, our devices have none. Manual art only |

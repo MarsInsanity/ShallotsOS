@@ -103,6 +103,25 @@ This will create:
 - Test with various ROM collections and filename lengths
 - Check navigation edge cases (empty folders, long names, etc.)
 
+### Host renderer
+`tests/host/build.sh` builds the core and `tests/host/render_harness.c` for a
+desktop Linux machine (needs gcc, g++ and FreeType headers). The harness replays
+buttons and saves frames as PPM files, which is enough to check layouts and
+OnionOS themes without a device:
+
+```sh
+tests/host/build.sh                       # -> out/host/render_harness
+# The core reads /mnt/sdcard: point it at a scratch card first, e.g.
+#   ln -s "$PWD/scratch-sd" /mnt/sdcard
+TF_PANEL_W=640 TF_PANEL_H=480 TF_UI_SCALE=100 HARNESS_BATTERY_RAW=170 \
+    out/host/render_harness /tmp/shots shot:home A shot:games A shot:list
+```
+
+Steps are button names (`A`, `B`, `X`, `Y`, `L`, `R`, `UP`, `DOWN`, `LEFT`,
+`RIGHT`, `START`, `SELECT`), `wait:N` frames and `shot:NAME`. Use
+`TF_PANEL_W=854 TF_UI_SCALE=150` for the SF3000 layout. `HARNESS_BATTERY_RAW`
+feeds the battery ADC so the battery widget is drawn.
+
 ---
 
 ## Directory Structure

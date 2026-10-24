@@ -26,6 +26,9 @@ extern const int theme_count;
 void theme_init(void);
 int theme_load_from_settings(const char* theme_name);
 void theme_apply(int theme_index);
+/* Replace the active palette (NULL restores the selected built-in theme). */
+void theme_set_override(const Theme* theme);
+int theme_has_override(void);
 const Theme* theme_get_current(void);
 int theme_get_current_index(void);
 const char* theme_get_name(int index);

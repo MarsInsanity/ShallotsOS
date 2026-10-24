@@ -64,6 +64,21 @@ static int language_force_font_id = 0;
 static int render_scale = 100;
 static int active_face_size = 0;
 
+/* Extra faces opened by path (OnionOS themes give the title, list, hints and
+ * grid their own font and size). One of them can temporarily stand in for the
+ * UI face; the Unicode/Latin fallbacks still cover glyphs it lacks. Buffers
+ * are sized to the file instead of the 24 MiB static UI buffers. */
+#define MAX_EXTRA_FACES 6
+#define EXTRA_FONT_ID_BASE 3
+typedef struct {
+  FontFace face;
+  char path[512];
+} ExtraFace;
+static ExtraFace extra_faces[MAX_EXTRA_FACES];
+static FontFace *active_primary = &primary_font;
+static int active_primary_id = 0;
+static int face_pixel_override = 0;
+
 static CachedGlyph glyph_cache[GLYPH_CACHE_SIZE];
 
 static void clear_glyph_cache(void) {
@@ -212,10 +227,12 @@ static void update_face_pixel_sizes(FontFace *face, int pixel_size) {
 }
 
 static void ensure_render_size(void) {
-  int pixel_size = (int)(ui_font_size * render_scale / 100.0f + 0.5f);
+  int pixel_size = face_pixel_override > 0
+                       ? face_pixel_override
+                       : (int)(ui_font_size * render_scale / 100.0f + 0.5f);
   if (pixel_size < 1) pixel_size = 1;
   if (pixel_size == active_face_size) return;
-  update_face_pixel_sizes(&primary_font, pixel_size);
+  update_face_pixel_sizes(active_primary, pixel_size);
   update_face_pixel_sizes(&fallback_font, pixel_size);
   update_face_pixel_sizes(&latin_font, pixel_size);
   active_face_size = pixel_size;
@@ -382,11 +399,11 @@ void font_init(void) {
 }
 
 static inline FontFace *get_face_for_codepoint(uint32_t cp, int *out_font_id) {
-  if (language_force_font_id == 0 && primary_font.loaded) {
-    if (FT_Get_Char_Index(primary_font.ft_face, cp) != 0) {
+  if (language_force_font_id == 0 && active_primary->loaded) {
+    if (FT_Get_Char_Index(active_primary->ft_face, cp) != 0) {
       if (out_font_id)
-        *out_font_id = 0;
-      return &primary_font;
+        *out_font_id = active_primary_id;
+      return active_primary;
     }
   }
 
@@ -408,10 +425,10 @@ static inline FontFace *get_face_for_codepoint(uint32_t cp, int *out_font_id) {
     }
   }
 
-  if (primary_font.loaded) {
+  if (active_primary->loaded) {
     if (out_font_id)
-      *out_font_id = 0;
-    return &primary_font;
+      *out_font_id = active_primary_id;
+    return active_primary;
   }
 
   if (out_font_id)
@@ -593,16 +610,134 @@ void font_draw_text(uint16_t *framebuffer, int screen_width, int screen_height,
                         color, 0, 0, NULL);
 }
 
+void font_draw_text_bold(uint16_t *framebuffer, int screen_width,
+                         int screen_height, int x, int y, const char *text,
+                         uint16_t color, int bold) {
+  shape_and_render_text(framebuffer, screen_width, screen_height, x, y, text,
+                        color, bold, 0, NULL);
+}
+
 int font_measure_text(const char *text, ...) {
   int width = 0;
   shape_and_render_text(NULL, 0, 0, 0, 0, text, 0, 0, 1, &width);
   return width;
 }
 
+int font_measure_text_bold(const char *text, int bold) {
+  int width = 0;
+  shape_and_render_text(NULL, 0, 0, 0, 0, text, 0, bold, 1, &width);
+  return width;
+}
+
+void font_line_metrics(int *ascent_out, int *descent_out) {
+  int ascent = 0, descent = 0;
+  ensure_render_size();
+  FontFace *face = active_primary;
+  if (language_force_font_id == 1 && fallback_font.loaded)
+    face = &fallback_font;
+  else if (language_force_font_id == 2 && latin_font.loaded)
+    face = &latin_font;
+  if (face->loaded && face->ft_face) {
+    ascent = (int)(face->ft_face->size->metrics.ascender >> 6);
+    descent = (int)(-(face->ft_face->size->metrics.descender >> 6));
+  }
+  if (ascent_out)
+    *ascent_out = ascent;
+  if (descent_out)
+    *descent_out = descent;
+}
+
+int font_face_open(const char *path) {
+  if (!path || !*path || !ft_library)
+    return -1;
+  int free_slot = -1;
+  for (int i = 0; i < MAX_EXTRA_FACES; i++) {
+    if (extra_faces[i].face.loaded) {
+      if (strcmp(extra_faces[i].path, path) == 0)
+        return i;
+    } else if (free_slot < 0) {
+      free_slot = i;
+    }
+  }
+  if (free_slot < 0)
+    return -1;
+
+  FILE *fp = fopen(path, "rb");
+  if (!fp)
+    return -1;
+  fseek(fp, 0, SEEK_END);
+  long size = ftell(fp);
+  fseek(fp, 0, SEEK_SET);
+  if (size <= 0 || size > FONT_BUFFER_MAX_SIZE) {
+    fclose(fp);
+    return -1;
+  }
+  uint8_t *bytes = malloc((size_t)size);
+  if (!bytes || fread(bytes, 1, (size_t)size, fp) != (size_t)size) {
+    free(bytes);
+    fclose(fp);
+    return -1;
+  }
+  fclose(fp);
+
+  FontFace *face = &extra_faces[free_slot].face;
+  memset(face, 0, sizeof *face);
+  face->buffer = bytes;
+  face->buffer_size = (size_t)size;
+  if (FT_New_Memory_Face(ft_library, bytes, (FT_Long)size, 0, &face->ft_face)) {
+    free(bytes);
+    memset(face, 0, sizeof *face);
+    return -1;
+  }
+  FT_Set_Pixel_Sizes(face->ft_face, 0, (FT_UInt)ui_font_size);
+  face->hb_font = hb_ft_font_create_referenced(face->ft_face);
+  if (!face->hb_font) {
+    FT_Done_Face(face->ft_face);
+    free(bytes);
+    memset(face, 0, sizeof *face);
+    return -1;
+  }
+  face->loaded = 1;
+  strncpy(extra_faces[free_slot].path, path,
+          sizeof extra_faces[free_slot].path - 1);
+  extra_faces[free_slot].path[sizeof extra_faces[free_slot].path - 1] = '\0';
+  return free_slot;
+}
+
+void font_face_use(int handle, int pixels) {
+  FontFace *face = &primary_font;
+  int id = 0;
+  if (handle >= 0 && handle < MAX_EXTRA_FACES &&
+      extra_faces[handle].face.loaded) {
+    face = &extra_faces[handle].face;
+    id = EXTRA_FONT_ID_BASE + handle;
+  }
+  if (face != active_primary || pixels != face_pixel_override)
+    active_face_size = 0; /* force the size onto the newly active face */
+  active_primary = face;
+  active_primary_id = id;
+  face_pixel_override = pixels > 0 ? pixels : 0;
+  ensure_render_size();
+}
+
+void font_face_close_all(void) {
+  font_face_use(-1, 0);
+  for (int i = 0; i < MAX_EXTRA_FACES; i++) {
+    FontFace *face = &extra_faces[i].face;
+    if (!face->loaded)
+      continue;
+    uint8_t *bytes = face->buffer;
+    unload_font_face(face);
+    free(bytes);
+    memset(&extra_faces[i], 0, sizeof extra_faces[i]);
+  }
+}
+
 void font_cap_metrics(int *baseline_out, int *cap_height_out) {
   int baseline = 0, cap = 0;
 
-  FontFace *active_face = &primary_font;
+  ensure_render_size();
+  FontFace *active_face = active_primary;
   if (language_force_font_id == 1 && fallback_font.loaded) {
     active_face = &fallback_font;
   } else if (language_force_font_id == 2 && latin_font.loaded) {

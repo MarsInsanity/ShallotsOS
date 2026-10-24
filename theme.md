@@ -2,6 +2,106 @@
 
 TreeFrogUI supports colour themes, custom fonts, one global wallpaper, per-system backgrounds and game thumbnails.
 
+ShallotsOS adds **OnionOS themes**: the OnionOS look and layout, and support for
+the theme format used by OnionOS on the Miyoo Mini.
+
+---
+
+## OnionOS themes
+
+With an OnionOS theme selected, the whole interface uses the OnionOS layout:
+
+- **Home screen**: Recents, Favorites, Games, Apps and Settings tiles with page
+  dots, like OnionOS's main menu. Left/Right chooses a tile and A opens it.
+- **Games**: the console grid, four systems across and two down.
+- **Game lists, Favorites, Apps and Settings**: OnionOS lists with the title bar,
+  the selection highlight, toggles and arrows, and the A/B hint bar with a
+  position counter. Box art appears on the right of game lists.
+- **Recents**: the GameSwitcher, with the theme's top and bottom bars over the
+  last screenshot of each game. Y hides the bars.
+
+B at the top of Games, Favorites, Recents, Apps or Settings returns to the home
+screen. Search (X), the core and extension picker (SELECT) and favouriting (Y)
+work as they do in the other styles.
+
+ShallotsOS ships with the **ShallotsOS** theme selected. To change it, open
+Settings → Appearance → **OnionOS Theme** and press Left/Right. Choose **off**
+to return to the TreeFrogUI layouts and colour themes.
+
+### Installing OnionOS themes
+
+1. Download a theme, for example from the
+   [OnionOS theme catalogue](https://github.com/OnionUI/Themes) (`release/` holds
+   one `.zip` per theme).
+2. Copy the `.zip`, or the unzipped theme folder, into **`Themes/`** at the root of
+   the SD card. This is the same place as on a Miyoo Mini.
+3. Select the theme under Settings → Appearance → **OnionOS Theme**. A `.zip` is
+   unpacked the first time you select it; the zip itself is left in place.
+
+A theme folder looks like this:
+
+```text
+Themes/Silky by DiMo/
+├── config.json      ← name, fonts, sizes and colours
+├── preview.png
+├── skin/            ← background.png, bg-title.png, bg-list-s.png, ic-game-f.png …
+├── icons/           ← optional console icons: gba.png, fc.png … (sel/ for selected)
+│   └── app/         ← optional app icons
+├── sound/change.wav ← optional navigation sound
+└── font.ttf         ← optional font named in config.json
+```
+
+### What is supported
+
+| OnionOS theme feature | Status |
+|---|---|
+| `config.json`: `title`, `hint`, `list`, `grid` (`grid1x4`, `grid3x4`), `currentpage`, `total` fonts, sizes and colours | Yes, with OnionOS's fallback rules |
+| `config.json`: `batteryPercentage` (`visible`, `size`, `color`, `offsetX`, `offsetY`, `textAlign` / `onleft`, `fixed`) | Yes |
+| `config.json`: `hideLabels` (`icons`, `hints`) and the older `hideIconTitle` | Yes |
+| Main menu tiles `ic-*-n.png` / `ic-*-f.png`, page dots `dot-a` / `dot-n`, logo `miyoo-topbar.png` | Yes |
+| `background`, `bg-title`, `tips-bar-bg`, `bg-list-s`, `bg-list-l`, `div-line-h`, `preview-bg` | Yes |
+| `icon-A-54`, `icon-B-54`, arrows, `extra/toggle-on` / `extra/toggle-off` | Yes |
+| Battery icons `power-*-icon`, `ic-power-charge-100%` | Yes (see the note below) |
+| Console grid cards `bg-game-item-n` / `bg-game-item-f` | Yes |
+| GameSwitcher bars `extra/gs-top-bar`, `extra/gs-bottom-bar` | Yes |
+| Console icons `icons/<name>.png` and `icons/sel/<name>.png` | Yes. OnionOS icon names such as `fc`, `sfc`, `md` and `ps` are matched to the ShallotsOS ROM folders. Systems without a theme icon use the selected **Icon Pack**. |
+| App icons `icons/app/<name>.png` | Yes, for the apps ShallotsOS has |
+| `sound/change.wav` | Yes, when **Menu Sounds** is on |
+| Theme `.zip` files | Yes |
+| Profile overrides in `Saves/CurrentProfile/theme/` | Yes |
+| `sound/bgm.mp3`, pop-up menus, Wi-Fi and key-tester images | Not used: ShallotsOS has no matching screen or hardware |
+
+Themes are designed for 640×480, the native resolution of the R36SX, R36 HD and
+GB350, so they appear exactly as designed on those devices. On 854×480 panels
+(SF3000 family) the full-width bars and background stretch to the panel and the
+tiles and grid stay centred.
+
+**Fonts.** OnionOS themes often name fonts that OnionOS keeps in
+`/mnt/SDCARD/miyoo/app/`. ShallotsOS looks for the font in the theme folder, then
+in `miyoo/app/` on the SD card, then in `frogui/onion/fonts/`. If you have
+OnionOS's fonts, copy them into `miyoo/app/` on the card. Otherwise
+`wqy-microhei.ttc` uses the bundled WenQuanYi Zen Hei, the Helvetica Neue fonts
+use DejaVu Sans, and anything else falls back to Exo 2 Bold Italic, which is
+OnionOS's own fallback.
+
+**Battery.** The theme's battery icons replace the device's own battery icon
+when Settings → Appearance → **Stock Battery Indicator** is off.
+
+**Missing images.** If a theme leaves an image out, the ShallotsOS theme's image is
+used, the same way OnionOS falls back to its stock skin. These spare images live
+in `frogui/onion/`.
+
+**Settings that do not apply.** With an OnionOS theme selected, Theme, Style,
+Background Theme Pack, Background Images, Background Dim, Wallpaper and Center
+Text are greyed out: the OnionOS theme sets those itself.
+
+### The ShallotsOS theme
+
+The default theme is a regular OnionOS theme in `Themes/ShallotsOS/`, so it also
+works on a Miyoo Mini running OnionOS. Its artwork is generated by
+`tools/onion_theme/make_shallotsos_theme.py`; its `preview.png` is a screenshot of
+the home screen taken with the FrogUI host renderer (`frogui/tests/host/`).
+
 ---
 
 ## Box art, game covers and thumbnails

@@ -37,6 +37,7 @@
 #include "input.h"
 #include "core_override.h"
 #include "ext_filter.h"
+#include "onion_theme.h"
 #include "common/i18n.h"
 
 #define SDCARD_BASE  "/mnt/sdcard"
@@ -462,6 +463,7 @@ static long long usb_mode_initiated_at_ms = 0;
 static uint32_t usb_mode_prev_raw = 0;
 static void ui_toast_show(const char *text);
 static void ui_transition_start(int direction);
+static const char *onion_home_label(int kind);
 static void system_labels_refresh(void);
 #define SYSTEM_CAROUSEL_FRAMES 12
 static int system_carousel_frame = SYSTEM_CAROUSEL_FRAMES + 1;
@@ -904,6 +906,14 @@ static int settings_background_dim = 15; /* darken background artwork: 0=unchang
 static int settings_file_cache = 1;      /* cache folder listings (mtime-keyed) for fast nav: 0=off, 1=on */
 static int settings_battery_color = 0;   /* "Nel Battery Mode": solid color light by level instead of fill bar */
 static int settings_stock_battery = 1;   /* cubevol's original fb1 indicator */
+/* OnionOS theme folder in /mnt/sdcard/Themes ("off" = TreeFrogUI layouts).
+ * Kept by name because the theme list is scanned from the card. */
+#define ONION_DEFAULT_THEME "ShallotsOS"
+static char settings_onion_theme[256] = ONION_DEFAULT_THEME;
+static int settings_onion_theme_idx = -1;   /* -1 = off */
+/* OnionOS MainUI-style home screen (Recents/Favorites/Games/Apps/Settings). */
+static bool viewing_home = false;
+static int home_selected = 2;
 static int settings_language;
 
 static void theme_sync_artwork_pack(void) {
@@ -919,6 +929,32 @@ static void theme_sync_artwork_pack(void) {
             return;
         }
     }
+}
+
+/* Load the selected OnionOS theme, or return to TreeFrogUI layouts, and hand
+ * its palette to every screen that is drawn with theme colours (overlays and
+ * picoarch's in-game menu). Returns 0 when the theme could not be loaded. */
+static int onion_apply(void) {
+    int ok = 1;
+    if (settings_onion_theme_idx >= onion_theme_count())
+        settings_onion_theme_idx = -1;
+    if (settings_onion_theme_idx != onion_theme_current() ||
+        (settings_onion_theme_idx >= 0 && !onion_theme_active())) {
+        if (!onion_theme_select(settings_onion_theme_idx)) {
+            ok = 0;
+            settings_onion_theme_idx = -1;
+            onion_theme_select(-1);
+        }
+        /* Installing a theme zip can merge it into an already listed theme. */
+        settings_onion_theme_idx = onion_theme_current();
+    }
+    /* A theme zip is renamed to its unpacked folder once installed. */
+    snprintf(settings_onion_theme, sizeof settings_onion_theme, "%s",
+             settings_onion_theme_idx >= 0 ? onion_theme_folder(settings_onion_theme_idx) : "off");
+    theme_set_override(onion_theme_palette());
+    if (!onion_theme_active())
+        viewing_home = false;
+    return ok;
 }
 
 int frogui_battery_color_mode(void) { return settings_battery_color; }
@@ -944,7 +980,7 @@ static const char *style_keys[STYLE_COUNT] = {"vertical", "horizontal", "system"
  * and FONT are special (dynamic option lists); ACTION opens the remap wizard. */
 typedef enum { RT_HEADER, RT_INFO, RT_TOGGLE, RT_RANGE, RT_THEME, RT_STYLE, RT_FONT, RT_WALLPAPER,
                RT_WALLFIT, RT_THEME_PACK, RT_ICON_PACK, RT_ROM_SOURCE, RT_OTG_STATUS,
-               RT_CACHE_REBUILD, RT_ACTION, RT_LANGUAGE } SRowType;
+               RT_CACHE_REBUILD, RT_ACTION, RT_LANGUAGE, RT_ONION_THEME } SRowType;
 typedef struct {
     SRowType type;
     const char *label;
@@ -953,7 +989,7 @@ typedef struct {
 } SRow;
 
 static const SRow settings_rows[] = {
-    { RT_HEADER, "settings.appearance" }, { RT_THEME, "settings.theme" }, { RT_THEME_PACK, "settings.background_theme_pack" }, { RT_STYLE, "settings.style" }, { RT_ICON_PACK, "settings.icon_pack" }, { RT_TOGGLE, "settings.center_text", &settings_center_text }, { RT_TOGGLE, "settings.friendly_system_names", &settings_friendly_names }, { RT_FONT, "settings.font" }, { RT_RANGE, "settings.font_size", &settings_font_size, 18, 26, 1 }, { RT_TOGGLE, "settings.battery_colour_mode", &settings_battery_color }, { RT_TOGGLE, "settings.stock_battery_indicator", &settings_stock_battery }, { RT_TOGGLE, "settings.background_images", &settings_backgrounds }, { RT_RANGE, "settings.background_dim", &settings_background_dim, 0, 100, 5 }, { RT_WALLPAPER, "settings.wallpaper" }, { RT_WALLFIT, "settings.background_image_fit" },
+    { RT_HEADER, "settings.appearance" }, { RT_ONION_THEME, "settings.onion_theme" }, { RT_THEME, "settings.theme" }, { RT_THEME_PACK, "settings.background_theme_pack" }, { RT_STYLE, "settings.style" }, { RT_ICON_PACK, "settings.icon_pack" }, { RT_TOGGLE, "settings.center_text", &settings_center_text }, { RT_TOGGLE, "settings.friendly_system_names", &settings_friendly_names }, { RT_FONT, "settings.font" }, { RT_RANGE, "settings.font_size", &settings_font_size, 18, 26, 1 }, { RT_TOGGLE, "settings.battery_colour_mode", &settings_battery_color }, { RT_TOGGLE, "settings.stock_battery_indicator", &settings_stock_battery }, { RT_TOGGLE, "settings.background_images", &settings_backgrounds }, { RT_RANGE, "settings.background_dim", &settings_background_dim, 0, 100, 5 }, { RT_WALLPAPER, "settings.wallpaper" }, { RT_WALLFIT, "settings.background_image_fit" },
     { RT_HEADER, "settings.general" }, { RT_LANGUAGE, "settings.language", &settings_language }, { RT_RANGE, "settings.brightness", &settings_brightness, 0, 100, SETTINGS_BRIGHTNESS_STEP }, { RT_TOGGLE, "settings.animations", &settings_anim }, { RT_TOGGLE, "settings.menu_sounds", &settings_menu_sounds }, { RT_TOGGLE, "settings.hide_extensions", &settings_hide_extensions }, { RT_TOGGLE, "settings.hide_empty_folders", &settings_hide_empty },
     { RT_HEADER, "settings.library" }, { RT_ROM_SOURCE, "settings.rom_source" }, { RT_OTG_STATUS, "settings.otg_storage" }, { RT_TOGGLE, "settings.game_switcher", &settings_game_switcher }, { RT_TOGGLE, "settings.start_in_recents", &settings_load_recents },
     { RT_HEADER, "settings.gameplay" }, { RT_TOGGLE, "settings.quick_resume", &settings_quick_resume }, { RT_TOGGLE, "settings.autosave_autoload", &settings_autosave_autoload }, { RT_TOGGLE, "settings.custom_aspect_ratios", &settings_custom_aspect_ratios },
@@ -966,6 +1002,16 @@ static bool otg_roms_available(void);
  * but cannot be changed until its prerequisite is enabled. */
 static bool settings_row_enabled(const SRow *r) {
     if (!r) return false;
+    if (onion_theme_active()) {
+        /* The Onion theme supplies colours, layout and backgrounds. Icon
+         * packs still fill in consoles the theme has no icon for. */
+        if (r->type == RT_THEME || r->type == RT_STYLE || r->type == RT_THEME_PACK ||
+            r->type == RT_WALLPAPER || r->type == RT_WALLFIT ||
+            r->val == &settings_backgrounds || r->val == &settings_background_dim ||
+            r->val == &settings_center_text)
+            return false;
+        return true;
+    }
     if (r->type == RT_THEME_PACK) return settings_backgrounds != 0;
     if (r->type == RT_ICON_PACK) return settings_style == STYLE_SYSTEM;
     return true;
@@ -1156,6 +1202,7 @@ static void settings_apply(void) {
     if (settings_background_dim > 100) settings_background_dim = 100;
     theme_apply(settings_theme_idx);
     theme_sync_artwork_pack();
+    onion_apply();
     if (font_count > 0)
         font_load_file(font_files[settings_font_idx]);
     font_set_size(settings_font_size);
@@ -1215,6 +1262,10 @@ static void settings_preview_row(const SRow *r) {
         theme_apply(settings_theme_idx);
         theme_sync_artwork_pack();
         break;
+    case RT_ONION_THEME:
+        if (!onion_apply())
+            ui_toast_show(tr_or("onion.theme_failed", "Theme could not be loaded"));
+        break;
     case RT_FONT:
         if (font_count > 0)
             font_load_file(font_files[settings_font_idx]);
@@ -1267,6 +1318,8 @@ static void settings_load_file(void) {
                 for (int i = 0; i < theme_count; i++)
                     if (strcmp(themes[i].name, val) == 0) { settings_theme_idx = i; break; }
             }
+        } else if (strcmp(line, "onion_theme") == 0) {
+            snprintf(settings_onion_theme, sizeof settings_onion_theme, "%s", val);
         } else if (strcmp(line, "font") == 0) {
             for (int i = 0; i < font_count; i++)
                 if (strcasecmp(font_files[i], val) == 0 ||
@@ -1408,6 +1461,8 @@ static void settings_save_file(void) {
     FILE *f = fopen(SETTINGS_FILE, "w");
     if (!f) { dbg("settings save: fopen failed"); return; }
     fprintf(f, "theme=%s\n", themes[settings_theme_idx].name);
+    fprintf(f, "onion_theme=%s\n", settings_onion_theme_idx >= 0 ?
+            onion_theme_folder(settings_onion_theme_idx) : "off");
     fprintf(f, "font=%s\n", font_count > 0 ? font_files[settings_font_idx] : "");
     fprintf(f, "font_size=%d\n", settings_font_size);
     fprintf(f, "language=%s\n", i18n_current_language());
@@ -1933,7 +1988,8 @@ static void scan_directory(const char *path) {
     /* Favourites remains part of the Games library. Recents and Settings are
      * real top-level tabs and must never appear as fake system folders. */
     if (strcmp(path, ROMS_PATH) == 0) {
-        int has_favs    = favorites_get_count()    > 0 ? 1 : 0;
+        /* OnionOS layouts open Favorites from the home screen instead. */
+        int has_favs    = (favorites_get_count() > 0 && !onion_theme_active()) ? 1 : 0;
         int extras = has_favs;
         while (entry_count + extras > entry_capacity) {
             entry_capacity = entry_capacity ? entry_capacity*2 : INITIAL_ENTRIES_CAPACITY;
@@ -2052,6 +2108,16 @@ static void render_game_switcher(uint16_t *framebuffer) {
     const RecentGame *list = recent_games_get_list();
     int n = recent_games_get_count();
     int barh = UI_S(30);
+    if (n <= 0 && onion_theme_active()) {
+        onion_render_background(framebuffer);
+        onion_render_header(framebuffer, onion_home_label(ONION_HOME_RECENT), 0);
+        const char *empty = tr_or("onion.no_recents", "No recent games yet");
+        font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT,
+                       (SCREEN_WIDTH - font_measure_text(empty)) / 2, SCREEN_HEIGHT / 2 - 12,
+                       empty, COLOR_TEXT);
+        onion_render_footer(framebuffer, NULL, tr_or("onion.back", "BACK"), 0, 0);
+        return;
+    }
     if (n <= 0) {
         render_game_switcher_header(framebuffer, barh);
         font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, PADDING, SCREEN_HEIGHT/2,
@@ -2134,6 +2200,22 @@ static void render_game_switcher(uint16_t *framebuffer) {
         font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, bx + UI_S(16), by + bh/2,
                        "(no screenshot - open the in-game menu once)", COLOR_TEXT);
 
+    if (onion_theme_active()) {
+        /* Onion GameSwitcher: themed top/bottom bars, Y hides them. */
+        if (!game_switcher_fullscreen) {
+            char info[96] = "";
+            long secs = playtime_lookup(g->full_path);
+            if (secs >= 3600)
+                snprintf(info, sizeof info, "%ldh %ldm", secs/3600, (secs%3600)/60);
+            else if (secs >= 60)
+                snprintf(info, sizeof info, "%ldm", secs/60);
+            else if (secs > 0)
+                snprintf(info, sizeof info, "%lds", secs);
+            onion_render_switcher_bars(framebuffer, g->game_name, info, selected_index + 1, n);
+        }
+        return;
+    }
+
     /* Bottom overlay: detailed mode carries play info; fullscreen keeps only
      * the selected game and navigation, matching Onion's minimal view. */
     int byb = SCREEN_HEIGHT - barh;
@@ -2174,16 +2256,9 @@ static void render_game_switcher(uint16_t *framebuffer) {
 /* Box-art side panel (Onion/muOS-style): right portion of the list view shows
  * the selected game's box art + name. Opaque card is drawn first so any
  * overflowing list-row text on the left is painted over. */
-static void render_boxart_panel(uint16_t *fb, const char *full_path, const char *name) {
-    int px   = SCREEN_WIDTH * 58 / 100;
-    int top  = UI_S(44);
-    int bot  = SCREEN_HEIGHT - UI_S(40);
-    int pw   = SCREEN_WIDTH - px - UI_S(10);
-    int ph   = bot - top;
-    if (pw < UI_S(60) || ph < UI_S(60)) return;          /* too narrow to bother */
-
-    /* Cache the decoded thumbnail; only re-decode when the selected game changes.
-     * The old code ran stbi_load (PNG/JPG decode) EVERY frame -> scrolling crawled. */
+/* Cache the decoded thumbnail; only re-decode when the selected game changes.
+ * The old code ran stbi_load (PNG/JPG decode) EVERY frame -> scrolling crawled. */
+static const Thumbnail *boxart_cached(const char *full_path) {
     static char cached_path[1024] = "";
     static Thumbnail ctb; static int chas = 0;
     if (strcmp(full_path, cached_path) != 0) {
@@ -2195,7 +2270,20 @@ static void render_boxart_panel(uint16_t *fb, const char *full_path, const char 
         strncpy(cached_path, full_path, sizeof cached_path - 1);
         cached_path[sizeof cached_path - 1] = 0;
     }
-    if (!chas) return;   /* no art → no panel */
+    return chas ? &ctb : NULL;
+}
+
+static void render_boxart_panel(uint16_t *fb, const char *full_path, const char *name) {
+    int px   = SCREEN_WIDTH * 58 / 100;
+    int top  = UI_S(44);
+    int bot  = SCREEN_HEIGHT - UI_S(40);
+    int pw   = SCREEN_WIDTH - px - UI_S(10);
+    int ph   = bot - top;
+    if (pw < UI_S(60) || ph < UI_S(60)) return;          /* too narrow to bother */
+
+    const Thumbnail *art = boxart_cached(full_path);
+    if (!art) return;   /* no art → no panel */
+    Thumbnail ctb = *art;
 
     int nameh = UI_S(22);
     int aw = pw, ah = ph - nameh;
@@ -3260,6 +3348,12 @@ static void handle_settings_menu(void) {
         case RT_THEME:
             settings_theme_idx = (settings_theme_idx + delta + theme_count) % theme_count;
             break;
+        case RT_ONION_THEME: {
+            /* "Off" sits before the first theme found in /Themes. */
+            int n = onion_theme_count() + 1;
+            settings_onion_theme_idx = (settings_onion_theme_idx + 1 + delta + n) % n - 1;
+            break;
+        }
         case RT_STYLE:
             settings_style = (settings_style + delta + STYLE_COUNT) % STYLE_COUNT;
             break;
@@ -3322,6 +3416,16 @@ static void handle_settings_menu(void) {
         settings_build_vis_rows();
         return;
     }
+    if (input_was_pressed(FROG_BTN_A) && onion_theme_active()) {
+        /* OnionOS settings: A switches a toggle and only B leaves. */
+        const SRow *r = &settings_rows[settings_menu_idx];
+        if (r->type == RT_TOGGLE && settings_row_enabled(r)) {
+            *r->val = !*r->val;
+            settings_preview_row(r);
+        }
+        if (r->type != RT_CACHE_REBUILD && r->type != RT_ACTION)
+            return;
+    }
     if (input_was_pressed(FROG_BTN_A) &&
         settings_rows[settings_menu_idx].type == RT_CACHE_REBUILD) {
         /* Rebuilding opts in, removes every old/corrupt cache entry, and
@@ -3363,14 +3467,14 @@ static void handle_settings_menu(void) {
 }
 
 static bool horizontal_system_view(void) {
-    return settings_style == STYLE_HORIZONTAL &&
+    return settings_style == STYLE_HORIZONTAL && !onion_theme_active() &&
            strcmp(current_path, ROMS_PATH) == 0 &&
            !viewing_recents && !viewing_favourites && !viewing_apps &&
            !apps_browsing && !viewing_search;
 }
 
 static bool icon_system_view(void) {
-    return settings_style == STYLE_SYSTEM &&
+    return (settings_style == STYLE_SYSTEM || onion_theme_active()) &&
            strcmp(current_path, ROMS_PATH) == 0 &&
            !viewing_recents && !viewing_favourites && !viewing_apps &&
            !apps_browsing && !viewing_search;
@@ -3398,6 +3502,18 @@ static void ui_toast_show(const char *text) {
 
 static void ui_menu_tick(void) {
     if (!settings_menu_sounds) return;
+    if (onion_theme_active()) {
+        /* OnionOS themes ship their own navigation sound. */
+        const int16_t *theme_tick;
+        int theme_frames = onion_theme_change_sound(SAMPLE_RATE, &theme_tick);
+        if (theme_frames > 0) {
+            if (audio_batch_cb) audio_batch_cb(theme_tick, (size_t)theme_frames);
+            else if (audio_cb)
+                for (int i = 0; i < theme_frames; i++)
+                    audio_cb(theme_tick[i * 2], theme_tick[i * 2 + 1]);
+            return;
+        }
+    }
     static int16_t tick[UI_TICK_MAX_FRAMES * 2];
     static int frames = 0;
     static int ready = 0;
@@ -3611,6 +3727,12 @@ static const char *system_icon_path(const char *folder, char *path, size_t size)
     return NULL;
 }
 
+/* OnionOS themes without an icon for a system fall back to the selected
+ * TreeFrogUI icon pack. */
+const char *frogui_fallback_system_icon(const char *folder, char *path, size_t size) {
+    return system_icon_path(folder, path, size);
+}
+
 static SystemIcon *system_icon_get(const char *folder) {
     if (system_icon_pack != settings_icon_pack_idx) {
         for (int i = 0; i < SYSTEM_ICON_CACHE_N; i++) {
@@ -3795,6 +3917,97 @@ static void render_system_grid(uint16_t *fb) {
     render_legend(fb, LEGEND_X_NONE, show_select, 1);
 }
 
+/* Show the favourites list in place of the Games root. */
+static int enter_favourites_view(void) {
+    const FavoriteGame *fl = favorites_get_list();
+    int fc = favorites_get_count();
+    while (fc > entry_capacity) {
+        entry_capacity = entry_capacity ? entry_capacity*2 : INITIAL_ENTRIES_CAPACITY;
+        entries = realloc(entries, entry_capacity * sizeof(DirEntry));
+        if (!entries) { entry_count = 0; return 0; }
+    }
+    entry_count = 0;
+    for (int i = 0; i < fc; i++) {
+        strncpy(entries[entry_count].name, fl[i].game_name, 255);
+        entries[entry_count].name[255] = '\0';
+        entries[entry_count].is_dir = 0;
+        entry_count++;
+    }
+    viewing_favourites = true;
+    selected_index = 0; scroll_offset = 0;
+    return 1;
+}
+
+/* ---- OnionOS home screen ------------------------------------------------ */
+static const int onion_home_kinds[] = {
+    ONION_HOME_RECENT, ONION_HOME_FAVORITE, ONION_HOME_GAME, ONION_HOME_APP, ONION_HOME_SETTING,
+};
+#define ONION_HOME_N ((int)(sizeof(onion_home_kinds) / sizeof(onion_home_kinds[0])))
+
+static const char *onion_home_label(int kind) {
+    switch (kind) {
+    case ONION_HOME_RECENT:   return tr_or("onion.recents", "Recents");
+    case ONION_HOME_FAVORITE: return tr_or("onion.favorites", "Favorites");
+    case ONION_HOME_APP:      return tr_or("onion.apps", "Apps");
+    case ONION_HOME_SETTING:  return tr_or("onion.settings", "Settings");
+    default:                  return tr_or("onion.games", "Games");
+    }
+}
+
+/* Return the browser to the Games root without leaving the Games tab. */
+static void onion_reset_to_games_root(void) {
+    if (main_tab_active() != MAIN_TAB_GAMES) {
+        switch_main_tab(MAIN_TAB_GAMES);
+        return;
+    }
+    if (viewing_favourites || viewing_search || strcmp(current_path, ROMS_PATH) != 0) {
+        viewing_favourites = false;
+        viewing_search = false;
+        strncpy(current_path, ROMS_PATH, MAX_PATH_LEN - 1);
+        current_path[MAX_PATH_LEN - 1] = '\0';
+        if (!restore_games_tab_entries())
+            scan_directory(current_path);
+    }
+}
+
+static void onion_open_home_item(int kind) {
+    viewing_home = false;
+    ui_transition_start(1);
+    switch (kind) {
+    case ONION_HOME_RECENT:   switch_main_tab(MAIN_TAB_RECENTS); break;
+    case ONION_HOME_APP:      switch_main_tab(MAIN_TAB_APPS); break;
+    case ONION_HOME_SETTING:  switch_main_tab(MAIN_TAB_SETTINGS); break;
+    case ONION_HOME_FAVORITE:
+        onion_reset_to_games_root();
+        enter_favourites_view();
+        break;
+    default:
+        onion_reset_to_games_root();
+        break;
+    }
+}
+
+static void handle_home_input(void) {
+    if (input_repeat(FROG_BTN_LEFT) && home_selected > 0)
+        home_selected--;
+    if (input_repeat(FROG_BTN_RIGHT) && home_selected < ONION_HOME_N - 1)
+        home_selected++;
+    if (home_selected >= ONION_HOME_N) home_selected = ONION_HOME_N - 1;
+    if (input_was_pressed(FROG_BTN_A))
+        onion_open_home_item(onion_home_kinds[home_selected]);
+}
+
+/* Screens where B returns to the OnionOS home screen: the top of each home
+ * item (Games root, Favorites, Recents, Apps, Settings). */
+static bool onion_top_level_view(void) {
+    if (!onion_theme_active() || viewing_home || search_kbd_active || extf_kbd_active ||
+        core_picker_active || remap_wizard_active || usb_mode_confirm_active ||
+        usb_mode_initiated_active || viewing_search || viewing_activity || apps_browsing)
+        return false;
+    return settings_menu_active || viewing_recents || viewing_apps || viewing_favourites ||
+           strcmp(current_path, ROMS_PATH) == 0;
+}
+
 static void handle_input(void) {
     input_update();
 
@@ -3865,13 +4078,20 @@ static void handle_input(void) {
         return;
     }
 
+    if (viewing_home && onion_theme_active()) {
+        handle_home_input();
+        return;
+    }
+
     /* Top-level tabs use shoulders only. D-pad Left/Right belongs to the
      * current view (including Vertical) and must never change tabs. */
     {
         int tab = main_tab_active();
-        bool at_tabs = settings_menu_active || viewing_recents || viewing_apps || apps_browsing ||
-                       (!viewing_favourites && !viewing_search &&
-                        strcmp(current_path, ROMS_PATH) == 0);
+        /* OnionOS layouts navigate through the home screen instead. */
+        bool at_tabs = !onion_theme_active() &&
+                       (settings_menu_active || viewing_recents || viewing_apps || apps_browsing ||
+                        (!viewing_favourites && !viewing_search &&
+                         strcmp(current_path, ROMS_PATH) == 0));
         bool prev = input_was_pressed(FROG_BTN_L1);
         bool next = input_was_pressed(FROG_BTN_R1);
         if (at_tabs && prev && tab > MAIN_TAB_RECENTS) {
@@ -4073,24 +4293,8 @@ static void handle_input(void) {
                 apps_browsing = true;
             }
         } else if (strcmp(entries[selected_index].name, FAVOURITES_ENTRY_NAME) == 0) {
-            /* Enter favourites view */
             ui_transition_start(1);
-            const FavoriteGame *fl = favorites_get_list();
-            int fc = favorites_get_count();
-            while (fc > entry_capacity) {
-                entry_capacity = entry_capacity ? entry_capacity*2 : INITIAL_ENTRIES_CAPACITY;
-                entries = realloc(entries, entry_capacity * sizeof(DirEntry));
-                if (!entries) goto input_done;
-            }
-            entry_count = 0;
-            for (int i = 0; i < fc; i++) {
-                strncpy(entries[entry_count].name, fl[i].game_name, 255);
-                entries[entry_count].name[255] = '\0';
-                entries[entry_count].is_dir = 0;
-                entry_count++;
-            }
-            viewing_favourites = true;
-            selected_index = 0; scroll_offset = 0;
+            if (!enter_favourites_view()) goto input_done;
         } else if (strcmp(entries[selected_index].name, RECENTS_ENTRY_NAME) == 0) {
             ui_transition_start(1);
             enter_recents_view();
@@ -4301,7 +4505,11 @@ void retro_init(void) {
     dbg("icon_pack_scan done");
     theme_init();
     dbg("theme_init done");
+    onion_theme_scan();
+    dbg("onion_theme_scan done");
     settings_load_file();
+    settings_onion_theme_idx = strcasecmp(settings_onion_theme, "off") == 0
+                             ? -1 : onion_theme_index_of(settings_onion_theme);
     i18n_init(i18n_language_code_at(settings_language));
     system_labels_refresh();
     settings_sections_load();   /* restore the user's collapsed sections */
@@ -4360,6 +4568,8 @@ void retro_init(void) {
     save_games_tab_entries();
     if (settings_load_recents && recent_games_get_count() > 0)
         enter_recents_view();   /* "Start in Recents" setting */
+    else if (onion_theme_active() && !settings_menu_active)
+        viewing_home = true;    /* OnionOS starts on its home screen */
     shutdown_requested = false;
     dbg("retro_init complete");
 }
@@ -4373,6 +4583,8 @@ void retro_deinit(void) {
     }
     system_icon_pack = -1;
     system_icon_missing_count = 0;
+    onion_theme_unload();
+    theme_set_override(NULL);
     free(framebuffer); framebuffer = NULL;
     free(view_transition_old); view_transition_old = NULL;
     free(view_transition_out); view_transition_out = NULL;
@@ -4389,8 +4601,55 @@ bool retro_load_game(const struct retro_game_info *info) {
 
 void retro_unload_game(void) {}
 
-static void render_settings_menu(void) {
+/* Value shown for a settings row and how it is presented (ONION_ROW_*):
+ * VALUE rows cycle with Left/Right, TOGGLE rows are on/off, INFO rows are
+ * read-only and PLAIN rows are actions. */
+static int settings_row_value(const SRow *r, char *value, size_t size) {
     extern const Theme themes[];
+    value[0] = '\0';
+    switch (r->type) {
+    case RT_INFO:
+        snprintf(value, size, "%s", treefrogui_version());
+        return ONION_ROW_INFO;
+    case RT_ONION_THEME:
+        snprintf(value, size, "%s", settings_onion_theme_idx >= 0
+                 ? onion_theme_label(settings_onion_theme_idx) : tr_or("value.off", "Off"));
+        return ONION_ROW_VALUE;
+    case RT_THEME:      snprintf(value, size, "%s", themes[settings_theme_idx].name); return ONION_ROW_VALUE;
+    case RT_STYLE:      snprintf(value, size, "%s", style_names[settings_style]); return ONION_ROW_VALUE;
+    case RT_FONT:       snprintf(value, size, "%s", font_count > 0 ? font_disp[settings_font_idx] : "(none)"); return ONION_ROW_VALUE;
+    case RT_WALLPAPER:  snprintf(value, size, "%s", wallpaper_disp[settings_wallpaper_idx]); return ONION_ROW_VALUE;
+    case RT_WALLFIT:    snprintf(value, size, "%s", wallpaper_fit_names[settings_wallpaper_fit]); return ONION_ROW_VALUE;
+    case RT_THEME_PACK: snprintf(value, size, "%s", theme_pack_disp[settings_theme_pack_idx]); return ONION_ROW_VALUE;
+    case RT_ICON_PACK:  snprintf(value, size, "%s", icon_pack_disp[settings_icon_pack_idx]); return ONION_ROW_VALUE;
+    case RT_LANGUAGE: {
+        char key[32];
+        snprintf(key, sizeof key, "language.%s", i18n_language_code_at(settings_language));
+        snprintf(value, size, "%s", tr(key));
+        return ONION_ROW_VALUE;
+    }
+    case RT_ROM_SOURCE:
+        if (otg_roms_available()) {
+            snprintf(value, size, "%s", rom_source_names[settings_rom_source]);
+            return ONION_ROW_VALUE;
+        }
+        snprintf(value, size, "%s", rom_source_names[ROM_SOURCE_SD]);
+        return ONION_ROW_INFO;
+    case RT_OTG_STATUS:
+        snprintf(value, size, "%s", tr(otg_roms_available() ? "value.connected" : "value.not_connected"));
+        return ONION_ROW_INFO;
+    case RT_TOGGLE:
+        snprintf(value, size, "%s", tr(*r->val ? "value.on" : "value.off"));
+        return ONION_ROW_TOGGLE;
+    case RT_RANGE:
+        snprintf(value, size, r->val == &settings_font_size ? "%d px" : "%d%%", *r->val);
+        return ONION_ROW_VALUE;
+    default:
+        return ONION_ROW_PLAIN;   /* RT_ACTION, RT_CACHE_REBUILD */
+    }
+}
+
+static void render_settings_menu(void) {
     if (banner_is_loaded())
         banner_render(framebuffer);
     else
@@ -4424,38 +4683,14 @@ static void render_settings_menu(void) {
                 font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, PADDING, y, line, COLOR_SELECT_BG);
             continue;
         }
-        switch (r->type) {
-        case RT_INFO:   snprintf(line, sizeof line, "%s: %s", tr(r->label), treefrogui_version()); break;
-        case RT_THEME:  snprintf(line, sizeof line, "%s: < %s >", tr(r->label), themes[settings_theme_idx].name); break;
-        case RT_STYLE:  snprintf(line, sizeof line, "%s: < %s >", tr(r->label), style_names[settings_style]); break;
-        case RT_FONT:   snprintf(line, sizeof line, "%s: < %s >", tr(r->label), font_count > 0 ? font_disp[settings_font_idx] : "(none)"); break;
-        case RT_WALLPAPER: snprintf(line, sizeof line, "%s: < %s >", tr(r->label), wallpaper_disp[settings_wallpaper_idx]); break;
-        case RT_WALLFIT:   snprintf(line, sizeof line, "%s: < %s >", tr(r->label), wallpaper_fit_names[settings_wallpaper_fit]); break;
-        case RT_THEME_PACK: snprintf(line, sizeof line, "%s: < %s >", tr(r->label), theme_pack_disp[settings_theme_pack_idx]); break;
-        case RT_ICON_PACK: snprintf(line, sizeof line, "%s: < %s >", tr(r->label), icon_pack_disp[settings_icon_pack_idx]); break;
-        case RT_LANGUAGE: {
-            char key[32];
-            snprintf(key, sizeof key, "language.%s", i18n_language_code_at(settings_language));
-            snprintf(line, sizeof line, "%s: < %s >", tr(r->label), tr(key));
-            break;
-        }
-        case RT_ROM_SOURCE:
-            if (otg_roms_available())
-                snprintf(line, sizeof line, "%s: < %s >", tr(r->label), rom_source_names[settings_rom_source]);
-            else
-                snprintf(line, sizeof line, "%s: %s", tr(r->label), rom_source_names[ROM_SOURCE_SD]);
-            break;
-        case RT_OTG_STATUS:
-            snprintf(line, sizeof line, "%s: %s", tr(r->label),
-                     tr(otg_roms_available() ? "value.connected" : "value.not_connected"));
-            break;
-        case RT_TOGGLE: snprintf(line, sizeof line, "%s: < %s >", tr(r->label), tr(*r->val ? "value.on" : "value.off")); break;
-        case RT_RANGE:
-            snprintf(line, sizeof line, r->val == &settings_font_size ? "%s: < %d px >" : "%s: < %d%% >",
-                     tr(r->label), *r->val);
-            break;
-        default:        snprintf(line, sizeof line, "%s", tr(r->label)); break;   /* RT_ACTION */
-        }
+        char value[96];
+        int kind = settings_row_value(r, value, sizeof value);
+        if (kind == ONION_ROW_VALUE || kind == ONION_ROW_TOGGLE)
+            snprintf(line, sizeof line, "%s: < %s >", tr(r->label), value);
+        else if (kind == ONION_ROW_INFO)
+            snprintf(line, sizeof line, "%s: %s", tr(r->label), value);
+        else
+            snprintf(line, sizeof line, "%s", tr(r->label));
         /* Options sit indented under their ">> HEADER" so the grouping reads
          * clearly. Headers stay flush at PADDING. */
         int ix = PADDING + UI_S(16);
@@ -4658,6 +4893,202 @@ static void render_usb_confirm(void) {
     }
 }
 
+/* ---- OnionOS screens --------------------------------------------------- */
+
+static void render_onion_settings(void) {
+    onion_render_background(framebuffer);
+    onion_render_header(framebuffer, onion_home_label(ONION_HOME_SETTING), 0);
+    settings_build_vis_rows();
+    int cur = settings_vis_cursor();
+    int rows = onion_list_rows(0);
+    static int soff = 0;
+    if (cur < soff) soff = cur;
+    if (cur >= soff + rows) soff = cur - rows + 1;
+    if (soff > settings_vis_n - rows) soff = settings_vis_n - rows;
+    if (soff < 0) soff = 0;
+    int vis = settings_vis_n - soff;
+    if (vis > rows) vis = rows;
+    OnionListItem items[8];
+    char labels[8][128], values[8][96];
+    memset(items, 0, sizeof items);
+    for (int i = 0; i < vis; i++) {
+        const SRow *r = &settings_rows[settings_vis_rows[soff + i]];
+        if (r->type == RT_HEADER) {
+            int sec = settings_section_of(settings_vis_rows[soff + i]);
+            bool open = sec >= 0 && settings_section_open[sec];
+            snprintf(labels[i], sizeof labels[i], "%s %s", open ? "-" : "+", tr(r->label));
+            items[i].kind = ONION_ROW_HEADER;
+        } else {
+            snprintf(labels[i], sizeof labels[i], "%s", tr(r->label));
+            items[i].kind = settings_row_value(r, values[i], sizeof values[i]);
+            items[i].value = values[i];
+            items[i].toggle_on = r->type == RT_TOGGLE && *r->val;
+            items[i].disabled = !settings_row_enabled(r) || r->type == RT_OTG_STATUS;
+        }
+        items[i].label = labels[i];
+    }
+    onion_render_list(framebuffer, items, vis, cur - soff, 0, 0);
+    onion_render_footer(framebuffer, tr_or("onion.select", "SELECT"),
+                        tr_or("onion.back", "BACK"), cur + 1, settings_vis_n);
+}
+
+static bool onion_entry_is_game(int idx) {
+    return idx >= 0 && idx < entry_count && !entries[idx].is_dir &&
+           strcmp(entries[idx].name, SETTINGS_ENTRY_NAME) != 0 &&
+           strcmp(entries[idx].name, RECENTS_ENTRY_NAME) != 0 &&
+           strcmp(entries[idx].name, FAVOURITES_ENTRY_NAME) != 0;
+}
+
+/* Whether a ROM in the current folder is a favourite (Onion marks them). */
+static bool onion_entry_is_favourite(int idx) {
+    if (!onion_entry_is_game(idx) || viewing_favourites || viewing_recents || viewing_search)
+        return false;
+    const char *core = get_core_for_folder(get_console_folder(current_path));
+    if (!core) core = get_core_for_extension(entries[idx].name);
+    if (!core) return false;
+    char game_name[256];
+    snprintf(game_name, sizeof game_name, "%s", entries[idx].name);
+    char *dot = strrchr(game_name, '.');
+    if (dot) *dot = '\0';
+    return favorites_is_favorited(core, game_name);
+}
+
+static void render_onion_browser(void) {
+    static char title[160];
+    if (viewing_search)
+        snprintf(title, sizeof title, "%s: %s", tr_or("onion.search", "Search"), search_query);
+    else if (viewing_recents)
+        snprintf(title, sizeof title, "%s", onion_home_label(ONION_HOME_RECENT));
+    else if (viewing_favourites)
+        snprintf(title, sizeof title, "%s", onion_home_label(ONION_HOME_FAVORITE));
+    else if (viewing_apps)
+        snprintf(title, sizeof title, "%s", onion_home_label(ONION_HOME_APP));
+    else if (apps_browsing && strcmp(current_path, apps_root_path) == 0)
+        snprintf(title, sizeof title, "%s", app_label(get_basename(current_path)));
+    else
+        snprintf(title, sizeof title, "%s", system_display_name(get_basename(current_path)));
+    onion_render_header(framebuffer, title, 0);
+
+    int large = viewing_apps;
+    int rows = onion_list_rows(large);
+    if (selected_index < scroll_offset) scroll_offset = selected_index;
+    if (selected_index >= scroll_offset + rows) scroll_offset = selected_index - rows + 1;
+    if (scroll_offset > entry_count - rows) scroll_offset = entry_count - rows;
+    if (scroll_offset < 0) scroll_offset = 0;
+
+    const Thumbnail *art = NULL;
+    if (!viewing_recents && !viewing_search && !viewing_apps &&
+        onion_entry_is_game(selected_index)) {
+        char fp[1024];
+        if (viewing_favourites) {
+            const FavoriteGame *fl = favorites_get_list();
+            if (selected_index < favorites_get_count())
+                art = boxart_cached(fl[selected_index].full_path);
+        } else {
+            snprintf(fp, sizeof fp, "%s/%s", current_path, entries[selected_index].name);
+            art = boxart_cached(fp);
+        }
+    }
+
+    OnionListItem items[8];
+    char labels[8][256], icons[8][512];
+    memset(items, 0, sizeof items);
+    int vis = entry_count - scroll_offset;
+    if (vis > rows) vis = rows;
+    for (int i = 0; i < vis; i++) {
+        int idx = scroll_offset + i;
+        const char *shown = entries[idx].name;
+        if (viewing_apps && entries[idx].is_dir) {
+            shown = app_label(entries[idx].name);
+            const char *icon = onion_theme_app_icon(entries[idx].name);
+            if (icon) {
+                snprintf(icons[i], sizeof icons[i], "%s", icon);
+                items[i].icon_path = icons[i];
+            }
+        } else if (entries[idx].is_dir && strcmp(current_path, ROMS_PATH) == 0) {
+            shown = system_display_name(entries[idx].name);
+        }
+        snprintf(labels[i], sizeof labels[i], "%s", shown);
+        if (settings_hide_extensions && !entries[idx].is_dir) {
+            char *dot = strrchr(labels[i], '.');
+            if (dot && dot != labels[i]) *dot = '\0';
+        }
+        items[i].label = labels[i];
+        items[i].kind = ONION_ROW_PLAIN;
+        items[i].folder = entries[idx].is_dir && !viewing_apps;
+        items[i].favourite = onion_entry_is_favourite(idx);
+    }
+    onion_render_list(framebuffer, items, vis, selected_index - scroll_offset, large,
+                      art ? SCREEN_WIDTH - 260 : 0);
+    if (art)
+        onion_render_preview(framebuffer, art);
+    if (entry_count == 0) {
+        const char *empty = tr_or("onion.empty", "Nothing here yet");
+        font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT,
+                       (SCREEN_WIDTH - font_measure_text(empty)) / 2, SCREEN_HEIGHT / 2 - 12,
+                       empty, COLOR_TEXT);
+    }
+    onion_render_footer(framebuffer, entry_count > 0 ? tr_or("onion.open", "OPEN") : NULL,
+                        tr_or("onion.back", "BACK"),
+                        entry_count > 0 ? selected_index + 1 : 0, entry_count);
+}
+
+static void render_onion_systems(void) {
+    onion_render_background(framebuffer);
+    onion_render_header(framebuffer, onion_home_label(ONION_HOME_GAME), 0);
+    static OnionGridItem *grid;
+    static int grid_cap;
+    if (entry_count > grid_cap) {
+        OnionGridItem *bigger = realloc(grid, (size_t)entry_count * sizeof *grid);
+        if (!bigger) return;
+        grid = bigger;
+        grid_cap = entry_count;
+    }
+    for (int i = 0; i < entry_count; i++) {
+        grid[i].label = system_display_name(entries[i].name);
+        grid[i].folder = entries[i].name;
+    }
+    onion_render_grid(framebuffer, grid, entry_count, selected_index);
+    if (entry_count == 0) {
+        const char *empty = tr_or("onion.no_games", "Add games to the roms folder");
+        font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT,
+                       (SCREEN_WIDTH - font_measure_text(empty)) / 2, SCREEN_HEIGHT / 2 - 12,
+                       empty, COLOR_TEXT);
+    }
+}
+
+/* Draw the current view with the OnionOS theme. Returns false for views that
+ * keep their TreeFrogUI rendering (palette-themed). */
+static bool render_onion_frame(void) {
+    if (viewing_activity)
+        return false;
+    if (viewing_home) {
+        OnionHomeItem items[ONION_HOME_N];
+        for (int i = 0; i < ONION_HOME_N; i++) {
+            items[i].kind = onion_home_kinds[i];
+            items[i].label = onion_home_label(onion_home_kinds[i]);
+        }
+        onion_render_home(framebuffer, items, ONION_HOME_N, home_selected);
+    } else if (settings_menu_active) {
+        render_onion_settings();
+    } else if (viewing_recents && settings_game_switcher) {
+        render_clear_screen(framebuffer);
+        render_game_switcher(framebuffer);
+    } else if (icon_system_view()) {
+        render_onion_systems();
+    } else {
+        onion_render_background(framebuffer);
+        render_onion_browser();
+    }
+    return true;
+}
+
+/* Rows per page follow the Onion list (6 rows, 4 for the large Apps list) so
+ * paging and scrolling match what is drawn. */
+static void onion_sync_list_rows(void) {
+    g_list_rows_override = onion_theme_active() ? onion_list_rows(viewing_apps) : 0;
+}
+
 void retro_run(void) {
     /* Take input from the libretro frontend (rkgame feeds cores this way; the
      * cubevol joy_key shm isn't updated when rkgame owns evdev). Build FrogUI's
@@ -4679,13 +5110,26 @@ void retro_run(void) {
     int old_settings_row = settings_menu_idx;
     bool old_settings_active = settings_menu_active;
     bool old_recents = viewing_recents, old_favourites = viewing_favourites;
+    bool old_home = viewing_home;
+    int old_home_selected = home_selected;
     char old_path[MAX_PATH_LEN];
     strncpy(old_path, current_path, sizeof old_path - 1);
     old_path[sizeof old_path - 1] = '\0';
+    bool onion_was_top = onion_top_level_view();
+    onion_sync_list_rows();
     handle_input();
+    /* OnionOS: B at the top of Games, Favorites, Recents, Apps or Settings
+     * returns to the home screen (after that view's own B handling). */
+    if (onion_was_top && input_was_pressed(FROG_BTN_B) && onion_theme_active() &&
+        !search_kbd_active && !core_picker_active && !remap_wizard_active) {
+        if (!viewing_home) ui_transition_start(-1);
+        viewing_home = true;
+    }
+    onion_sync_list_rows();
     if (old_selected != selected_index || old_settings_row != settings_menu_idx ||
         old_settings_active != settings_menu_active || old_recents != viewing_recents ||
-        old_favourites != viewing_favourites || strcmp(old_path, current_path) != 0)
+        old_favourites != viewing_favourites || strcmp(old_path, current_path) != 0 ||
+        old_home != viewing_home || old_home_selected != home_selected)
         ui_menu_tick();
 
     /* Entering the systems screen can also happen after a folder, Settings or
@@ -4811,7 +5255,12 @@ void retro_run(void) {
                            settings_theme_pack_idx != banner_last_pack ||
                            settings_background_dim != banner_last_dim);
         }
-        if (need_reload && !(viewing_recents && settings_game_switcher)) {
+        if (onion_theme_active()) {
+            /* The Onion theme draws its own background. Invalidate the keys so
+             * the banner is rebuilt if Onion mode is switched off later. */
+            banner_last_bg = -1;
+            banner_last_path[0] = '\0';
+        } else if (need_reload && !(viewing_recents && settings_game_switcher)) {
             /* GameSwitcher paints its own full panel. Leave the Games banner
              * and its cache keys untouched while Recents is open, so returning
              * to Games does not decode the same background from SD again. */
@@ -4859,6 +5308,7 @@ void retro_run(void) {
             for (int s = 0; s < (int)(sizeof(settings_section_open)/sizeof(settings_section_open[0])); s++)
                 sig = sig*33u + (settings_section_open[s] ? 1u : 0u);
             sig = sig*33u + (unsigned)settings_theme_idx;
+            sig = sig*33u + (unsigned)(settings_onion_theme_idx + 1);
             sig = sig*33u + (unsigned)settings_style;
             sig = sig*33u + (unsigned)settings_icon_pack_idx;
             sig = sig*33u + (unsigned)settings_font_idx;
@@ -4872,6 +5322,7 @@ void retro_run(void) {
             sig = sig*33u + (unsigned)scroll_offset;
             sig = sig*33u + (unsigned)(viewing_recents*16 + viewing_favourites*8 + viewing_apps*4 + apps_browsing*2 + viewing_activity + viewing_search*32);
             sig = sig*33u + (unsigned)game_switcher_fullscreen;
+            sig = sig*33u + (unsigned)(viewing_home ? 64 + home_selected : 0);
             for (const char *p = current_path; *p; p++) sig = sig*33u + (unsigned char)*p;
         }
         redraw = first || sig != last_sig || banner_is_animating() ||
@@ -4907,6 +5358,8 @@ void retro_run(void) {
         render_core_picker();
     } else if (remap_wizard_active) {
         render_remap_wizard();
+    } else if (onion_theme_active() && render_onion_frame()) {
+        /* drawn by the OnionOS theme */
     } else if (settings_menu_active) {
         render_settings_menu();
     } else if (viewing_recents && settings_game_switcher) {

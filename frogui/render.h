@@ -43,7 +43,13 @@ void render_set_geometry(int w, int h, int ui_scale);
                               */
 #define PADDING UI_S(16)
 #define START_Y UI_S(40)
-#define VISIBLE_ENTRIES ((SCREEN_HEIGHT - START_Y - ITEM_HEIGHT) / ITEM_HEIGHT)
+/* OnionOS themes lay lists out in fixed 60/90 px rows; while one is active it
+ * sets the rows per page here so scrolling matches what is drawn. */
+extern int g_list_rows_override;
+#define VISIBLE_ENTRIES                                                        \
+  (g_list_rows_override > 0                                                    \
+       ? g_list_rows_override                                                  \
+       : ((SCREEN_HEIGHT - START_Y - ITEM_HEIGHT) / ITEM_HEIGHT))
 
 // Thumbnail layout
 #define THUMBNAIL_AREA_X UI_S(160)
