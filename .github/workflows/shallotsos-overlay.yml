@@ -1,0 +1,86 @@
+name: Build ShallotsOS overlay
+
+# Builds the ShallotsOS FrogUI core with the public SF3000 toolchain and packs
+# it with the OnionOS theme files as an SD-card overlay. It creates no release:
+# the result is a workflow artifact to copy onto a card that already runs
+# TreeFrogUI.
+on:
+  push:
+    branches:
+      - 'claude/**'
+    paths:
+      - 'frogui/**'
+      - 'assets/onion/**'
+      - '.github/workflows/shallotsos-overlay.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TOOLCHAIN_URL: https://github.com/game-de-it/sf3000/releases/download/sf3000_toolchain_v0.1/mipsel-buildroot-linux-gnu_sdk-buildroot.tar.gz
+
+jobs:
+  overlay:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out ShallotsOS
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install the SF3000 toolchain
+        run: |
+          set -euo pipefail
+          root="$HOME/sf3000-work/sf3000toolchain"
+          mkdir -p "$root"
+          curl -fL --retry 4 -o "$RUNNER_TEMP/toolchain.tar.gz" "$TOOLCHAIN_URL"
+          tar -xzf "$RUNNER_TEMP/toolchain.tar.gz" -C "$root"
+          sdk=$(dirname "$(find "$root" -maxdepth 3 -name relocate-sdk.sh | head -n 1)")
+          (cd "$sdk" && ./relocate-sdk.sh)
+          gcc=$(find "$sdk" -path '*/bin/mips*-linux-gnu-gcc' \( -type f -o -type l \) | sort | head -n 1)
+          sysroot=$(find "$sdk" -maxdepth 3 -type d -name sysroot | head -n 1)
+          test -x "$gcc" && test -d "$sysroot"
+          echo "MIPS=${gcc%gcc}" >> "$GITHUB_ENV"
+          echo "SYSROOT=$sysroot" >> "$GITHUB_ENV"
+          "$gcc" --version | head -n 1
+
+      - name: Build frogui_libretro.so
+        run: make -C frogui -j"$(nproc)" MIPS="$MIPS" SYSROOT="$SYSROOT"
+
+      - name: Assemble the SD-card overlay
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/overlay"
+          mkdir -p "$out/cubegm/cores" "$out/frogui/onion/fonts" "$out/frogui/lang" "$out/Themes"
+          cp frogui/out/frogui_libretro.so "$out/cubegm/cores/"
+          cp -a assets/onion/Themes/. "$out/Themes/"
+          cp -a assets/onion/Themes/ShallotsOS/skin assets/onion/Themes/ShallotsOS/icons \
+                assets/onion/Themes/ShallotsOS/config.json "$out/frogui/onion/"
+          cp -a assets/onion/fonts/. "$out/frogui/onion/fonts/"
+          cp -a frogui/lang/builtin "$out/frogui/lang/"
+          cat > "$out/SHALLOTSOS-README.txt" <<EOF
+          ShallotsOS overlay (commit ${GITHUB_SHA::7})
+
+          Copy everything in this folder to the root of an SD card that
+          already runs TreeFrogUI, replacing existing files when asked:
+
+            cubegm/cores/frogui_libretro.so  ShallotsOS menu
+            Themes/ShallotsOS/               default OnionOS-format theme
+            frogui/onion/                    fallback skin and Exo 2 font
+            frogui/lang/builtin/             translations
+
+          OnionOS themes (folders or .zip files) also go in Themes/.
+          Pick one in Settings > Appearance > OnionOS Theme.
+
+          To undo, copy frogui_libretro.so from your TreeFrogUI release back
+          to cubegm/cores/, or set OnionOS Theme to off.
+          EOF
+          find "$out" -type f | sort | sed "s|$out/||"
+
+      - name: Upload the overlay
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShallotsOS-overlay
+          path: ${{ runner.temp }}/overlay
+          if-no-files-found: error
