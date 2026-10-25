@@ -55,6 +55,7 @@
   "value.game_keys_combo": "SEL+START/L1",
   "settings.start_in_recents": "In 'Zuletzt gespielt' starten",
   "settings.gameplay": "GAMEPLAY",
+  "settings.power_resume": "Nach Ausschalten fortsetzen",
   "settings.quick_resume": "Schnelle Fortsetzung",
   "settings.autosave_autoload": "Automatisches Speichern/Laden",
   "settings.system": "SYSTEM",

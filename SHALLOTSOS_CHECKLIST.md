@@ -110,8 +110,14 @@ Latest test build:
       save (first try dropped it: the shutdown takes a few seconds). It is
       only dropped if the game still runs 10 s after release, or is left
       normally. SIGTERM from the shutdown also saves. No screen flash.
-- [ ] Needs a device test: the input register (+0x50) is inferred from the
-      ALi/HiChip GPIO layout that `powergpio` matches
+- [x] Confirmed working on the device (power-off save and boot resume)
+- [x] Settings > Gameplay > **Resume After Power-Off** (default on) turns it
+      off; Quick Resume stays as the fallback for unexpected shutdowns and
+      for the SF3000's power switch
+- [x] Low battery: at 5% or less, not charging, for 30 s, save like a
+      power-off. Momentary-button consoles then shut down via
+      `cubegm/shutdown.sh`; SF3000 re-saves every 2 minutes while low
+- [ ] Needs a device test: low-battery save and shutdown
 
 ### File cache
 

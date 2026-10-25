@@ -55,6 +55,7 @@
   "value.game_keys_combo": "SEL+START/L1",
   "settings.start_in_recents": "Son Oynananlarda Başlat",
   "settings.gameplay": "OYNANIŞ",
+  "settings.power_resume": "Resume After Power-Off",
   "settings.quick_resume": "Hızlı devam et",
   "settings.autosave_autoload": "Otomatik kaydet/Yükle",
   "settings.system": "SİSTEM",

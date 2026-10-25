@@ -50,6 +50,7 @@
   "value.game_keys_combo": "SEL+START/L1",
   "settings.start_in_recents": "Iniciar em Recentes",
   "settings.gameplay": "GAMEPLAY",
+  "settings.power_resume": "Resume After Power-Off",
   "settings.quick_resume": "Retomada Rápida",
   "settings.autosave_autoload": "Salvar/Carregar Automaticamente",
   "settings.system": "SISTEMA",

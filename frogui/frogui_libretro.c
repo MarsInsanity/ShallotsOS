@@ -896,6 +896,9 @@ static int settings_bl_reassert = 0;
 static int settings_audio_mute_reassert = 0;
 static int settings_filter_idx = 1;     /* forced bilinear (option removed from menu) */
 static int settings_filter_idx_on_enter = 0;  /* snapshot for restart-on-change */
+/* Save the exact spot when the console is powered off (or the battery runs
+ * low) in a game and resume it on the next boot; read by picoarch. */
+static int settings_power_resume = 1;
 static int settings_quick_resume = 0;      /* boot straight into last game: 0=off, 1=on. Settings key stays "auto_resume" for upgrade compat. */
 static int settings_custom_aspect_ratios = 0; /* expose forced aspect-ratio choices in PicoArch */
 static int settings_autosave_autoload = 1; /* auto-save on pause/quit + auto-load on any game launch (boot or manual pick): 0=off, 1=on */
@@ -1013,7 +1016,7 @@ static const SRow settings_rows[] = {
     { RT_HEADER, "settings.appearance" }, { RT_ONION_THEME, "settings.onion_theme" }, { RT_THEME, "settings.theme" }, { RT_THEME_PACK, "settings.background_theme_pack" }, { RT_STYLE, "settings.style" }, { RT_ICON_PACK, "settings.icon_pack" }, { RT_TOGGLE, "settings.center_text", &settings_center_text }, { RT_TOGGLE, "settings.friendly_system_names", &settings_friendly_names }, { RT_FONT, "settings.font" }, { RT_RANGE, "settings.font_size", &settings_font_size, 18, 26, 1 }, { RT_TOGGLE, "settings.battery_colour_mode", &settings_battery_color }, { RT_TOGGLE, "settings.stock_battery_indicator", &settings_stock_battery }, { RT_TOGGLE, "settings.background_images", &settings_backgrounds }, { RT_RANGE, "settings.background_dim", &settings_background_dim, 0, 100, 5 }, { RT_WALLPAPER, "settings.wallpaper" }, { RT_WALLFIT, "settings.background_image_fit" },
     { RT_HEADER, "settings.general" }, { RT_LANGUAGE, "settings.language", &settings_language }, { RT_RANGE, "settings.brightness", &settings_brightness, 0, 100, SETTINGS_BRIGHTNESS_STEP }, { RT_TOGGLE, "settings.animations", &settings_anim }, { RT_TOGGLE, "settings.menu_sounds", &settings_menu_sounds }, { RT_TOGGLE, "settings.hide_extensions", &settings_hide_extensions }, { RT_TOGGLE, "settings.hide_empty_folders", &settings_hide_empty },
     { RT_HEADER, "settings.library" }, { RT_ROM_SOURCE, "settings.rom_source" }, { RT_OTG_STATUS, "settings.otg_storage" }, { RT_TOGGLE, "settings.game_switcher", &settings_game_switcher }, { RT_RANGE, "settings.game_keys", &settings_game_keys, 0, 2, 1 }, { RT_TOGGLE, "settings.start_in_recents", &settings_load_recents },
-    { RT_HEADER, "settings.gameplay" }, { RT_TOGGLE, "settings.quick_resume", &settings_quick_resume }, { RT_TOGGLE, "settings.autosave_autoload", &settings_autosave_autoload }, { RT_TOGGLE, "settings.custom_aspect_ratios", &settings_custom_aspect_ratios },
+    { RT_HEADER, "settings.gameplay" }, { RT_TOGGLE, "settings.power_resume", &settings_power_resume }, { RT_TOGGLE, "settings.quick_resume", &settings_quick_resume }, { RT_TOGGLE, "settings.autosave_autoload", &settings_autosave_autoload }, { RT_TOGGLE, "settings.custom_aspect_ratios", &settings_custom_aspect_ratios },
     { RT_HEADER, "settings.system" }, { RT_RANGE, "settings.volume", &settings_volume, 0, 100, 5 }, { RT_TOGGLE, "settings.file_cache", &settings_file_cache }, { RT_CACHE_REBUILD, "settings.rebuild_file_cache" }, { RT_TOGGLE, "settings.disable_sleep", &settings_disable_sleep }, { RT_ACTION, "settings.button_mapping" }, { RT_INFO, "settings.version" },
 };
 #define SETTINGS_ROW_N ((int)(sizeof(settings_rows) / sizeof(settings_rows[0])))
@@ -1394,6 +1397,8 @@ static void settings_load_file(void) {
                 settings_friendly_names = 1;
         } else if (strcmp(line, "friendly_system_names") == 0) {
             settings_friendly_names = (strcmp(val, "on") == 0) ? 1 : 0;
+        } else if (strcmp(line, "power_resume") == 0) {
+            settings_power_resume = (strcmp(val, "on") == 0) ? 1 : 0;
         } else if (strcmp(line, "auto_resume") == 0) {
             settings_quick_resume = (strcmp(val, "on") == 0) ? 1 : 0;
         } else if (strcmp(line, "autosave_autoload") == 0) {
@@ -1505,6 +1510,7 @@ static void settings_save_file(void) {
     fprintf(f, "brightness=%d\n", settings_brightness);
     fprintf(f, "volume=%d\n", settings_volume);
     fprintf(f, "filter=%s\n", filter_names[settings_filter_idx]);
+    fprintf(f, "power_resume=%s\n", onoff_names[settings_power_resume]);
     fprintf(f, "auto_resume=%s\n", onoff_names[settings_quick_resume]);
     fprintf(f, "autosave_autoload=%s\n", onoff_names[settings_autosave_autoload]);
     fprintf(f, "custom_aspect_ratios=%s\n", onoff_names[settings_custom_aspect_ratios]);

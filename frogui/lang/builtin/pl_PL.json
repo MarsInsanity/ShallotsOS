@@ -54,6 +54,7 @@
   "value.game_keys_combo": "SEL+START/L1",
   "settings.start_in_recents": "Startuj w ostatnich",
   "settings.gameplay": "GRANIE",
+  "settings.power_resume": "Resume After Power-Off",
   "settings.quick_resume": "Szybkie wznowienie",
   "settings.autosave_autoload": "Autozapis / autowczytanie",
   "settings.custom_aspect_ratios": "Wszystkie proporcje obrazu",
