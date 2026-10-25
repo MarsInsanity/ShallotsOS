@@ -30,22 +30,21 @@ page.
 Latest test build:
 
 - https://github.com/MarsInsanity/ShallotsOS/actions/runs/40216842381
-  (ShallotsOS `3048da9`, picoarch `95326c6`)
+  (ShallotsOS `3048da9`, picoarch `4b5ddde`)
 
 ## User to-do (device tests)
 
 1. Install the latest test build (link above), replacing files when asked.
-2. Load > Switcher: leave a game through the GameSwitcher (or power-off)
-   once with this build, resume it, play on, then Load > Switcher goes back
-   to where you left. (Older builds deleted that state on resume.)
-3. Load > Auto (needs Auto save & load on): leave a game normally, start it
-   again, play on, then Load > Auto goes back to where you left last time.
-4. Music: hold volume up/down while a song plays; the stock slider should
-   not show. If it still does, send `/mnt/sdcard/log.txt` lines with
-   "page2" (needs `log.txt` at the card root).
-5. FPS counter: hidden while the in-game menu is open, back in the game.
-6. Books (needs `cubegm/ebook` from TreeFrogUI), Videos and Images folders.
-7. When convenient: low-battery save at 5%.
+2. In-game menu, Options, Player/Emulator controls: sharp text, same layout
+   as before, background game picture, slot previews, toasts after saving.
+3. Load > Auto preview shows the game (after leaving a game once with this
+   build, Auto save & load on).
+4. Music: hold volume up/down while a song plays. If the stock bar still
+   shows, send the `VIDEO_PLAYER: panel=...` line from `/mnt/sdcard/log.txt`
+   (create an empty `log.txt` at the card root first). Check the battery
+   icon/volume OSD still appear normally after leaving the player.
+5. Books (needs `cubegm/ebook` from TreeFrogUI), Videos and Images folders.
+6. When convenient: low-battery save at 5%.
 
 ## Done
 
@@ -90,6 +89,13 @@ Latest test build:
 - [x] FPS / CPU HUD hidden while the in-game menu is open
 - [x] Music player: the HUD moves to fb1's second page when the plane has
       one, so cubevol's slider lands on the hidden page (logged as page2=1)
+- [x] In-game menu drawn at panel resolution (640x480 / 854x480) and sent
+      straight to the panel like FrogUI, sizes doubled so the layout is the
+      same; glyph cache raised to 64 px. Checked with a host harness that
+      runs menu.c
+- [x] Load > Auto preview: the final auto-save captures the game frame first
+- [x] Music player: fb1 raised to two pages when its memory allows (log
+      line "virtual=a/b mem=.. page2=.. resized=..")
 - [x] Draft of every component's open-source license in README.md
       ("License & Attribution" tables) and LICENSE.md section 4; awaiting the
       user's review of the open points

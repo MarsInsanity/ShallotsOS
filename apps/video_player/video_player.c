@@ -46,6 +46,8 @@ typedef struct {
     int rotation;
     uint32_t *canvas;
     bool flipped;   /* showing the plane's second page, see overlay_open */
+    bool resized;   /* yres_virtual was raised for that page; restore it */
+    struct fb_var_screeninfo vi_orig;
 } Overlay;
 
 typedef struct {
@@ -242,14 +244,33 @@ static int overlay_open(Overlay *o) {
      * the plane has a second page, show that one instead: the HUD draws
      * there and cubevol's slider lands on the hidden page. overlay_close
      * pans back so cubevol's OSD shows again after the player. */
-    if (o->vi.yoffset == 0 && o->vi.yres_virtual >= o->vi.yres * 2 &&
-        o->mem_len >= (size_t)o->pitch * o->vi.yres * 2) {
-        struct fb_var_screeninfo v = o->vi;
-        v.xoffset = 0;
-        v.yoffset = v.yres;
-        if (ioctl(o->fd, FBIOPAN_DISPLAY, &v) == 0) {
-            o->vi.yoffset = v.yres;
-            o->flipped = true;
+    o->vi_orig = o->vi;
+    if (o->vi.yoffset == 0 && o->mem_len >= (size_t)o->pitch * o->vi.yres * 2) {
+        /* Like fb0 in picoarch: raise the virtual height to two pages when
+         * the plane's memory holds them. */
+        if (o->vi.yres_virtual < o->vi.yres * 2) {
+            struct fb_var_screeninfo v = o->vi;
+            v.yres_virtual = v.yres * 2;
+            if (ioctl(o->fd, FBIOPUT_VSCREENINFO, &v) == 0 &&
+                ioctl(o->fd, FBIOGET_VSCREENINFO, &v) == 0 && v.yres_virtual >= v.yres * 2 &&
+                v.xres == o->vi.xres && v.yres == o->vi.yres && v.bits_per_pixel == o->vi.bits_per_pixel) {
+                o->vi = v;
+                o->resized = true;
+            }
+        }
+        if (o->vi.yres_virtual >= o->vi.yres * 2) {
+            struct fb_var_screeninfo v = o->vi;
+            v.xoffset = 0;
+            v.yoffset = v.yres;
+            if (ioctl(o->fd, FBIOPAN_DISPLAY, &v) == 0) {
+                o->vi.yoffset = v.yres;
+                o->flipped = true;
+            }
+        }
+        if (o->resized && !o->flipped) {
+            ioctl(o->fd, FBIOPUT_VSCREENINFO, &o->vi_orig);
+            o->vi = o->vi_orig;
+            o->resized = false;
         }
     }
     /* fb1 is portrait-shaped on the portrait-mounted SF panels. Its memory
@@ -278,6 +299,8 @@ static void overlay_close(Overlay *o) {
         v.xoffset = v.yoffset = 0;
         ioctl(o->fd, FBIOPAN_DISPLAY, &v);
     }
+    if (o->resized)
+        ioctl(o->fd, FBIOPUT_VSCREENINFO, &o->vi_orig);
     if (o->mem) munmap(o->mem, o->mem_len);
     if (o->fd >= 0) close(o->fd);
     free(o->canvas);
@@ -890,12 +913,14 @@ int main(int argc, char **argv) {
     bool have_overlay = overlay_open(&overlay) == 0;
     int panel_rotation = 0, panel_w = 0, panel_h = 0;
     read_device_geometry(&panel_w, &panel_h, &panel_rotation);
-    char geometry_log[128];
+    char geometry_log[192];
     snprintf(geometry_log, sizeof(geometry_log),
-             "panel=%dx%d rotate=%d fb1=%dx%d virtual=%u page2=%d",
+             "panel=%dx%d rotate=%d fb1=%dx%d virtual=%u/%u mem=%u page2=%d resized=%d",
              panel_w, panel_h, panel_rotation,
              have_overlay ? overlay.fb_w : 0, have_overlay ? overlay.fb_h : 0,
-             have_overlay ? overlay.vi.yres_virtual : 0, have_overlay && overlay.flipped);
+             have_overlay ? overlay.vi_orig.yres_virtual : 0, have_overlay ? overlay.vi.yres_virtual : 0,
+             have_overlay ? (unsigned)overlay.mem_len : 0,
+             have_overlay && overlay.flipped, have_overlay && overlay.resized);
     log_step(geometry_log);
     log_step(have_overlay ? "fb1 overlay ready" : "fb1 overlay unavailable");
     if (have_overlay) overlay_clear(&overlay);
