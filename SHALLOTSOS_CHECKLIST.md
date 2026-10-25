@@ -29,8 +29,8 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40236080818
-  (ShallotsOS `0b78610`, picoarch `fa4846f`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40237701300
+  (ShallotsOS `29d566e`, picoarch `7624661`)
 
 ## User to-do (device tests)
 
@@ -62,9 +62,12 @@ D. Still open from before
     the card root if the stock bar still shows.
 13. Kirby lag: when it happens, play 15 s, menu and back, 15 s more, send
     `logs/picoarch.log`.
-14. Performance baseline: Yoshi's Island 30 s Bilinear + 30 s Sharp, one
-    PS1 game (note ps1r / qpsx / default), rewind off; send
-    `logs/picoarch.log`.
+14. Performance defaults (new): Yoshi's Island, a PS1 game on
+    PCSX ReARMed (Y > Emulator), a GBA and a Genesis game: smoother? any
+    new glitches or sound problems? Then 30 s Bilinear + 30 s Sharp of
+    Yoshi's Island, rewind off; send `logs/picoarch.log` (the DBG lag
+    lines now show `skipped=`). If you once used Options > Save config
+    for a core, that core keeps its old settings until you change them.
 15. Books (needs `cubegm/ebook`), Videos, Images apps.
 16. When convenient: low-battery save at 5%.
 
@@ -335,6 +338,23 @@ User's to-do list (October 2026):
         review core build flags, frameskip, CPU clock and present path
         using the DBG lag report
       - Same pass for other heavy systems (PS1 via ps1r / qpsx, GBA, etc.)
+      - [x] Performance defaults (picoarch overrides): Frameskip **Auto**
+        (skips drawing only while a game falls behind) for snes9x2005 /
+        _plus, snes9x2002, gpsp, picodrive, PCE Fast and PCSX ReARMed;
+        PCSX ReARMed also threaded SPU on, dithering off (as PCSX4ALL).
+        The SF3000 audio ring sits 50-75% full, so "underrun likely" is now
+        below 25% (it was 50%, which would have skipped frames in games
+        running at speed). PCE Fast overrides never applied (wrong core
+        name), fixed. Lag report counts skipped frames
+      - Left as is: PCSX4ALL (TreeFrog already ships fast, clean defaults:
+        auto frameskip, no dither, reverb and interpolation off, accurate
+        cycle rate); Sega CD default stays Genesis Plus GX (TreeFrog's
+        choice; PicoDrive is the faster pick in the Y menu)
+      - [ ] DS (DSperate): its SF3000 launcher is TreeFrog's own package,
+        not in the public repo. DSperate has `frameskip` /
+        `frameskip_mode = adaptive` in its INI (`~/.config/dsperate/`, per
+        game in `games/`). Need the card's `cubegm/dsperate/run_sf3000.sh`
+        to know where its config lives before shipping a default
       - PS2: not possible on this hardware (told the user)
 
 ## Ideas offered, not started
