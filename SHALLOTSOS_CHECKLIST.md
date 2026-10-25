@@ -12,6 +12,25 @@ Repositories and branches:
 
 Device: R36SX v2.7 on the R36SX v2.6 firmware (`install_first/r36sx/`).
 
+## Test builds (standing rule)
+
+Every time a new build is ready to test, wait for both GitHub Actions runs to
+pass and give the direct links to those runs (each has its artifact at the
+bottom of the page):
+
+- Overlay (FrogUI menu, themes): "Build ShallotsOS overlay" in ShallotsOS,
+  artifact `ShallotsOS-overlay` → copy its contents to the SD card root
+- Emulator frontend: "Build picoarch" in ShallotsOS_picoarch, artifact
+  `picoarch` → copy its `cubegm/` folder to the SD card root
+
+Both workflows run on every push to the `claude/**` branches; they can also be
+started from the Actions tab with "Run workflow".
+
+Latest test build:
+
+- Overlay: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40146593321
+- picoarch: https://github.com/MarsInsanity/ShallotsOS_picoarch/actions/runs/40146591970
+
 ## Done
 
 ### OnionOS look and themes (ShallotsOS)
@@ -88,6 +107,8 @@ Device: R36SX v2.7 on the R36SX v2.6 firmware (`install_first/r36sx/`).
 - [x] Also re-checks after USB mode, which returns to FrogUI without a reboot
 
 ## In progress
+
+- (nothing right now; waiting on device test results)
 
 ## Next
 
