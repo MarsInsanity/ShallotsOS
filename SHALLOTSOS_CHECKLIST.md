@@ -14,22 +14,22 @@ Device: R36SX v2.7 on the R36SX v2.6 firmware (`install_first/r36sx/`).
 
 ## Test builds (standing rule)
 
-Every time a new build is ready to test, wait for both GitHub Actions runs to
-pass and give the direct links to those runs (each has its artifact at the
-bottom of the page):
+Every time a new build is ready to test, wait for the GitHub Actions run to
+pass and give the direct link to it. The artifact is at the bottom of the run
+page.
 
-- Overlay (FrogUI menu, themes): "Build ShallotsOS overlay" in ShallotsOS,
-  artifact `ShallotsOS-overlay` → copy its contents to the SD card root
-- Emulator frontend: "Build picoarch" in ShallotsOS_picoarch, artifact
-  `picoarch` → copy its `cubegm/` folder to the SD card root
-
-Both workflows run on every push to the `claude/**` branches; they can also be
-started from the Actions tab with "Run workflow".
+- One download: "Build ShallotsOS overlay" in ShallotsOS, artifact
+  `ShallotsOS-overlay` → copy its contents to the SD card root. It holds the
+  FrogUI menu, themes, and `picoarch` / `picoarch_hi` built from the latest
+  ShallotsOS_picoarch (branch `claude/gameswitcher-fn-hold`).
+- It runs on every ShallotsOS push to `claude/**` that touches FrogUI, the
+  theme assets or the workflow. After a picoarch-only change, start it with
+  "Run workflow" (it has a `picoarch_ref` input for another branch).
+- ShallotsOS_picoarch keeps its own "Build picoarch" check for picoarch pushes.
 
 Latest test build:
 
-- Overlay: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40146593321
-- picoarch: https://github.com/MarsInsanity/ShallotsOS_picoarch/actions/runs/40146591970
+- (being rebuilt with picoarch included)
 
 ## Done
 
@@ -47,7 +47,8 @@ Latest test build:
 - [x] Default "ShallotsOS" theme and its generator script, plus the Exo 2 font
 - [x] Theme asset test (`tests/test_onion_theme.sh`) and docs
 - [x] Classic (non-Onion) UI left pixel-identical to upstream
-- [x] GitHub Actions overlay build (artifact `ShallotsOS-overlay`)
+- [x] GitHub Actions overlay build (artifact `ShallotsOS-overlay`), which
+      also builds the latest picoarch so one download has everything
 
 ### GameSwitcher behaviour
 
@@ -128,7 +129,6 @@ Latest test build:
 
 ## Install (from Windows)
 
-1. Download the `ShallotsOS-overlay` artifact from the ShallotsOS Actions
-   run and copy its contents to the SD card root.
-2. Download the `picoarch` artifact from the ShallotsOS_picoarch Actions run
-   and copy `picoarch` and `picoarch_hi` into `cubegm/` on the card.
+1. Download the `ShallotsOS-overlay` artifact from the latest ShallotsOS
+   Actions run (link above) and unzip it.
+2. Copy its contents to the SD card root, replacing files when asked.

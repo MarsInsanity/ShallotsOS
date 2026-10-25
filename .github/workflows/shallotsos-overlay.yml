@@ -1,9 +1,9 @@
 name: Build ShallotsOS overlay
 
-# Builds the ShallotsOS FrogUI core with the public SF3000 toolchain and packs
-# it with the OnionOS theme files as an SD-card overlay. It creates no release:
-# the result is a workflow artifact to copy onto a card that already runs
-# TreeFrogUI.
+# Builds the ShallotsOS FrogUI core and the latest ShallotsOS_picoarch (the
+# emulator frontend) with the public SF3000 toolchain, and packs them with the
+# OnionOS theme files as one SD-card overlay. It creates no release: the result
+# is a workflow artifact to copy onto a card that already runs TreeFrogUI.
 on:
   push:
     branches:
@@ -13,11 +13,17 @@ on:
       - 'assets/onion/**'
       - '.github/workflows/shallotsos-overlay.yml'
   workflow_dispatch:
+    inputs:
+      picoarch_ref:
+        description: ShallotsOS_picoarch branch, tag or commit to build
+        default: claude/gameswitcher-fn-hold
 
 permissions:
   contents: read
 
 env:
+  # The picoarch branch pushes build from, unless a manual run names another.
+  PICOARCH_REF: ${{ inputs.picoarch_ref || 'claude/gameswitcher-fn-hold' }}
   TOOLCHAIN_URL: https://github.com/game-de-it/sf3000/releases/download/sf3000_toolchain_v0.1/mipsel-buildroot-linux-gnu_sdk-buildroot.tar.gz
 
 jobs:
@@ -27,6 +33,14 @@ jobs:
       - name: Check out ShallotsOS
         uses: actions/checkout@v4
         with:
+          submodules: recursive
+
+      - name: Check out ShallotsOS_picoarch
+        uses: actions/checkout@v4
+        with:
+          repository: MarsInsanity/ShallotsOS_picoarch
+          ref: ${{ env.PICOARCH_REF }}
+          path: picoarch-src
           submodules: recursive
 
       - name: Install the SF3000 toolchain
@@ -49,24 +63,39 @@ jobs:
           make -C frogui all -j"$(nproc)"
           file frogui/out/frogui_libretro.so
 
+      # The picoarch build scripts work in ~/sf3000-work/picoarch and include
+      # FrogUI's common code from ../FrogUI/common.
+      - name: Build picoarch and picoarch_hi
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/sf3000-work/FrogUI"
+          cp -a frogui/common "$HOME/sf3000-work/FrogUI/common"
+          cp -a picoarch-src "$HOME/sf3000-work/picoarch"
+          sh "$HOME/sf3000-work/picoarch/build_sf3000.sh"
+          bash "$HOME/sf3000-work/picoarch/build_picoarch_hi.sh"
+          file "$HOME/sf3000-work/picoarch/picoarch" "$HOME/sf3000-work/picoarch/picoarch_hi"
+          echo "PICOARCH_SHA=$(git -C picoarch-src rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
       - name: Assemble the SD-card overlay
         run: |
           set -euo pipefail
           out="$RUNNER_TEMP/overlay"
           mkdir -p "$out/cubegm/cores" "$out/frogui/onion/fonts" "$out/frogui/lang" "$out/Themes"
           cp frogui/out/frogui_libretro.so "$out/cubegm/cores/"
+          cp "$HOME/sf3000-work/picoarch/picoarch" "$HOME/sf3000-work/picoarch/picoarch_hi" "$out/cubegm/"
           cp -a assets/onion/Themes/. "$out/Themes/"
           cp -a assets/onion/Themes/ShallotsOS/skin assets/onion/Themes/ShallotsOS/icons \
                 assets/onion/Themes/ShallotsOS/config.json "$out/frogui/onion/"
           cp -a assets/onion/fonts/. "$out/frogui/onion/fonts/"
           cp -a frogui/lang/builtin "$out/frogui/lang/"
           cat > "$out/SHALLOTSOS-README.txt" <<EOF
-          ShallotsOS overlay (commit ${GITHUB_SHA::7})
+          ShallotsOS overlay (ShallotsOS ${GITHUB_SHA::7}, picoarch ${PICOARCH_SHA})
 
           Copy everything in this folder to the root of an SD card that
           already runs TreeFrogUI, replacing existing files when asked:
 
             cubegm/cores/frogui_libretro.so  ShallotsOS menu
+            cubegm/picoarch, picoarch_hi     emulator frontend and in-game menu
             Themes/ShallotsOS/               default OnionOS-format theme
             frogui/onion/                    fallback skin and Exo 2 font
             frogui/lang/builtin/             translations
@@ -74,8 +103,8 @@ jobs:
           OnionOS themes (folders or .zip files) also go in Themes/.
           Pick one in Settings > Appearance > OnionOS Theme.
 
-          To undo, copy frogui_libretro.so from your TreeFrogUI release back
-          to cubegm/cores/, or set OnionOS Theme to off.
+          To undo, copy frogui_libretro.so, picoarch and picoarch_hi from
+          your TreeFrogUI release back to cubegm/, or set OnionOS Theme to off.
           EOF
           find "$out" -type f | sort | sed "s|$out/||"
 
