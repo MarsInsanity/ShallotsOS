@@ -26,8 +26,9 @@ With an OnionOS theme selected, the whole interface uses the OnionOS layout:
   from history, SELECT changes the header (title, game time, or game and total
   time), and B or START goes back to the main menu. In a game, Settings →
   Library → **In-game Menu Keys** picks how the menu and the GameSwitcher
-  open: FN (tap / hold), hold SELECT / hold START, or SELECT+START /
-  SELECT+L1.
+  open: FN (tap / hold), hold SELECT / hold START, or SELECT+START (tap /
+  hold). Only the chosen keys work; FN stays free for system shortcuts in
+  the other two.
 
 B at the top of Games, Favorites, Recents, Apps or Settings returns to the home
 screen. Search (X), the core and extension picker (SELECT) and favouriting (Y)

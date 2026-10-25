@@ -974,9 +974,9 @@ static int onion_apply(void) {
 int frogui_battery_color_mode(void) { return settings_battery_color; }
 static int frogui_stock_battery_indicator(void) { return settings_stock_battery; }
 static int settings_game_switcher = 1;  /* recents as box-art carousel: 0=off, 1=on */
-/* In-game keys for the emulator menu / GameSwitcher, read by picoarch:
- * 0 = FN (tap / hold), 1 = hold SELECT / hold START, 2 = SELECT+START /
- * SELECT+L1. */
+/* In-game keys for the emulator menu / GameSwitcher, read by picoarch; each
+ * replaces the others: 0 = FN (tap / hold), 1 = hold SELECT / hold START,
+ * 2 = SELECT+START (tap / hold). */
 static int settings_game_keys = 0;
 static const char *const game_keys_values[3] = {"fn", "hold", "combo"};
 /* Whether the GameSwitcher is on screen. OnionOS layouts show it only when
@@ -4945,7 +4945,7 @@ static int settings_row_value(const SRow *r, char *value, size_t size) {
             static const char *const keys[3] = {"value.game_keys_fn", "value.game_keys_hold",
                                                 "value.game_keys_combo"};
             static const char *const fallback[3] = {"FN", "Hold SEL/START",
-                                                    "SEL+START/L1"};
+                                                    "SEL+START"};
             snprintf(value, size, "%s", tr_or(keys[*r->val], fallback[*r->val]));
             return ONION_ROW_VALUE;
         }

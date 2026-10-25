@@ -52,7 +52,7 @@
   "settings.game_keys": "Tasten im Spiel",
   "value.game_keys_fn": "FN",
   "value.game_keys_hold": "SEL/START lang",
-  "value.game_keys_combo": "SEL+START/L1",
+  "value.game_keys_combo": "SEL+START",
   "settings.start_in_recents": "In 'Zuletzt gespielt' starten",
   "settings.gameplay": "GAMEPLAY",
   "settings.power_resume": "Nach Ausschalten fortsetzen",

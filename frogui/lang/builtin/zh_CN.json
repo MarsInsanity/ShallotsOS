@@ -47,7 +47,7 @@
   "settings.game_keys": "In-game Menu Keys",
   "value.game_keys_fn": "FN",
   "value.game_keys_hold": "Hold SEL/START",
-  "value.game_keys_combo": "SEL+START/L1",
+  "value.game_keys_combo": "SEL+START",
   "settings.start_in_recents": "Start in Recents",
   "settings.gameplay": "GAMEPLAY",
   "settings.power_resume": "Resume After Power-Off",

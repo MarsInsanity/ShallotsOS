@@ -43,7 +43,8 @@ Latest test build:
 6. Optional: battery % before and after a 30-minute sleep.
 7. Low battery (when convenient): play until 5%; it should save and shut
    down, then resume on boot.
-8. Try In-game Menu Keys (all three) and the new boot logo.
+8. Try In-game Menu Keys (all three: only the chosen keys should work) and
+   the new boot logo.
 9. Send `logs/picoarch.log`.
 
 ## Done
@@ -96,11 +97,12 @@ Latest test build:
 
 ### In-game keys setting
 
-- [x] Settings > Library > In-game Menu Keys: **FN** (tap = menu, hold =
-      GameSwitcher), **Hold SEL/START** (hold SELECT = menu, hold START =
-      GameSwitcher, taps still reach the game), or **SEL+START/L1**
-      (SELECT+START = menu, SELECT+L1 = GameSwitcher). FN and SELECT+START
-      keep working in every mode
+- [x] Settings > Library > In-game Menu Keys picks one layout (the others
+      are off): **FN** (tap = menu, hold = GameSwitcher; SELECT+START also
+      opens the menu), **Hold SEL/START** (hold SELECT = menu, hold START =
+      GameSwitcher, taps reach the game), **SEL+START** (tap = menu, hold =
+      GameSwitcher). SELECT+L1 stays the screenshot shortcut
+- [ ] Device test: each layout, and that FN does nothing in the other two
 
 ### GameSwitcher look (matches OnionOS's gs_render.h)
 
