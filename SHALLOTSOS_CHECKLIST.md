@@ -32,6 +32,20 @@ Latest test build:
 - https://github.com/MarsInsanity/ShallotsOS/actions/runs/40149721145
   (ShallotsOS `46576a4`, picoarch `b4de93f`)
 
+## User to-do (device tests)
+
+1. Install the latest test build (link above).
+2. Create an empty `log.txt` at the SD card root (turns on logging).
+3. Boot once (writes the hardware report for the front LEDs).
+4. Settings > System > Disable Sleep: off, then restart.
+5. Kirby: tap power to sleep, wait 30 s, wake, play a bit. Note whether the
+   battery icon or lag come back.
+6. Optional: battery % before and after a 30-minute sleep.
+7. Low battery (when convenient): play until 5%; it should save and shut
+   down, then resume on boot.
+8. Try In-game Menu Keys (all three) and the new boot logo.
+9. Send `logs/picoarch.log`.
+
 ## Done
 
 ### OnionOS look and themes (ShallotsOS)
@@ -134,6 +148,9 @@ Latest test build:
       paused game
 - [ ] Needs a device test with Disable Sleep off; it stays on by default
       (upstream's choice) until sleep is confirmed solid
+- [ ] Front LEDs stay on during sleep: find their control from the boot
+      hardware report (LED/PWM/GPIO/device tree in `logs/picoarch.log`),
+      then switch them off for sleep (and maybe add an LED setting)
 - [ ] Decide on power-off after a long sleep (Miyoo Mini-style) once the log
       shows whether sleep is a real suspend (light) or a paused game (drains)
 
