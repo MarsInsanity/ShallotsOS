@@ -34,17 +34,16 @@ Latest test build:
 
 ## User to-do (device tests)
 
-1. Install the latest test build (link above).
-2. Create an empty `log.txt` at the SD card root (turns on logging).
-3. Boot once (writes the hardware report for the front LEDs).
-4. Settings > System > Disable Sleep: off, then restart.
-5. Kirby: tap power to sleep, wait 30 s, wake, play a bit. Note whether the
-   battery icon or lag come back.
-6. Optional: battery % before and after a 30-minute sleep.
-7. Low battery (when convenient): play until 5%; it should save and shut
-   down, then resume on boot.
-8. Try In-game Menu Keys (all three: only the chosen keys should work) and
-   the new boot logo.
+1. Install the latest test build (link above). Keep `log.txt` on the card.
+2. Settings > System > **ShallotsOS Sleep**: on (restart if you changed it).
+3. In Kirby: tap power. Screen goes dark and the game pauses. Tap power again:
+   the game continues with no battery icon and no lag.
+4. Same in the main menu.
+5. Sleep for over 5 minutes: it should power off, and the next boot resumes
+   Kirby where it was.
+6. Hold power while asleep: it powers off and resumes on boot.
+7. Hold layout: SELECT+R2 saves without Kirby losing its power-up.
+8. Low battery (when convenient): play until 5%; it saves and shuts down.
 9. Send `logs/picoarch.log`.
 
 ## Done
@@ -107,7 +106,9 @@ Latest test build:
       never reach the game (first test: Kirby lost its power-up and the menu
       wouldn't open). Right-stick drift (arrives as A/B/X/Y) no longer turns
       a hold into a combo. Hold layout: SELECT+START held 1 s = menu (way out)
-- [ ] Device test: each layout, and that FN does nothing in the other two
+- [x] Hold layout: SELECT+L1/R1/L2/R2 (screenshot, FF, load, save) keep
+      SELECT from the game (Kirby lost its power-up on SELECT+R2)
+- [x] Device test: all three layouts work; FN+volume doesn't trigger FN
 
 ### GameSwitcher look (matches OnionOS's gs_render.h)
 
@@ -146,20 +147,19 @@ Latest test build:
 
 ### Sleep (picoarch)
 
-- [x] Waking from sleep re-applies full CPU speed (games lagged on the stock
-      frequency policy), hides the stock battery overlay again in games, and
-      drops audio queued around the sleep. Also re-checks the CPU policy every
-      few seconds
-- [x] Logs power presses and each sleep's frame gap vs. kernel-suspend time
-      (`logs/picoarch.log` when `log.txt` exists) to tell real suspend from a
-      paused game
-- [ ] Needs a device test with Disable Sleep off; it stays on by default
-      (upstream's choice) until sleep is confirmed solid
-- [ ] Front LEDs stay on during sleep: find their control from the boot
-      hardware report (LED/PWM/GPIO/device tree in `logs/picoarch.log`),
-      then switch them off for sleep (and maybe add an LED setting)
-- [ ] Decide on power-off after a long sleep (Miyoo Mini-style) once the log
-      shows whether sleep is a real suspend (light) or a paused game (drains)
+- [x] Device log: the firmware's sleep never suspends the kernel ("suspended
+      0 ms"), it only pauses the game, so it drains the battery like the
+      Miyoo Mini's; waking leaves the stock battery icon up and the game slow
+      (audio underruns). No LED device exists (`/sys/class/leds` empty, no
+      LED device-tree node), so the front lights can't be switched by software
+- [x] **ShallotsOS Sleep** (Settings > System, the old "Disable Sleep" key,
+      default on): a short power press pauses, mutes, turns the backlight off
+      and slows the CPU; the next short press wakes and restores exactly that.
+      After 5 minutes asleep it saves the game (Resume After Power-Off) and
+      powers off, which also stops the LEDs. Works in games and the menu
+- [x] Firmware-sleep wake restore (CPU, OSD, audio) kept for when ShallotsOS
+      Sleep is off
+- [ ] Device test: ShallotsOS Sleep (short press, wake, 5-minute power-off)
 
 ### File cache
 

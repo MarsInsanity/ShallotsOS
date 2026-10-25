@@ -988,7 +988,7 @@ static int settings_load_recents = 0;   /* start FrogUI in the recents view: 0=o
 enum { ROM_SOURCE_SD, ROM_SOURCE_OTG, ROM_SOURCE_COUNT };
 static int settings_rom_source = ROM_SOURCE_SD;
 static const char *rom_source_names[ROM_SOURCE_COUNT] = {"SD", "OTG"};
-static int settings_disable_sleep = 1;  /* live-patch cubevol to disable power sleep: 0=off, 1=on. zhijack reads this at boot; applies after restart. Default ON: R36SX/SF3500-class sleep isn't supported by TreeFrogUI, so ship with it disabled and point users at Quick Resume instead. */
+static int settings_disable_sleep = 1;  /* "ShallotsOS Sleep": on = cubevol's sleep is live-patched out (zhijack, at boot) and picoarch sleeps itself (backlight off, 5-minute power-off); off = the firmware's sleep. Key kept as disable_sleep for upgrade compat. */
 static int settings_volume = 100;       /* global output volume 0..100 → cubegm/sndgain.txt */
 static const char *filter_names[] = {"nearest", "bilinear"};
 static const char *onoff_names[] = {"off", "on"};

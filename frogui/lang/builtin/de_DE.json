@@ -62,7 +62,7 @@
   "settings.volume": "Lautstärke",
   "settings.file_cache": "Dateicache",
   "settings.rebuild_file_cache": "Dateicache neu aufbauen",
-  "settings.disable_sleep": "Ruhezustand deaktivieren (Neustart)",
+  "settings.disable_sleep": "ShallotsOS-Ruhemodus (Neustart)",
   "settings.version": "TreeFrogUI-Version",
   "settings.button_mapping": "Tastenbelegung",
   "value.on": "Aktivieren",

@@ -62,7 +62,7 @@
   "settings.volume": "Volume",
   "settings.file_cache": "Cache dei file",
   "settings.rebuild_file_cache": "Ricostruisci cache dei file",
-  "settings.disable_sleep": "Disattiva sospensione (riavvio)",
+  "settings.disable_sleep": "ShallotsOS Sleep (restart)",
   "settings.version": "Versione TreeFrogUI",
   "settings.button_mapping": "Mappatura pulsanti",
   "value.on": "Attiva",

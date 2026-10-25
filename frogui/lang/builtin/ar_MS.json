@@ -62,7 +62,7 @@
   "settings.volume": "مستوى الصوت",
   "settings.file_cache": "ذاكرة التخزين المؤقت للملفات",
   "settings.rebuild_file_cache": "إعادة بناء ذاكرة التخزين المؤقت للملفات",
-  "settings.disable_sleep": "تعطيل وضع السكون (إعادة تشغيل)",
+  "settings.disable_sleep": "ShallotsOS Sleep (restart)",
   "settings.version": "إصدار TreeFrogUI",
   "settings.button_mapping": "تخطيط الأزرار",
   "value.on": "تشغيل",

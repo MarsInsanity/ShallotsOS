@@ -62,7 +62,7 @@
   "settings.volume": "ボリューム",
   "settings.file_cache": "ファイルキャッシュ",
   "settings.rebuild_file_cache": "ファイルキャッシュ再構築",
-  "settings.disable_sleep": "スリープ無効 (リスタート)",
+  "settings.disable_sleep": "ShallotsOS Sleep (restart)",
   "settings.version": "TreeFrogUI バージョン",
   "settings.button_mapping": "ボタンの割当て",
   "value.on": "ON",

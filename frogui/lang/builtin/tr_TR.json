@@ -62,7 +62,7 @@
   "settings.volume": "Ses düzeyi",
   "settings.file_cache": "Dosya önbelleği",
   "settings.rebuild_file_cache": "Dosya önbelleğini yeniden oluştur",
-  "settings.disable_sleep": "Uyku modunu kapat (Yeniden başlat)",
+  "settings.disable_sleep": "ShallotsOS Sleep (restart)",
   "settings.version": "TreeFrogUI Sürümü",
   "settings.button_mapping": "Düğme eşleme",
   "value.on": "Açık",
