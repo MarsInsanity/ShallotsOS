@@ -30,19 +30,17 @@ page.
 Latest test build:
 
 - https://github.com/MarsInsanity/ShallotsOS/actions/runs/40218217609
-  (ShallotsOS `6f98330`, picoarch `4b5ddde`)
+  (ShallotsOS `6f98330`, picoarch `12005d6`)
 
 ## User to-do (device tests)
 
 1. Install the latest test build (link above), replacing files when asked.
-2. In-game menu, Options, Player/Emulator controls: sharp text, same layout
-   as before, background game picture, slot previews, toasts after saving.
-3. Load > Auto preview shows the game (after leaving a game once with this
-   build, Auto save & load on).
-4. Music: hold volume up/down while a song plays. If the stock bar still
-   shows, send the `VIDEO_PLAYER: panel=...` line from `/mnt/sdcard/log.txt`
-   (create an empty `log.txt` at the card root first). Check the battery
-   icon/volume OSD still appear normally after leaving the player.
+2. Load > Auto preview after leaving a game once (Auto save & load on).
+3. Lag: keep `log.txt` at the card root. When the lag starts, keep playing
+   ~15 s, then open the menu and go back to the game, play ~15 s more and
+   send `logs/picoarch.log`.
+4. Music volume bar: send the `VIDEO_PLAYER:` lines from `/mnt/sdcard/log.txt`
+   (the file at the card root, not the one in `logs/`).
 5. Books (needs `cubegm/ebook` from TreeFrogUI), Videos and Images folders.
 6. When convenient: low-battery save at 5%.
 
@@ -96,6 +94,11 @@ Latest test build:
 - [x] Load > Auto preview: the final auto-save captures the game frame first
 - [x] Music player: fb1 raised to two pages when its memory allows (log
       line "virtual=a/b mem=.. page2=.. resized=..")
+- [x] Auto preview: capture falls back to the last good menu capture when
+      the frame comes out black (logged as "DBG capture: ...")
+- [x] Lag report in logs/picoarch.log every 5 s of play ("DBG lag: fps,
+      frame max, present avg/max, audio queue, SDL queue, CPU governor/freq")
+      to find the intermittent input lag that the menu clears
 - [x] Draft of every component's open-source license in README.md
       ("License & Attribution" tables) and LICENSE.md section 4; awaiting the
       user's review of the open points
