@@ -367,6 +367,10 @@ User's to-do list (October 2026):
         APU), last in the Y menu list; the overlay workflow builds them
         with the SF3000 GCC via its tools/build.py. Its own frameskip
         default is Auto, max 1 in a row. Systems can now list 8 emulators
+      - [x] Reviewed HCSNES 0.1 vs snes9x2005 a79dfe9: only Super FX
+        dispatch, capped frameskip and the RTC fix differ. Sent the user a
+        brief for its developer (in-core profiling to cores.log, build
+        flags / PGO, GSU locals, PPU and threading, tests)
       - [ ] HCSNES PS1 core: add the same way when it exists
       - PS2: not possible on this hardware (told the user)
 
