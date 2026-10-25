@@ -30,7 +30,7 @@ page.
 Latest test build:
 
 - https://github.com/MarsInsanity/ShallotsOS/actions/runs/40221021235
-  (ShallotsOS `b584c03`, picoarch `12005d6`)
+  (ShallotsOS `b584c03`, picoarch `fa4846f`)
 
 ## User to-do (device tests)
 
@@ -39,10 +39,14 @@ Latest test build:
 3. Lag: keep `log.txt` at the card root. When the lag starts, keep playing
    ~15 s, then open the menu and go back to the game, play ~15 s more and
    send `logs/picoarch.log`.
-4. Music volume bar: send the `VIDEO_PLAYER:` lines from `/mnt/sdcard/log.txt`
+4. Performance baseline: play Yoshi's Island ~30 s with the Bilinear
+   filter, then ~30 s with Sharp (Options > Audio and video), rewind off;
+   same for a PS1 game; note which PS1 core (ps1r / qpsx) and send
+   `logs/picoarch.log`.
+5. Music volume bar: send the `VIDEO_PLAYER:` lines from `/mnt/sdcard/log.txt`
    (the file at the card root, not the one in `logs/`).
-5. Books (needs `cubegm/ebook` from TreeFrogUI), Videos and Images folders.
-6. When convenient: low-battery save at 5%.
+6. Books (needs `cubegm/ebook` from TreeFrogUI), Videos and Images folders.
+7. When convenient: low-battery save at 5%.
 
 ## Done
 
@@ -269,7 +273,13 @@ User's to-do list (October 2026):
       Auto-Load, GameSwitcher looks and keys, Options highlight, new ROMs
       appearing, power-off save and boot resume
 - [ ] Waiting on the user: mockups for media apps and play tracking
-- [ ] Emulator performance (user priority, next big task):
+- [ ] Emulator performance (user priority, next big task; asked again
+      October 2026, PS1 a priority too):
+      - [x] Measuring: the DBG lag report (every 5 s) now has run time per
+        frame, the present's share, emulation time (emu~), the scale
+        filter and whether rewind is on
+      - [ ] Baseline logs from the user: Yoshi's Island and a PS1 game,
+        each with Bilinear and with Sharp, rewind off
       - Yoshi's Island (SNES, SuperFX2) is slow on ShallotsOS but fine on
         stock. Measure FPS on both; check the Sharp filter's software
         scaling cost (the user's games run with Sharp); compare
