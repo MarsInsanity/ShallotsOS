@@ -29,8 +29,8 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40198598541
-  (ShallotsOS `c9c6aa4`, picoarch `6d4473e`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40199740326
+  (ShallotsOS `cab89d7`, picoarch `6d4473e`)
 
 ## User to-do (device tests)
 
