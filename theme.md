@@ -18,7 +18,8 @@ With an OnionOS theme selected, the whole interface uses the OnionOS layout:
   the selection highlight, toggles and arrows, and the A/B hint bar with a
   position counter. Box art appears on the right of game lists.
 - **Recents**: the list of recently played games.
-- **GameSwitcher** (FN in the menu, or hold FN in a game): laid out like
+- **GameSwitcher** (FN in the menu, or hold FN in a game; START in the menu
+  on consoles without FN): laid out like
   OnionOS's. The last screenshot of each game fills the screen, the header
   shows play time and the battery, and the game name sits on a dark bar with
   arrows. Left/Right changes game and A resumes it. Y switches between the
@@ -31,6 +32,8 @@ With an OnionOS theme selected, the whole interface uses the OnionOS layout:
   the other two. In those two, SELECT and START only reach the game once it
   is clear they aren't a menu press (a quick tap is passed on when released),
   and in the hold layout SELECT+START held for a second also opens the menu.
+  Only the R36SX family has an FN button: on the SF3000, SF3500 and GB350
+  the FN choice is skipped and SELECT+START is the default.
 
 B at the top of Games, Favorites, Recents, Apps or Settings returns to the home
 screen. Search (X), the core and extension picker (SELECT) and favouriting (Y)

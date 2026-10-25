@@ -30,7 +30,7 @@ page.
 Latest test build:
 
 - https://github.com/MarsInsanity/ShallotsOS/actions/runs/40198598541
-  (ShallotsOS `c9c6aa4`, picoarch `5eba488`)
+  (ShallotsOS `c9c6aa4`, picoarch `6d4473e`)
 
 ## User to-do (device tests)
 
@@ -69,6 +69,11 @@ Latest test build:
       theme's background is stored the Miyoo way too
 - [x] Game Boy Color fallback console icon (Cosy GBC), and the overlay now
       ships `frogui/system-icons/` for themes without icons (e.g. Aubergine)
+- [x] Consoles without FN (SF3000, SF3500, GB350): START opens and closes the
+      GameSwitcher in the menu; In-game Menu Keys skips FN and defaults to
+      SELECT+START (picoarch falls back the same way); the power-button watch
+      runs only on the R36SX family (SF3000 has a real power switch). Checked
+      at 854x480 in the host build; picoarch builds with the SF3000 toolchain
 - [x] Draft of every component's open-source license in README.md
       ("License & Attribution" tables) and LICENSE.md section 4; awaiting the
       user's review of the open points

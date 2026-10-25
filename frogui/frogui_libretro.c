@@ -1324,9 +1324,22 @@ static void settings_preview_row(const SRow *r) {
     }
 }
 
+/* Devices without an FN button (SF3000, SF3500, GB350) cannot use the FN
+ * layout for the in-game menu: they get SELECT+START (tap = menu, hold =
+ * GameSwitcher) instead, and the FN choice is skipped in Settings. */
+static int game_keys_min(void) { return input_fn_available() ? 0 : 1; }
+
+static void game_keys_for_device(void) {
+    if (settings_game_keys < game_keys_min())
+        settings_game_keys = 2;
+}
+
 static void settings_load_file(void) {
     FILE *f = fopen(SETTINGS_FILE, "r");
-    if (!f) return;
+    if (!f) {
+        game_keys_for_device();
+        return;
+    }
     char line[256];
     extern const int theme_count;
     extern const Theme themes[];
@@ -1451,6 +1464,7 @@ static void settings_load_file(void) {
         }
     }
     fclose(f);
+    game_keys_for_device();
     /* The shared system volume (cubevol persistentmem - what the PHYSICAL
      * volume buttons last set) always wins over our saved copy: the user
      * may have changed it with the buttons since the last Settings visit. */
@@ -3637,6 +3651,8 @@ static void handle_settings_menu(void) {
         case RT_RANGE:
             *r->val += delta * r->rstep;
             if (*r->val < r->rmin) *r->val = r->rmin;
+            if (r->val == &settings_game_keys && *r->val < game_keys_min())
+                *r->val = game_keys_min();
             if (*r->val > r->rmax) *r->val = r->rmax;
             break;
         default: break;
@@ -4231,6 +4247,8 @@ static int fn_combo_probe(void) {
  * FN+volume = brightness, so a press that saw another button, or changed the
  * volume or backlight, is ignored. */
 static bool fn_pressed(void) {
+    if (!input_fn_available())
+        return false;   /* no FN button: bit 16 means nothing here */
     /* The two-writer input race can drop a held bit for a poll or two, so a
      * release only counts after FN has read released for a while. */
     static bool fn_was_down = true;   /* FN may still be held from the game */
@@ -4437,8 +4455,11 @@ static void handle_input(void) {
         return;
     }
 
-    /* OnionOS: FN opens the GameSwitcher, and closes it again. */
-    if (fn_pressed() && onion_theme_active() && settings_game_switcher && !settings_menu_active) {
+    /* OnionOS: FN opens the GameSwitcher, and closes it again. Devices
+     * without FN use START, which also closes it from inside. */
+    bool switcher_key = input_fn_available() ? fn_pressed()
+                                             : input_was_pressed(FROG_BTN_START);
+    if (switcher_key && onion_theme_active() && settings_game_switcher && !settings_menu_active) {
         if (switcher_active()) {
             ui_transition_start(-1);
             switch_main_tab(MAIN_TAB_GAMES);
