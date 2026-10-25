@@ -4275,7 +4275,7 @@ typedef struct {
 static SystemIcon system_icons[SYSTEM_ICON_CACHE_N];
 static unsigned system_icon_clock;
 static int system_icon_pack = -1;
-#define SYSTEM_ICON_MISSING_N 32
+#define SYSTEM_ICON_MISSING_N 64
 static char system_icon_missing[SYSTEM_ICON_MISSING_N][512];
 static int system_icon_missing_count;
 
@@ -4284,6 +4284,20 @@ static SystemIcon *system_icon_cached(const char *path) {
         if (system_icons[i].pixels && strcmp(system_icons[i].path, path) == 0)
             return &system_icons[i];
     return NULL;
+}
+
+/* 1 when the icon is cached or on the card; misses are remembered. */
+static int system_icon_usable(const char *path) {
+    if (system_icon_cached(path)) return 1;
+    for (int i = 0; i < system_icon_missing_count; i++)
+        if (strcmp(system_icon_missing[i], path) == 0) return 0;
+    if (access(path, R_OK) == 0) return 1;
+    if (system_icon_missing_count < SYSTEM_ICON_MISSING_N) {
+        strncpy(system_icon_missing[system_icon_missing_count], path, 511);
+        system_icon_missing[system_icon_missing_count][511] = '\0';
+        system_icon_missing_count++;
+    }
+    return 0;
 }
 
 static const char *system_icon_path(const char *folder, char *path, size_t size) {
@@ -4296,21 +4310,21 @@ static const char *system_icon_path(const char *folder, char *path, size_t size)
      * the shared Game Gear/Master System artwork key (gg). */
     else if (strcasecmp(folder, "sms") == 0) key = "gg";
     else if (systems_find_exact(folder)) key = systems_icon_key(folder);
-    if (settings_icon_pack_idx > 0 && settings_icon_pack_idx < icon_pack_count)
-        snprintf(path, size, BANNER_DIR "/icon-packs/%s/%s.png",
-                 icon_pack_files[settings_icon_pack_idx], key);
-    else
-        snprintf(path, size, BANNER_DIR "/system-icons/%s.png", key);
-    if (system_icon_cached(path)) return path;
-    for (int i = 0; i < system_icon_missing_count; i++)
-        if (strcmp(system_icon_missing[i], path) == 0) return NULL;
-    if (access(path, R_OK) == 0) return path;
-    if (system_icon_missing_count < SYSTEM_ICON_MISSING_N) {
-        strncpy(system_icon_missing[system_icon_missing_count], path, 511);
-        system_icon_missing[system_icon_missing_count][511] = '\0';
-        system_icon_missing_count++;
+    /* The icon packs were made for TreeFrogUI's folders and have no art for
+     * systems it lacked (gbc): try the pack's closest system, so the style
+     * matches, then the shared system-icons folder. */
+    const char *sibling = strcmp(key, "gbc") == 0 ? "gb" : NULL;
+    if (settings_icon_pack_idx > 0 && settings_icon_pack_idx < icon_pack_count) {
+        const char *pack = icon_pack_files[settings_icon_pack_idx];
+        snprintf(path, size, BANNER_DIR "/icon-packs/%s/%s.png", pack, key);
+        if (system_icon_usable(path)) return path;
+        if (sibling) {
+            snprintf(path, size, BANNER_DIR "/icon-packs/%s/%s.png", pack, sibling);
+            if (system_icon_usable(path)) return path;
+        }
     }
-    return NULL;
+    snprintf(path, size, BANNER_DIR "/system-icons/%s.png", key);
+    return system_icon_usable(path) ? path : NULL;
 }
 
 /* OnionOS themes without an icon for a system fall back to the selected

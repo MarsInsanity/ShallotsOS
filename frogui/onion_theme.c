@@ -1583,6 +1583,9 @@ static const OImg *console_icon(const char *folder, int selected) {
   const ShSystem *sys = systems_find_exact(folder);
   if (sys && n < 4 && strcasecmp(sys->icon, folder))
     names[n++] = sys->icon;
+  /* A theme with no Game Boy Color art: its Game Boy icon keeps the style. */
+  if (n < 4 && !strcasecmp(folder, "gbc"))
+    names[n++] = "gb";
   char path[ONION_PATH_MAX];
   for (int s = selected ? 0 : 1; s < 2; s++) {
     for (int i = 0; i < n; i++) {

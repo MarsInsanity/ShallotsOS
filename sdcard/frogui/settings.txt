@@ -1,7 +1,7 @@
 theme=Red
 onion_theme=ShallotsOS
 style=vertical
-icon_pack=Pixel_by_Jeltron
+icon_pack=
 friendly_system_names=on
 font=GamePocket
 brightness=75
