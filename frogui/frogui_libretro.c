@@ -1896,6 +1896,68 @@ static void cache_store(const char *path, uint64_t mtime, int at_root) {
     else      unlink(tmp);
 }
 
+/* The card can only change while the console is off, so once per boot
+ * compare what is in the ROM folders now with what was there last time and
+ * drop the listing cache if anything changed. Folder dates can't be trusted
+ * for this: Windows leaves a FAT folder's date alone when files are added,
+ * so a cached listing (or a system hidden as empty) would never refresh.
+ * Hashes the names in roms/ and in each folder one level below it. */
+#define ROMS_SIG_FILE    CACHE_DIR "/roms.sig"
+#define ROMS_SIG_CHECKED "/tmp/shallotsos_roms_checked"
+
+static uint32_t roms_sig_add(uint32_t h, const char *s) {
+    for (; *s; s++) h = (h ^ (unsigned char)*s) * 16777619u;
+    return (h ^ '/') * 16777619u;
+}
+
+static uint32_t roms_signature(void) {
+    uint32_t h = 2166136261u;
+    DIR *root = opendir(ROMS_PATH);
+    if (!root) return h;
+    struct dirent *e;
+    while ((e = readdir(root)) != NULL) {
+        if (e->d_name[0] == '.') continue;
+        h = roms_sig_add(h, e->d_name);
+        char sub[MAX_PATH_LEN];
+        snprintf(sub, sizeof sub, "%s/%s", ROMS_PATH, e->d_name);
+        DIR *d = opendir(sub);   /* fails for plain files, which is fine */
+        if (!d) continue;
+        struct dirent *f;
+        while ((f = readdir(d)) != NULL)
+            if (f->d_name[0] != '.') h = roms_sig_add(h, f->d_name);
+        h = roms_sig_add(h, "..");   /* end of this folder */
+        closedir(d);
+    }
+    closedir(root);
+    return h;
+}
+
+static void refresh_cache_if_roms_changed(void) {
+    if (!settings_file_cache || access(ROMS_SIG_CHECKED, F_OK) == 0) return;
+    long long t0 = monotonic_ms();
+    char now[16], old[16] = "";
+    snprintf(now, sizeof now, "%08x", (unsigned)roms_signature());
+    FILE *f = fopen(ROMS_SIG_FILE, "r");
+    if (f) {
+        if (!fgets(old, sizeof old, f)) old[0] = '\0';
+        old[strcspn(old, "\r\n")] = '\0';
+        fclose(f);
+    }
+    if (strcmp(now, old) != 0) {
+        cache_clear();
+        unlink(SETTINGS_DIR "/.cache/artwork-misses.bin");   /* new art too */
+        mkdir(CACHE_DIR, 0755);
+        f = fopen(ROMS_SIG_FILE, "w");
+        if (f) { fputs(now, f); fputc('\n', f); fclose(f); }
+        dbg("roms changed: file cache cleared");
+    }
+    f = fopen(ROMS_SIG_CHECKED, "w");
+    if (f) fclose(f);
+    char msg[48];
+    snprintf(msg, sizeof msg, "roms check took %lld ms", monotonic_ms() - t0);
+    dbg(msg);
+}
+
 static void scan_directory(const char *path) {
     /* An unopenable dir is NOT an early return: fall through with an empty
      * listing so the root still gets its Settings/Recents rows. The old
@@ -4642,6 +4704,7 @@ void retro_init(void) {
     }
     strncpy(current_path, g_roms_path, MAX_PATH_LEN - 1);
     current_path[MAX_PATH_LEN - 1] = '\0';
+    refresh_cache_if_roms_changed();
     scan_directory(current_path);
     dbg("scan_directory done");
     /* Recents reuses entries[] for its own rows. Keep the freshly-built Games

@@ -52,6 +52,14 @@ Device: R36SX v2.7 on the R36SX v2.6 firmware (`install_first/r36sx/`).
 - [x] Options submenus and Save/Load State lists use the theme's highlight
       colour, like the main menu (the white bar hid the selected item)
 
+### File cache
+
+- [x] The file cache refreshes itself after ROMs are added or removed:
+      once per boot, FrogUI compares the names in `roms/` and each system
+      folder with the last boot and clears stale listings (and remembered
+      missing artwork). It doesn't rely on folder dates, which Windows
+      doesn't update on FAT cards.
+
 ## In progress
 
 - [ ] Confirm the picoarch CI build passes and produces the artifact
@@ -68,11 +76,6 @@ Device: R36SX v2.7 on the R36SX v2.6 firmware (`install_first/r36sx/`).
   - [ ] SELECT: cycle the header (title / game time / game + total time)
   - [ ] ShallotsOS theme: draw its `gs-top-bar` with the logo and its
         `gs-bottom-bar` with the button legend, like Onion's default theme
-- [ ] Rebuild the file cache automatically when ROM folders change. Cards
-      are only edited while the device is off, so check once per boot.
-      Windows doesn't update folder dates on FAT cards, so compare folder
-      contents rather than dates.
-
 ## Next
 
 - [ ] Test on the device: FN tap/hold, FN+volume, suspend/resume, fake08
