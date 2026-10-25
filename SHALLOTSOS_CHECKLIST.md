@@ -65,6 +65,19 @@ Device: R36SX v2.7 on the R36SX v2.6 firmware (`install_first/r36sx/`).
 - [x] ShallotsOS theme: logo in the top bar and button legend in the bottom
       bar, like Onion's default theme; bars widen cleanly on 854 px panels
 
+### Save on power-off, resume on boot (picoarch)
+
+- [x] Holding power for 1 s in a game saves to hidden slot 10, flushes
+      battery saves and writes `picoarch/resume_on_boot.txt`. The hardware
+      cuts power about 4 s in. Reads the power pin (GPIO 14 at 0x18800000,
+      the pin `powergpio` drives), read-only, and only when it reads as an
+      idle input.
+- [x] The next boot resumes that game from slot 10, even with Quick Resume
+      off. The marker is removed first, so a broken game can't boot-loop.
+- [x] Letting go of power while the console stays on drops the save
+- [ ] Needs a device test: the input register (+0x50) is inferred from the
+      ALi/HiChip GPIO layout that `powergpio` matches
+
 ### File cache
 
 - [x] The file cache refreshes itself after ROMs are added or removed:
@@ -72,19 +85,17 @@ Device: R36SX v2.7 on the R36SX v2.6 firmware (`install_first/r36sx/`).
       folder with the last boot and clears stale listings (and remembered
       missing artwork). It doesn't rely on folder dates, which Windows
       doesn't update on FAT cards.
+- [x] Also re-checks after USB mode, which returns to FrogUI without a reboot
 
 ## In progress
 
-- [ ] Confirm the picoarch CI build passes and produces the artifact
-- [ ] Save on shutdown and resume on boot (OnionOS-style): powering off in a
-      game suspends it, and the next boot resumes it
-- [ ] Check that the file cache also refreshes after USB mode (the card can
-      change while the console is on)
+- [ ] Confirm the picoarch CI build passes (local MIPS builds pass)
 
 ## Next
 
 - [ ] Test on the device: FN tap/hold, FN+volume, suspend/resume, fake08
-      Auto-Load, GameSwitcher looks, Options highlight, new ROMs appearing
+      Auto-Load, GameSwitcher looks and keys, Options highlight, new ROMs
+      appearing, power-off save and boot resume
 - [ ] Waiting on the user: mockups for media apps and play tracking
 
 ## Ideas offered, not started

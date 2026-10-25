@@ -4297,6 +4297,9 @@ static void handle_input(void) {
         if (usb_mode_initiated_active) {
             if (monotonic_ms() - usb_mode_initiated_at_ms >= 750) {
                 usb_mode_initiated_active = false;
+                /* Files can change over USB without a reboot: check the ROM
+                 * folders again when FrogUI comes back. */
+                unlink(ROMS_SIG_CHECKED);
                 request_builtin_launch(USB_MODE_BIN);
             }
             return;
