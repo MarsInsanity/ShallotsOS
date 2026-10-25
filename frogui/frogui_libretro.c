@@ -3274,6 +3274,24 @@ static int str_icontains(const char *hay, const char *needle) {
     return 0;
 }
 
+static int str_icontains_opt(const char *hay, const char *needle) {
+    return hay && str_icontains(hay, needle);
+}
+
+/* The gamelist name for list row idx: search results live in many folders. */
+static const char *entry_gamelist_label(int idx) {
+    if (entries[idx].is_dir) return NULL;
+    if (viewing_search && idx < search_results_count) {
+        char dir[MAX_PATH_LEN];
+        snprintf(dir, sizeof dir, "%s", search_results[idx].path);
+        char *slash = strrchr(dir, '/');
+        if (!slash) return NULL;
+        *slash = '\0';
+        return gamelist_label(dir, slash + 1);
+    }
+    return gamelist_label(current_path, entries[idx].name);
+}
+
 static void search_add_result(const char *name, const char *path) {
     if (search_results_count >= search_results_cap) {
         int nc = search_results_cap ? search_results_cap * 2 : 128;
@@ -3302,8 +3320,11 @@ static void search_walk(const char *dir, int depth) {
         struct stat st;
         if (stat(p, &st) != 0) continue;
         if (S_ISDIR(st.st_mode)) {
-            if (!is_psp_folder(e->d_name) && depth < 3) search_walk(p, depth + 1);
-        } else if (str_icontains(e->d_name, search_query)) {
+            if (!is_psp_folder(e->d_name) && !is_artwork_folder_name(e->d_name) && depth < 3)
+                search_walk(p, depth + 1);
+        } else if (str_icontains(e->d_name, search_query) ||
+                   str_icontains_opt(gamelist_label(dir, e->d_name), search_query)) {
+            /* The gamelist name counts too, when names come from gamelist.xml. */
             /* Same per-system whitelist as the browser, so search results never
              * resurrect the hidden companion files (PS1 .bin tracks). The
              * extension is isolated once here (review: normalize per entry). */
@@ -5898,7 +5919,7 @@ static void render_onion_browser(void) {
         } else if (entries[idx].is_dir && strcmp(current_path, ROMS_PATH) == 0) {
             shown = system_display_name(entries[idx].name);
         }
-        const char *listed = !entries[idx].is_dir ? gamelist_label(current_path, entries[idx].name) : NULL;
+        const char *listed = entry_gamelist_label(idx);
         snprintf(labels[i], sizeof labels[i], "%s", listed ? listed : shown);
         if (!listed && settings_hide_extensions && !entries[idx].is_dir) {
             char *dot = strrchr(labels[i], '.');
@@ -6320,7 +6341,7 @@ void retro_run(void) {
                     shown = system_display_name(entries[idx].name);
                 /* Hide file extension (.gb/.gba/...) when enabled — display only,
                  * the real name in entries[] is still used to launch. Files only. */
-                const char *listed = !entries[idx].is_dir ? gamelist_label(current_path, entries[idx].name) : NULL;
+                const char *listed = entry_gamelist_label(idx);
                 if (listed) {
                     shown = listed;
                 } else if (settings_hide_extensions && !entries[idx].is_dir) {

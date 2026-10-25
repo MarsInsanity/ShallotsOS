@@ -76,6 +76,9 @@ D. Still open from before
     with Default (Cosy); gamelist names on other systems once Settings >
     General > Names from gamelist.xml is on (off by default; arcade names
     come from TreeFrogUI's own list, which is why FBNeo/CPS already show).
+19. Search (X) with Names from gamelist.xml on: typing part of a scraped
+    name finds the game even when the file name differs, and results show
+    the scraped names.
 17. HCSNES: Y on Yoshi's Island > Emulator > HCSNES Fast (then Plus);
     play the same scene as on Snes9x 2005 Plus; note smoothness, sound,
     glitches; send `logs/picoarch.log` (DBG lag lines per core). Don't
@@ -382,6 +385,9 @@ User's to-do list (October 2026):
       system-icons; OnionOS themes without GBC art use their GB icon. New
       cards start on Default (Cosy); existing cards change it in Settings >
       Appearance > Icon Pack
+- [x] Search matches and shows gamelist.xml names (when that setting is on),
+      each result labelled from its own folder's gamelist; scraper art
+      folders (media, Imgs...) are skipped while searching
       - PS2: not possible on this hardware (told the user)
 
 ## Ideas offered, not started
