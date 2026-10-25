@@ -35,16 +35,11 @@ Latest test build:
 ## User to-do (device tests)
 
 1. Install the latest test build (link above). Keep `log.txt` on the card.
-2. Settings > System > **ShallotsOS Sleep**: on (restart if you changed it).
-3. In Kirby: tap power. Screen goes dark and the game pauses. Tap power again:
-   the game continues with no battery icon and no lag.
-4. Same in the main menu.
-5. Set Sleep Power-Off to 10 s, sleep in Kirby and wait: it should power
-   off, and the next boot resumes Kirby where it was. Try a longer time too.
-6. Hold power while asleep: it powers off and resumes on boot.
-7. Hold layout: SELECT+R2 saves without Kirby losing its power-up.
-8. Low battery (when convenient): play until 5%; it saves and shuts down.
-9. Send `logs/picoarch.log`.
+2. Boot once **unplugged**, then once **plugged in** (each boot writes the
+   LED report with the charging state).
+3. Note whether the blue LED ever changes: colour or brightness when
+   charging, at low battery, or during the power-off screen.
+4. Send `logs/picoarch.log`.
 
 ## Done
 
@@ -161,7 +156,12 @@ Latest test build:
       10, 15 or 30 minutes; greyed out when ShallotsOS Sleep is off
 - [x] Firmware-sleep wake restore (CPU, OSD, audio) kept for when ShallotsOS
       Sleep is off
-- [ ] Device test: ShallotsOS Sleep (short press, wake, 5-minute power-off)
+- [x] Device test: ShallotsOS Sleep works (no battery icon, no lag on wake)
+- [ ] Front LED (blue, between SELECT and START) stays on asleep. Extended
+      boot report: device-tree pin/PWM properties, all GPIO banks, charging
+      state. Find a pin only by reading, never by flipping unknown pins
+- [ ] Decide: post-boot "Powered off after N min asleep" message (suggested)
+      vs. a warning before the sleep power-off
 
 ### File cache
 
