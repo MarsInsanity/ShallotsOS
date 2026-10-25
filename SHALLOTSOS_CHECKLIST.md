@@ -31,8 +31,8 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40240396673
-  (ShallotsOS `4a2bc4b`, picoarch `7624661`, HCSNES `c3c190d`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40242112773
+  (ShallotsOS `766180d`, picoarch `7624661`, HCSNES `c3c190d`)
 
 ## User to-do (device tests)
 
@@ -72,6 +72,10 @@ D. Still open from before
     for a core, that core keeps its old settings until you change them.
 15. Books (needs `cubegm/ebook`), Videos, Images apps.
 16. When convenient: low-battery save at 5%.
+18. GBC icon shows with Pixel by Jeltron (the pack's Game Boy art) and
+    with Default (Cosy); gamelist names on other systems once Settings >
+    General > Names from gamelist.xml is on (off by default; arcade names
+    come from TreeFrogUI's own list, which is why FBNeo/CPS already show).
 17. HCSNES: Y on Yoshi's Island > Emulator > HCSNES Fast (then Plus);
     play the same scene as on Snes9x 2005 Plus; note smoothness, sound,
     glitches; send `logs/picoarch.log` (DBG lag lines per core). Don't
@@ -372,6 +376,12 @@ User's to-do list (October 2026):
         brief for its developer (in-core profiling to cores.log, build
         flags / PGO, GSU locals, PPU and threading, tests)
       - [ ] HCSNES PS1 core: add the same way when it exists
+- [x] User test (October 2026): box art shows; GBC had no icon: the
+      shipped settings.txt started on the Pixel by Jeltron pack, and no
+      TreeFrogUI pack has gbc.png. Now the pack's GB icon, then
+      system-icons; OnionOS themes without GBC art use their GB icon. New
+      cards start on Default (Cosy); existing cards change it in Settings >
+      Appearance > Icon Pack
       - PS2: not possible on this hardware (told the user)
 
 ## Ideas offered, not started
