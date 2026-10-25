@@ -34,19 +34,30 @@ Latest test build:
 
 ## User to-do (device tests)
 
-1. Install the latest test build (link above).
-2. In-game menu (FN or your menu key): Miyoo-style panel; Save/Load slot
-   changes with Left/Right; background shows the slot or "Empty"; A saves or
-   loads and returns to the game with a toast.
-3. Options and its pages, and Player/Emulator controls: same style, values
-   change with Left/Right, long lists scroll.
-4. Music: change volume and brightness while a song plays; the slider shows
+1. Install the latest test build (link above), replacing files when asked.
+2. Save/Load slots: Left/Right goes through 1-30 in Save; Load also offers
+   Auto and Switcher; slot 9 and above save and load.
+3. Emulator controls pages list the built-in SELECT+R2/L2/R1 shortcuts.
+4. FN on the R36SX still works as before: tap = in-game menu, hold =
+   GameSwitcher, FN in the menu opens the GameSwitcher; FN+volume still
+   changes brightness.
+5. START in the menu does nothing new on the R36SX (it only opens the
+   GameSwitcher on consoles without FN).
+6. Settings > Library > In-game Menu Keys still offers FN on the R36SX.
+7. Picture themes: BMO Noire and Aubergine backgrounds the right way up.
+   Also check the ShallotsOS theme and one other theme you use still look
+   the same.
+8. Aubergine (or any theme without console icons): Game Boy Color has an
+   icon.
+9. Music: change volume and brightness while a song plays; the slider shows
    at the top in the player's style.
-5. Music/Videos/Books/Images folders at the card root: files show up under
-   Apps; Books opens EPUB/PDF (needs `cubegm/ebook` from TreeFrogUI).
-6. In-game toast after a sleep power-off (rounded card, no cut-off).
-7. Picture themes such as BMO Noire: backgrounds the right way up (the
-   "FILE EDIT VIEW HELP" bar at the top, hints at the bottom).
+10. Music/Videos/Books/Images folders at the card root: files show up under
+    Apps; Books opens EPUB/PDF (needs `cubegm/ebook` from TreeFrogUI).
+11. Sleep power-off: after waking, the in-game toast is a rounded card in
+    the theme font, not cut off.
+12. Power-off save and resume still work after the power-watch change (hold
+    power in a game, boot, the game resumes).
+13. When convenient: low-battery save at 5%.
 
 ## Done
 
