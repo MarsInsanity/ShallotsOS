@@ -34,15 +34,12 @@ Latest test build:
 
 ## User to-do (device tests)
 
-1. Install the latest test build (link above). Keep `log.txt` on the card.
-2. Boot once **unplugged**, then once **plugged in** (each boot writes the
-   LED report with the charging state).
-3. Note when each LED colour (blue, red, green) is on: always, charging,
-   full, low battery, power-off screen.
-4. Sleep Power-Off at 10 s: sleep in Kirby, let it power off, boot. Kirby
-   resumes with "Powered off after 10 s asleep, game resumed".
-5. Same while asleep in the main menu: the menu shows the message.
-6. Send `logs/picoarch.log`.
+1. Install the latest test build (link above).
+2. Sleep Power-Off at 10 s: sleep in Kirby, let it power off, boot. The
+   resumed game shows a dark rounded "POWERED OFF AFTER 10 S ASLEEP, GAME
+   RESUMED" card above the bottom edge for about 4 s, then it disappears.
+3. Check the stock battery icon doesn't stay up after it (if Stock Battery
+   Indicator is on, the icon shows only while the message is up).
 
 ## Done
 
@@ -160,16 +157,19 @@ Latest test build:
 - [x] Firmware-sleep wake restore (CPU, OSD, audio) kept for when ShallotsOS
       Sleep is off
 - [x] Device test: ShallotsOS Sleep works (no battery icon, no lag on wake)
-- [ ] Front LEDs (blue, red and green, between SELECT and START) stay on
-      asleep. Bank 0 holds exactly three output pins high (6, 8, 9): likely
-      candidates. Next: an opt-in LED test (one pin off for 2 s, restored)
-      once the extended report agrees. Extended
-      boot report: device-tree pin/PWM properties, all GPIO banks, charging
-      state. Find a pin only by reading, never by flipping unknown pins
+- [x] Front LEDs (blue, red, green between SELECT and START): not software
+      controllable. Extended report maps every output pin: bank 0 pin 6 =
+      `lcd-reset-pin`, 8 = `key-clk`, 9 = `key-do` (button matrix), 19 =
+      `speaker-output`; pin 14 = `power-button` (confirms the power watch).
+      No LED or PWM is in use for them, so they're on the power/charging
+      hardware. Sleep Power-Off is the way to turn them off
 - [x] Post-boot message after an automatic power-off ("Powered off after 5
       min asleep" / "Powered off: battery low"): the resumed game shows it
       with ", game resumed", otherwise the menu does (for about 4 s)
 - [x] OnionOS-layout toasts drawn above the hint bar (they were cut off)
+- [x] In-game messages (power-off note, low battery) drawn as a toast on the
+      OSD plane at panel resolution (the HUD text was scaled and cut off)
+- [ ] Device test: in-game toast after a sleep power-off
 
 ### File cache
 
