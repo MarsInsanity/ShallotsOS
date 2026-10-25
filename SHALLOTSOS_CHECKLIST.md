@@ -29,17 +29,22 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40192025998
-  (ShallotsOS `946ef79`, picoarch `228a897`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40193155121
+  (ShallotsOS `901d147`, picoarch `4dbec17`)
 
 ## User to-do (device tests)
 
 1. Install the latest test build (link above).
-2. Sleep Power-Off at 10 s: sleep in Kirby, let it power off, boot. The
-   resumed game shows a dark rounded "POWERED OFF AFTER 10 S ASLEEP, GAME
-   RESUMED" card above the bottom edge for about 4 s, then it disappears.
-3. Check the stock battery icon doesn't stay up after it (if Stock Battery
-   Indicator is on, the icon shows only while the message is up).
+2. In-game menu (FN or your menu key): Miyoo-style panel; Save/Load slot
+   changes with Left/Right; background shows the slot or "Empty"; A saves or
+   loads and returns to the game with a toast.
+3. Options and its pages, and Player/Emulator controls: same style, values
+   change with Left/Right, long lists scroll.
+4. Music: change volume and brightness while a song plays; the slider shows
+   at the top in the player's style.
+5. Music/Videos/Books/Images folders at the card root: files show up under
+   Apps; Books opens EPUB/PDF (needs `cubegm/ebook` from TreeFrogUI).
+6. In-game toast after a sleep power-off (rounded card, no cut-off).
 
 ## Done
 
