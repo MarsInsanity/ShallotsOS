@@ -45,6 +45,7 @@ typedef struct {
     int logical_w, logical_h;
     int rotation;
     uint32_t *canvas;
+    bool flipped;   /* showing the plane's second page, see overlay_open */
 } Overlay;
 
 typedef struct {
@@ -236,6 +237,21 @@ static int overlay_open(Overlay *o) {
     if (o->mem == MAP_FAILED) { o->mem = NULL; goto fail; }
     o->canvas = calloc((size_t)o->logical_w * o->logical_h, sizeof(*o->canvas));
     if (!o->canvas) goto fail;
+    /* cubevol draws its volume/brightness slider straight into fb1's first
+     * page, faster than the HUD can paint over it while a key is held. When
+     * the plane has a second page, show that one instead: the HUD draws
+     * there and cubevol's slider lands on the hidden page. overlay_close
+     * pans back so cubevol's OSD shows again after the player. */
+    if (o->vi.yoffset == 0 && o->vi.yres_virtual >= o->vi.yres * 2 &&
+        o->mem_len >= (size_t)o->pitch * o->vi.yres * 2) {
+        struct fb_var_screeninfo v = o->vi;
+        v.xoffset = 0;
+        v.yoffset = v.yres;
+        if (ioctl(o->fd, FBIOPAN_DISPLAY, &v) == 0) {
+            o->vi.yoffset = v.yres;
+            o->flipped = true;
+        }
+    }
     /* fb1 is portrait-shaped on the portrait-mounted SF panels. Its memory
      * must receive the same clockwise transform as the decoded MAIN layer.
      * Trust the boot profile, but only rotate when the fb geometry agrees. */
@@ -257,6 +273,11 @@ static void overlay_clear(Overlay *o) {
 
 static void overlay_close(Overlay *o) {
     overlay_clear(o);
+    if (o->flipped) {
+        struct fb_var_screeninfo v = o->vi;
+        v.xoffset = v.yoffset = 0;
+        ioctl(o->fd, FBIOPAN_DISPLAY, &v);
+    }
     if (o->mem) munmap(o->mem, o->mem_len);
     if (o->fd >= 0) close(o->fd);
     free(o->canvas);
@@ -871,9 +892,10 @@ int main(int argc, char **argv) {
     read_device_geometry(&panel_w, &panel_h, &panel_rotation);
     char geometry_log[128];
     snprintf(geometry_log, sizeof(geometry_log),
-             "panel=%dx%d rotate=%d fb1=%dx%d",
+             "panel=%dx%d rotate=%d fb1=%dx%d virtual=%u page2=%d",
              panel_w, panel_h, panel_rotation,
-             have_overlay ? overlay.fb_w : 0, have_overlay ? overlay.fb_h : 0);
+             have_overlay ? overlay.fb_w : 0, have_overlay ? overlay.fb_h : 0,
+             have_overlay ? overlay.vi.yres_virtual : 0, have_overlay && overlay.flipped);
     log_step(geometry_log);
     log_step(have_overlay ? "fb1 overlay ready" : "fb1 overlay unavailable");
     if (have_overlay) overlay_clear(&overlay);

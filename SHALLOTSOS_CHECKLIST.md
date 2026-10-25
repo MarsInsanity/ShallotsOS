@@ -30,25 +30,22 @@ page.
 Latest test build:
 
 - https://github.com/MarsInsanity/ShallotsOS/actions/runs/40215075641
-  (ShallotsOS `3f963a1`, picoarch `c371123`)
+  (ShallotsOS `3f963a1`, picoarch `95326c6`)
 
 ## User to-do (device tests)
 
 1. Install the latest test build (link above), replacing files when asked.
-2. BMO Noire: Settings > Library > Show Recents on Home off; the home scenes
-   (Favorites, Games, Apps, Settings) line up like the theme's preview. Also
-   check another theme's home tiles (now 10 px higher, as on Onion).
-3. Load slots: after resuming from the GameSwitcher or power-off, Load >
-   Switcher has that state and loads it; Auto shows only with Auto save &
-   load on; resume on next launch still works once.
-4. Music: change volume/brightness while a song plays; the stock slider
-   should at most flash for a frame.
-5. Music app: with files in both `/Music` and `roms/music`, a `roms/music`
-   folder appears at the top and B returns from it.
-6. FPS counter (in-game menu Options or the HUD toggle): rounded card in the
-   theme font.
-7. Books (needs `cubegm/ebook` from TreeFrogUI), Videos and Images folders.
-8. When convenient: low-battery save at 5%.
+2. Load > Switcher: leave a game through the GameSwitcher (or power-off)
+   once with this build, resume it, play on, then Load > Switcher goes back
+   to where you left. (Older builds deleted that state on resume.)
+3. Load > Auto (needs Auto save & load on): leave a game normally, start it
+   again, play on, then Load > Auto goes back to where you left last time.
+4. Music: hold volume up/down while a song plays; the stock slider should
+   not show. If it still does, send `/mnt/sdcard/log.txt` lines with
+   "page2" (needs `log.txt` at the card root).
+5. FPS counter: hidden while the in-game menu is open, back in the game.
+6. Books (needs `cubegm/ebook` from TreeFrogUI), Videos and Images folders.
+7. When convenient: low-battery save at 5%.
 
 ## Done
 
@@ -87,6 +84,12 @@ Latest test build:
 - [x] Media apps show every folder with files (root first, then e.g.
       `roms/music` as a folder entry)
 - [x] FPS / CPU HUD drawn as a TTF card like the toast
+- [x] Load > Auto: the menu no longer re-saves Auto when it opens, so Auto
+      is the state from when the game was last left; Auto and Switcher are
+      always listed again ("Empty" when unused)
+- [x] FPS / CPU HUD hidden while the in-game menu is open
+- [x] Music player: the HUD moves to fb1's second page when the plane has
+      one, so cubevol's slider lands on the hidden page (logged as page2=1)
 - [x] Draft of every component's open-source license in README.md
       ("License & Attribution" tables) and LICENSE.md section 4; awaiting the
       user's review of the open points
