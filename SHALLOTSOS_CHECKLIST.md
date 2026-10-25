@@ -67,6 +67,8 @@ Latest test build:
       upside down: 50 of the 56 picture backgrounds in the official theme
       collection); fixes e.g. BMO Noire's mirrored bottom bar. The ShallotsOS
       theme's background is stored the Miyoo way too
+- [x] Game Boy Color fallback console icon (Cosy GBC), and the overlay now
+      ships `frogui/system-icons/` for themes without icons (e.g. Aubergine)
 - [x] Classic (non-Onion) UI left pixel-identical to upstream
 - [x] ShallotsOS boot logo replaces the TreeFrogUI one (both panel formats,
       from `tools/onion_theme/make_boot_logo.py`); the overlay ships the

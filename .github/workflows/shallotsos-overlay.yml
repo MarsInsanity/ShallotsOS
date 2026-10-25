@@ -11,6 +11,7 @@ on:
     paths:
       - 'frogui/**'
       - 'assets/onion/**'
+      - 'assets/system-icons/**'
       - 'sdcard/cubegm/xgame-logo.bmp'
       - 'apps/video_player/**'
       - '.github/workflows/shallotsos-overlay.yml'
@@ -102,6 +103,9 @@ jobs:
           cp -a assets/onion/Themes/ShallotsOS/skin assets/onion/Themes/ShallotsOS/icons \
                 assets/onion/Themes/ShallotsOS/config.json "$out/frogui/onion/"
           cp -a assets/onion/fonts/. "$out/frogui/onion/fonts/"
+          # Console icons for themes that ship none of their own.
+          mkdir -p "$out/frogui/system-icons"
+          cp -a assets/system-icons/. "$out/frogui/system-icons/"
           cp -a frogui/lang/builtin "$out/frogui/lang/"
           cat > "$out/SHALLOTSOS-README.txt" <<EOF
           ShallotsOS overlay (ShallotsOS ${GITHUB_SHA::7}, picoarch ${PICOARCH_SHA})
@@ -117,6 +121,7 @@ jobs:
                                              854x480 SF3000-family console)
             Themes/ShallotsOS/               default OnionOS-format theme
             frogui/onion/                    fallback skin and Exo 2 font
+            frogui/system-icons/             console icons for themes without any
             frogui/lang/builtin/             translations
 
           OnionOS themes (folders or .zip files) also go in Themes/.

@@ -71,6 +71,7 @@ gb GB
 gba GBA
 gbac GBA
 gbav GBA
+gbc GBC
 gbb GB
 gbgb GB
 geolith NEOGEO
