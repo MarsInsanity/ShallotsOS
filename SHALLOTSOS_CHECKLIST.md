@@ -119,6 +119,15 @@ Latest test build:
       `cubegm/shutdown.sh`; SF3000 re-saves every 2 minutes while low
 - [ ] Needs a device test: low-battery save and shutdown
 
+### Sleep (picoarch)
+
+- [x] Waking from sleep re-applies full CPU speed (games lagged on the stock
+      frequency policy), hides the stock battery overlay again in games, and
+      drops audio queued around the sleep. Also re-checks the CPU policy every
+      few seconds
+- [ ] Needs a device test with Disable Sleep off; it stays on by default
+      (upstream's choice) until sleep is confirmed solid
+
 ### File cache
 
 - [x] The file cache refreshes itself after ROMs are added or removed:
