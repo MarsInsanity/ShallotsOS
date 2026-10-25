@@ -187,6 +187,8 @@ User's to-do list (October 2026):
 - [x] Emulator menu laid out like Miyoo's: game behind, dark left panel,
       full-width highlight bar in the theme colour, A/B hint bar; theme font
       (Exo 2) in mixed case with an OnionOS theme
+- [x] Options pages and Player/Emulator controls drawn in the same style
+      (values on the right with arrows, scrolling with a counter)
 - [x] Save/Load slots switched with Left/Right in the menu row (SpruceOS
       style), background shows the slot's screenshot or "Empty"; A saves or
       loads and returns to the game with a toast
