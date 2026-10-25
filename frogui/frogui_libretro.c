@@ -3668,9 +3668,10 @@ static void game_menu_open(const char *dir, const char *name, bool is_game) {
     snprintf(gm_sys_key, sizeof gm_sys_key, "%s/%s", ROMS_PATH, folder ? folder : "");
     const char *game_ov = is_game ? core_override_lookup(gm_rom, NULL) : NULL;
     const char *sys_ov = core_override_lookup(NULL, gm_sys_key);
-    if (game_ov) { gm_scope = 0; gm_core = gm_core_index(game_ov); }
-    else if (sys_ov) { gm_scope = 1; gm_core = gm_core_index(sys_ov); }
-    else { gm_scope = is_game ? 0 : 1; gm_core = 0; }
+    /* On a game the menu is about that game: "Default" follows whatever the
+     * system uses. On a system it shows the system's own choice. */
+    if (is_game) { gm_scope = 0; gm_core = game_ov ? gm_core_index(game_ov) : 0; }
+    else { gm_scope = 1; gm_core = sys_ov ? gm_core_index(sys_ov) : 0; }
     if (is_game) {
         const char *listed = gamelist_label(dir, name);
         snprintf(gm_title, sizeof gm_title, "%s", listed ? listed : name);
@@ -3757,11 +3758,11 @@ static void gm_row_text(int r, char *label, size_t ls, char *value, size_t vs) {
         if (gm_core) {
             snprintf(value, vs, "%s", systems_core_label(gm_cores[gm_core - 1], core, sizeof core));
         } else {
-            /* For one game, "no choice" means the system's choice. */
+            /* For one game, Default is the system's current emulator (its own
+             * choice if it has one); for the system, its built-in default. */
             const char *sys_ov = gm_scope == 0 ? core_override_lookup(NULL, gm_sys_key) : NULL;
             if (sys_ov && access(sys_ov, F_OK) != 0) sys_ov = NULL;
-            snprintf(value, vs, "%s (%s)",
-                     sys_ov ? tr_or("gm.system", "System") : tr_or("gm.default", "Default"),
+            snprintf(value, vs, "%s (%s)", tr_or("gm.default", "Default"),
                      systems_core_label(sys_ov ? sys_ov : gm_cores[0], core, sizeof core));
         }
         break;

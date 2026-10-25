@@ -47,8 +47,9 @@ A. Folder move (first boot)
 5. Former nesq / gbav-style games still run on their old emulator.
 6. Box art still shows; no Imgs / media folders listed as games.
 B. Y menu
-7. Y on a game: Search, Emulator Left/Right, Apply to This game / Whole
-   system, A saves (toast); the game then launches on that emulator.
+7. Y on a game while its system has its own emulator: the menu opens on
+   This game with "Default (<system's>)"; changing it leaves the system's
+   choice alone.
 8. Y on a system in the Games list: whole-system emulator.
 9. Add / Remove Favourite from the menu; X still searches.
 C. Scraping
@@ -146,6 +147,10 @@ D. Still open from before
       sets its emulator; launch uses game choice, then system choice, then
       the default; standalone emulators allowed as choices; Y hint now
       "Y-MENU"; override list raised to 2048 entries
+- [x] Y menu fix: on a game it opens on "This game" (it opened on "Whole
+      system" when the system had a choice, so a game change overwrote the
+      system's); "Default (<system's current emulator>)" for a game
+- [x] Skraper step-by-step guide: docs/scraping.md
 - [x] Draft of every component's open-source license in README.md
       ("License & Attribution" tables) and LICENSE.md section 4; awaiting the
       user's review of the open points

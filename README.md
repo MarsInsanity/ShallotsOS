@@ -240,7 +240,7 @@ roms/GBA/.res/Advance Wars.png    ← the box art
 
 No conversion is needed - use **PNG or JPG**, any resolution; large images are downscaled automatically (maximum displayed size 250×200), and PNG transparency is supported. Rule: `<rom folder>/.res/<rom name without extension>.png` (or `.jpg`). Old raw `.rgb565` thumbnail sets still work - see [Box art, game covers and thumbnails](theme.md#box-art-game-covers-and-thumbnails).
 
-**Skraper / gamelist.xml**: EmulationStation `gamelist.xml` (Skraper's Recalbox output) and OnionOS `miyoogamelist.xml` in a ROM folder are read for box art, and optionally for game names (Settings → General → Names from gamelist.xml). See [Skraper and gamelist.xml](theme.md#skraper-and-gamelistxml).
+**Skraper / gamelist.xml**: EmulationStation `gamelist.xml` (Skraper's Recalbox output) and OnionOS `miyoogamelist.xml` in a ROM folder are read for box art, and optionally for game names (Settings → General → Names from gamelist.xml). Step by step: [docs/scraping.md](docs/scraping.md).
 
 Title screens and screenshots can use the same folders with a suffix such as `-title`, `-titlescreen`, `-screenshot`, `-screen`, or `-preview` (for example `Imgs/Advance Wars-title.png`). Box art is preferred; the title/screenshot is used when box art is missing, including the Recents preview.
 
