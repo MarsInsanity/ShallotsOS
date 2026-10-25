@@ -988,7 +988,12 @@ static int settings_load_recents = 0;   /* start FrogUI in the recents view: 0=o
 enum { ROM_SOURCE_SD, ROM_SOURCE_OTG, ROM_SOURCE_COUNT };
 static int settings_rom_source = ROM_SOURCE_SD;
 static const char *rom_source_names[ROM_SOURCE_COUNT] = {"SD", "OTG"};
-static int settings_disable_sleep = 1;  /* "ShallotsOS Sleep": on = cubevol's sleep is live-patched out (zhijack, at boot) and picoarch sleeps itself (backlight off, 5-minute power-off); off = the firmware's sleep. Key kept as disable_sleep for upgrade compat. */
+/* ShallotsOS Sleep: power off after this long asleep (index into
+ * sleep_poweroff_secs; picoarch reads the seconds as "sleep_poweroff"). */
+static int settings_sleep_poweroff = 4;
+static const int sleep_poweroff_secs[] = {10, 30, 60, 120, 300, 600, 900, 1800};
+#define SLEEP_POWEROFF_N ((int)(sizeof sleep_poweroff_secs / sizeof sleep_poweroff_secs[0]))
+static int settings_disable_sleep = 1;  /* "ShallotsOS Sleep": on = cubevol's sleep is live-patched out (zhijack, at boot) and picoarch sleeps itself (backlight off, powers off after Sleep Power-Off); off = the firmware's sleep. Key kept as disable_sleep for upgrade compat. */
 static int settings_volume = 100;       /* global output volume 0..100 → cubegm/sndgain.txt */
 static const char *filter_names[] = {"nearest", "bilinear"};
 static const char *onoff_names[] = {"off", "on"};
@@ -1017,7 +1022,7 @@ static const SRow settings_rows[] = {
     { RT_HEADER, "settings.general" }, { RT_LANGUAGE, "settings.language", &settings_language }, { RT_RANGE, "settings.brightness", &settings_brightness, 0, 100, SETTINGS_BRIGHTNESS_STEP }, { RT_RANGE, "settings.volume", &settings_volume, 0, 100, 5 }, { RT_TOGGLE, "settings.animations", &settings_anim }, { RT_TOGGLE, "settings.menu_sounds", &settings_menu_sounds }, { RT_TOGGLE, "settings.hide_extensions", &settings_hide_extensions }, { RT_TOGGLE, "settings.hide_empty_folders", &settings_hide_empty },
     { RT_HEADER, "settings.library" }, { RT_ROM_SOURCE, "settings.rom_source" }, { RT_OTG_STATUS, "settings.otg_storage" }, { RT_TOGGLE, "settings.game_switcher", &settings_game_switcher }, { RT_RANGE, "settings.game_keys", &settings_game_keys, 0, 2, 1 }, { RT_TOGGLE, "settings.start_in_recents", &settings_load_recents },
     { RT_HEADER, "settings.gameplay" }, { RT_TOGGLE, "settings.power_resume", &settings_power_resume }, { RT_TOGGLE, "settings.quick_resume", &settings_quick_resume }, { RT_TOGGLE, "settings.autosave_autoload", &settings_autosave_autoload }, { RT_TOGGLE, "settings.custom_aspect_ratios", &settings_custom_aspect_ratios },
-    { RT_HEADER, "settings.system" }, { RT_TOGGLE, "settings.file_cache", &settings_file_cache }, { RT_CACHE_REBUILD, "settings.rebuild_file_cache" }, { RT_TOGGLE, "settings.disable_sleep", &settings_disable_sleep }, { RT_ACTION, "settings.button_mapping" }, { RT_INFO, "settings.version" },
+    { RT_HEADER, "settings.system" }, { RT_TOGGLE, "settings.file_cache", &settings_file_cache }, { RT_CACHE_REBUILD, "settings.rebuild_file_cache" }, { RT_TOGGLE, "settings.disable_sleep", &settings_disable_sleep }, { RT_RANGE, "settings.sleep_poweroff", &settings_sleep_poweroff, 0, 7, 1 }, { RT_ACTION, "settings.button_mapping" }, { RT_INFO, "settings.version" },
 };
 #define SETTINGS_ROW_N ((int)(sizeof(settings_rows) / sizeof(settings_rows[0])))
 static bool otg_roms_available(void);
@@ -1026,6 +1031,7 @@ static bool otg_roms_available(void);
  * but cannot be changed until its prerequisite is enabled. */
 static bool settings_row_enabled(const SRow *r) {
     if (!r) return false;
+    if (r->val == &settings_sleep_poweroff) return settings_disable_sleep != 0;
     if (onion_theme_active()) {
         /* The Onion theme supplies colours, layout and backgrounds. Icon
          * packs still fill in consoles the theme has no icon for. */
@@ -1426,6 +1432,10 @@ static void settings_load_file(void) {
             settings_battery_color = (strcmp(val, "on") == 0) ? 1 : 0;
         } else if (strcmp(line, "stock_battery") == 0) {
             settings_stock_battery = (strcmp(val, "on") == 0) ? 1 : 0;
+        } else if (strcmp(line, "sleep_poweroff") == 0) {
+            int secs = atoi(val);
+            for (int k = 0; k < SLEEP_POWEROFF_N; k++)
+                if (sleep_poweroff_secs[k] <= secs) settings_sleep_poweroff = k;
         } else if (strcmp(line, "disable_sleep") == 0) {
             settings_disable_sleep = (strcmp(val, "on") == 0) ? 1 : 0;
         } else if (strcmp(line, "game_switcher") == 0) {
@@ -1537,6 +1547,7 @@ static void settings_save_file(void) {
     fprintf(f, "load_recents=%s\n", onoff_names[settings_load_recents]);
     fprintf(f, "rom_source=%s\n", rom_source_names[settings_rom_source]);
     fprintf(f, "disable_sleep=%s\n", onoff_names[settings_disable_sleep]);
+    fprintf(f, "sleep_poweroff=%d\n", sleep_poweroff_secs[settings_sleep_poweroff]);
     fprintf(f, "sections=%d%d%d%d%d\n",
             settings_section_open[0] ? 1 : 0, settings_section_open[1] ? 1 : 0,
             settings_section_open[2] ? 1 : 0, settings_section_open[3] ? 1 : 0,
@@ -4941,6 +4952,14 @@ static int settings_row_value(const SRow *r, char *value, size_t size) {
         snprintf(value, size, "%s", tr(*r->val ? "value.on" : "value.off"));
         return ONION_ROW_TOGGLE;
     case RT_RANGE:
+        if (r->val == &settings_sleep_poweroff) {
+            int secs = sleep_poweroff_secs[*r->val];
+            if (secs < 60)
+                snprintf(value, size, "%d s", secs);
+            else
+                snprintf(value, size, "%d min", secs / 60);
+            return ONION_ROW_VALUE;
+        }
         if (r->val == &settings_game_keys) {
             static const char *const keys[3] = {"value.game_keys_fn", "value.game_keys_hold",
                                                 "value.game_keys_combo"};

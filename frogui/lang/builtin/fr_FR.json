@@ -63,6 +63,7 @@
   "settings.file_cache": "Cache de fichiers",
   "settings.rebuild_file_cache": "Reconstruire le cache de fichiers",
   "settings.disable_sleep": "ShallotsOS Sleep (restart)",
+  "settings.sleep_poweroff": "Sleep Power-Off",
   "settings.version": "Version TreeFrogUI",
   "settings.button_mapping": "Assignation des touches",
   "value.on": "Activer",

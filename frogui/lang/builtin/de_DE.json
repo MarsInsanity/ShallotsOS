@@ -63,6 +63,7 @@
   "settings.file_cache": "Dateicache",
   "settings.rebuild_file_cache": "Dateicache neu aufbauen",
   "settings.disable_sleep": "ShallotsOS-Ruhemodus (Neustart)",
+  "settings.sleep_poweroff": "Ausschalten nach Ruhe",
   "settings.version": "TreeFrogUI-Version",
   "settings.button_mapping": "Tastenbelegung",
   "value.on": "Aktivieren",

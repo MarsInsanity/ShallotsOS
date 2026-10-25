@@ -39,8 +39,8 @@ Latest test build:
 3. In Kirby: tap power. Screen goes dark and the game pauses. Tap power again:
    the game continues with no battery icon and no lag.
 4. Same in the main menu.
-5. Sleep for over 5 minutes: it should power off, and the next boot resumes
-   Kirby where it was.
+5. Set Sleep Power-Off to 10 s, sleep in Kirby and wait: it should power
+   off, and the next boot resumes Kirby where it was. Try a longer time too.
 6. Hold power while asleep: it powers off and resumes on boot.
 7. Hold layout: SELECT+R2 saves without Kirby losing its power-up.
 8. Low battery (when convenient): play until 5%; it saves and shuts down.
@@ -157,6 +157,8 @@ Latest test build:
       and slows the CPU; the next short press wakes and restores exactly that.
       After 5 minutes asleep it saves the game (Resume After Power-Off) and
       powers off, which also stops the LEDs. Works in games and the menu
+- [x] **Sleep Power-Off** (Settings > System): 10 s, 30 s, 1, 2, 5 (default),
+      10, 15 or 30 minutes; greyed out when ShallotsOS Sleep is off
 - [x] Firmware-sleep wake restore (CPU, OSD, audio) kept for when ShallotsOS
       Sleep is off
 - [ ] Device test: ShallotsOS Sleep (short press, wake, 5-minute power-off)
