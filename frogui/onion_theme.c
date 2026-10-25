@@ -1789,6 +1789,21 @@ static void draw_card(uint16_t *fb, int x, int y, int w, int h,
   }
 }
 
+/* A short message above the hint bar: dark rounded card, theme hint font. */
+void onion_render_toast(uint16_t *fb, const char *text) {
+  if (!fb || !text || !*text)
+    return;
+  use_font(FONT_HINT, cfg.hint.size * 4 / 5 > 16 ? cfg.hint.size * 4 / 5 : 16);
+  char fitted[160];
+  fit_text(text, fitted, sizeof fitted, SCREEN_WIDTH - 80, 0);
+  int tw = font_measure_text_bold(fitted, 0);
+  int w = tw + 40, h = 44;
+  int x = (SCREEN_WIDTH - w) / 2, y = SCREEN_HEIGHT - 60 - 12 - h;
+  draw_card(fb, x, y, w, h, 0x0000, 210);
+  text_centered_y(fb, (SCREEN_WIDTH - tw) / 2, y + h / 2, fitted, 0xFFFF, 0);
+  font_face_use(-1, 0);
+}
+
 void onion_render_home(uint16_t *fb, const OnionHomeItem *items, int count,
                        int selected) {
   if (!fb || !items || count <= 0)

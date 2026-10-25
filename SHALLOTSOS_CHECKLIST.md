@@ -37,9 +37,12 @@ Latest test build:
 1. Install the latest test build (link above). Keep `log.txt` on the card.
 2. Boot once **unplugged**, then once **plugged in** (each boot writes the
    LED report with the charging state).
-3. Note whether the blue LED ever changes: colour or brightness when
-   charging, at low battery, or during the power-off screen.
-4. Send `logs/picoarch.log`.
+3. Note when each LED colour (blue, red, green) is on: always, charging,
+   full, low battery, power-off screen.
+4. Sleep Power-Off at 10 s: sleep in Kirby, let it power off, boot. Kirby
+   resumes with "Powered off after 10 s asleep, game resumed".
+5. Same while asleep in the main menu: the menu shows the message.
+6. Send `logs/picoarch.log`.
 
 ## Done
 
@@ -157,11 +160,16 @@ Latest test build:
 - [x] Firmware-sleep wake restore (CPU, OSD, audio) kept for when ShallotsOS
       Sleep is off
 - [x] Device test: ShallotsOS Sleep works (no battery icon, no lag on wake)
-- [ ] Front LED (blue, between SELECT and START) stays on asleep. Extended
+- [ ] Front LEDs (blue, red and green, between SELECT and START) stay on
+      asleep. Bank 0 holds exactly three output pins high (6, 8, 9): likely
+      candidates. Next: an opt-in LED test (one pin off for 2 s, restored)
+      once the extended report agrees. Extended
       boot report: device-tree pin/PWM properties, all GPIO banks, charging
       state. Find a pin only by reading, never by flipping unknown pins
-- [ ] Decide: post-boot "Powered off after N min asleep" message (suggested)
-      vs. a warning before the sleep power-off
+- [x] Post-boot message after an automatic power-off ("Powered off after 5
+      min asleep" / "Powered off: battery low"): the resumed game shows it
+      with ", game resumed", otherwise the menu does (for about 4 s)
+- [x] OnionOS-layout toasts drawn above the hint bar (they were cut off)
 
 ### File cache
 

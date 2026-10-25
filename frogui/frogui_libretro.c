@@ -4862,6 +4862,21 @@ void retro_init(void) {
     strncpy(current_path, g_roms_path, MAX_PATH_LEN - 1);
     current_path[MAX_PATH_LEN - 1] = '\0';
     refresh_cache_if_roms_changed();
+    /* picoarch leaves a note when it powered the console off (asleep too
+     * long, low battery); a resumed game shows it, otherwise the menu does. */
+    {
+        FILE *nf = fopen("/mnt/sdcard/picoarch/poweroff_note.txt", "r");
+        if (nf) {
+            char note[96] = "";
+            if (fgets(note, sizeof note, nf)) note[strcspn(note, "\r\n")] = '\0';
+            fclose(nf);
+            unlink("/mnt/sdcard/picoarch/poweroff_note.txt");
+            if (note[0]) {
+                ui_toast_show(note);
+                ui_toast_frames = 240;   /* a boot message: about 4 s */
+            }
+        }
+    }
     scan_directory(current_path);
     dbg("scan_directory done");
     /* Recents reuses entries[] for its own rows. Keep the freshly-built Games
@@ -5840,7 +5855,10 @@ void retro_run(void) {
     }
 
     if (ui_toast_frames > 0) {
-        render_toast(framebuffer, ui_toast_text);
+        if (onion_theme_active())
+            onion_render_toast(framebuffer, ui_toast_text);
+        else
+            render_toast(framebuffer, ui_toast_text);
         ui_toast_frames--;
     }
 

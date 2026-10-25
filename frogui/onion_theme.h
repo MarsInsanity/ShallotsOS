@@ -93,6 +93,8 @@ int onion_render_preview(uint16_t *fb, const Thumbnail *art);
 /* GameSwitcher overlay for a full-screen capture already in fb. `header` is
  * the header title (Onion shows play time there); `game` the selected game.
  * The legend (extra/gs-legend) is drawn when show_legend is set. */
+/* A short message above the hint bar. */
+void onion_render_toast(uint16_t *fb, const char *text);
 /* Yes/no prompt (lines split on '\n') over a dimmed screen. */
 void onion_render_prompt(uint16_t *fb, const char *message, const char *a_label,
                          const char *b_label);
