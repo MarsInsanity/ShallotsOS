@@ -36,53 +36,44 @@ Latest test build:
 
 ## User to-do (device tests)
 
+Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40242387710
 Before: back up the SD card; keep an empty `log.txt` at the card root.
+Confirmed earlier: folder move prompt and move, NES save states, Resume,
+GameSwitcher, Recents, Favourites, Y-menu search/emulator/favourite, box art.
 
-A. Folder move (first boot)
-1. Prompt appears; B powers off and it asks again next boot; A moves.
-2. Games in the right folders (nes, gb / gbc split, megadrive /
-   mastersystem / gamegear, psx, atari2600...); old folders gone; the
-   result message's "left in old folders" count, if any.
-3. Saves and save states load (one NES, one GB/GBC, one PS1 game).
-4. Recents, Favourites, play time (Activity Tracker), resume after
-   power-off still work.
-5. Former nesq / gbav-style games still run on their old emulator.
-6. Box art still shows; no Imgs / media folders listed as games.
-B. Y menu
-7. Y on a game while its system has its own emulator: the menu opens on
-   This game with "Default (<system's>)"; changing it leaves the system's
-   choice alone.
-8. Y on a system in the Games list: whole-system emulator.
-9. Add / Remove Favourite from the menu; X still searches.
-C. Scraping
-10. Skraper (Recalbox front-end) recognises the systems; box art shows;
-    Settings > General > Names from gamelist.xml; big folders' first open
-    time.
-D. Still open from before
-11. Load > Auto preview shows the game (after leaving a game once).
-12. Music: hold volume; send the `VIDEO_PLAYER:` lines from `log.txt` at
-    the card root if the stock bar still shows.
-13. Kirby lag: when it happens, play 15 s, menu and back, 15 s more, send
+A. New in this build
+1. GBC icon: shows with Pixel by Jeltron (the pack's Game Boy art) and
+   with Default (Cosy) (Settings > Appearance > Icon Pack).
+2. Search (X) with Names from gamelist.xml on: part of a scraped name finds
+   the game when the file name differs; results show scraped names.
+3. Y menu fix: per-game emulator on a system that has its own (e.g. GBA
+   on mGBA, one game on VBA Next): the system stays on mGBA; per-game
+   "Default (mGBA)" sends that game back to mGBA.
+B. Performance
+4. Yoshi's Island on Snes9x 2005 Plus, then HCSNES Fast, then HCSNES Plus
+   (Y > Emulator > This game): same scene; smoothness, sound, glitches.
+   Don't load a save state made by another emulator.
+5. A PS1 game on PCSX4ALL and on PCSX ReARMed; a GBA and a Genesis game:
+   smoother than before? new glitches or crackle?
+6. Send `logs/picoarch.log` (and `logs/cores.log`) after 4-5.
+   Options > Save config for a core keeps its old settings.
+C. After the folder move (not yet confirmed)
+7. GB/GBC and PS1 saves and save states load; former nesq / gbav-style
+   games still on their old emulator; Activity Tracker play time.
+D. Scraping
+8. Once scraping is done: names and art on all scraped systems; first
+   open time of a big folder (arcade).
+E. Still open from before
+9. Load > Auto preview shows the game after leaving it once.
+10. Music: hold volume; send the `VIDEO_PLAYER:` lines from `log.txt` if
+    the stock bar still shows.
+11. Kirby lag: when it happens, 15 s play, menu and back, 15 s more; send
     `logs/picoarch.log`.
-14. Performance defaults (new): Yoshi's Island, a PS1 game on
-    PCSX ReARMed (Y > Emulator), a GBA and a Genesis game: smoother? any
-    new glitches or sound problems? Then 30 s Bilinear + 30 s Sharp of
-    Yoshi's Island, rewind off; send `logs/picoarch.log` (the DBG lag
-    lines now show `skipped=`). If you once used Options > Save config
-    for a core, that core keeps its old settings until you change them.
-15. Books (needs `cubegm/ebook`), Videos, Images apps.
-16. When convenient: low-battery save at 5%.
-18. GBC icon shows with Pixel by Jeltron (the pack's Game Boy art) and
-    with Default (Cosy); gamelist names on other systems once Settings >
-    General > Names from gamelist.xml is on (off by default; arcade names
-    come from TreeFrogUI's own list, which is why FBNeo/CPS already show).
-19. Search (X) with Names from gamelist.xml on: typing part of a scraped
-    name finds the game even when the file name differs, and results show
-    the scraped names.
-17. HCSNES: Y on Yoshi's Island > Emulator > HCSNES Fast (then Plus);
-    play the same scene as on Snes9x 2005 Plus; note smoothness, sound,
-    glitches; send `logs/picoarch.log` (DBG lag lines per core). Don't
-    load a save state made by another core.
+12. Books (needs `cubegm/ebook`), Videos, Images apps.
+13. When convenient: low-battery save at 5%.
+F. Wanted from you
+14. Text of `cubegm/dsperate/run_sf3000.sh` (to set DS defaults).
+15. Activity Tracker mockup.
 
 ## Done
 
