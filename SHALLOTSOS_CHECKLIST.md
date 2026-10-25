@@ -47,7 +47,7 @@ Device: R36SX v2.7 on the R36SX v2.6 firmware (`install_first/r36sx/`).
 
 - [x] Auto-Save/Auto-Load fixed for cores that load the game late (fake08):
       the state is restored a few frames in
-- [x] GitHub Actions build of `picoarch` and `picoarch_hi` (artifact `picoarch`)
+- [x] GitHub Actions build of `picoarch` and `picoarch_hi` (artifact `picoarch`), passing
 - [x] Build fix: `g_switcher_enabled` used before its definition
 - [x] Options submenus and Save/Load State lists use the theme's highlight
       colour, like the main menu (the white bar hid the selected item)
@@ -88,8 +88,6 @@ Device: R36SX v2.7 on the R36SX v2.6 firmware (`install_first/r36sx/`).
 - [x] Also re-checks after USB mode, which returns to FrogUI without a reboot
 
 ## In progress
-
-- [ ] Confirm the picoarch CI build passes (local MIPS builds pass)
 
 ## Next
 
