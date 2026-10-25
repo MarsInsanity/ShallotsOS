@@ -9,11 +9,13 @@
  * picked per game or per system (X on a game). TreeFrogUI's folders, which
  * chose the emulator by folder (nesq, gbav, snes02...), map onto them. */
 
+#define SH_MAX_CORES 8
+
 typedef struct {
   const char *folder;    /* Recalbox folder name */
   const char *name;      /* Recalbox full name */
   const char *icon;      /* OnionOS icon name */
-  const char *cores[6];  /* emulator paths, default first */
+  const char *cores[SH_MAX_CORES];  /* emulator paths, default first */
 } ShSystem;
 
 int systems_count(void);

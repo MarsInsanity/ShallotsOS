@@ -17,7 +17,8 @@ static const ShSystem systems[] = {
     {"nes", "Nintendo Entertainment System", "fc", {C("fceumm"), C("quicknes"), C("nestopia")}},
     {"fds", "Family Computer Disk System", "fds", {C("fceumm")}},
     {"snes", "Super Nintendo Entertainment System", "sfc",
-     {C("snes9x2005_plus"), C("snes9x2002"), C("snes9x2005"), C("snes9x2010")}},
+     {C("snes9x2005_plus"), C("snes9x2002"), C("snes9x2005"), C("snes9x2010"),
+      C("hcsnes_fast"), C("hcsnes_plus")}},
     {"gb", "Game Boy", "gb", {C("gambatte"), C("gearboy"), C("tgbdual")}},
     {"gbc", "Game Boy Color", "gbc", {C("gambatte"), C("gearboy"), C("tgbdual")}},
     {"gba", "Game Boy Advance", "gba",
@@ -197,7 +198,7 @@ const ShSystem *systems_find(const char *folder) {
 
 int systems_cores(const ShSystem *s, const char **out, int max) {
   int n = 0;
-  for (int i = 0; s && i < 6 && s->cores[i] && n < max; i++)
+  for (int i = 0; s && i < SH_MAX_CORES && s->cores[i] && n < max; i++)
     if (access(s->cores[i], F_OK) == 0)
       out[n++] = s->cores[i];
   return n;
@@ -213,6 +214,7 @@ const char *systems_core_label(const char *core, char *buf, size_t size) {
       {"fceumm", "FCEUmm"}, {"quicknes", "QuickNES"}, {"nestopia", "Nestopia"},
       {"snes9x2005_plus", "Snes9x 2005 Plus"}, {"snes9x2005", "Snes9x 2005"},
       {"snes9x2002", "Snes9x 2002"}, {"snes9x2010", "Snes9x 2010"},
+      {"hcsnes_fast", "HCSNES Fast"}, {"hcsnes_plus", "HCSNES Plus"},
       {"gambatte", "Gambatte"}, {"gearboy", "Gearboy"}, {"tgbdual", "TGB Dual"},
       {"gpsp", "gpSP"}, {"gpsp_multicore", "gpSP multicore"}, {"vba_next", "VBA Next"},
       {"mgba", "mGBA"}, {"picodrive", "PicoDrive"}, {"genesis_plus_gx", "Genesis Plus GX"},
@@ -268,7 +270,7 @@ const char *systems_legacy_core(const char *legacy_folder, const char *target) {
     return NULL;
   /* Only an emulator the new system offers (tgbdual for a .gbc moved out
    * of gbb, say), and not when it is that system's default anyway. */
-  for (int k = 0; k < 6 && s->cores[k]; k++)
+  for (int k = 0; k < SH_MAX_CORES && s->cores[k]; k++)
     if (!strcmp(s->cores[k], legacy_map[i].core))
       return k == 0 ? NULL : legacy_map[i].core;
   return NULL;

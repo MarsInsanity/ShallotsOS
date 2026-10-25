@@ -113,7 +113,7 @@ powers the console off and asks again next time.
 |---|---|---|---|
 | **nes** | Nintendo Entertainment System | `fceumm`, `quicknes`, `nestopia` | `FC`, `nesq`, `nest` |
 | **fds** | Family Computer Disk System | `fceumm` |  |
-| **snes** | Super Nintendo Entertainment System | `snes9x2005_plus`, `snes9x2002`, `snes9x2005`, `snes9x2010` | `SFC`, `snes02` |
+| **snes** | Super Nintendo Entertainment System | `snes9x2005_plus`, `snes9x2002`, `snes9x2005`, `snes9x2010`, `hcsnes_fast`, `hcsnes_plus` | `SFC`, `snes02` |
 | **gb** | Game Boy | `gambatte`, `gearboy`, `tgbdual` | `gbgb`, `gbb`, `dblcherrygb` |
 | **gbc** | Game Boy Color | `gambatte`, `gearboy`, `tgbdual` |  |
 | **gba** | Game Boy Advance | `gpsp`, `gpsp_multicore`, `vba_next`, `mgba` | `gbac`, `gbav`, `mgba`, `gbaf` |
@@ -549,6 +549,7 @@ or bundled with devices for sale. Full license texts are in
 |---|---|---|---|
 | picoarch (`picoarch`, `picoarch_hi`, in-game menu) | [MarsInsanity/ShallotsOS_picoarch](https://github.com/MarsInsanity/ShallotsOS_picoarch) | [BSD 3-Clause](https://opensource.org/license/bsd-3-clause) | neonloop; SF3000 port; ShallotsOS changes are under the license of the file they change |
 | libpicofe (menu and input library inside picoarch) | `libpicofe/` in picoarch | GPL v2+, LGPL v2.1+ or MAME license (your choice) | notaz and contributors |
+| HCSNES (`hcsnes_fast`, `hcsnes_plus`, experimental SNES) | [MarsInsanity/HCSNES](https://github.com/MarsInsanity/HCSNES) | Snes9x license (non-commercial) for the emulator; MIT for HCSNES's own new files | Snes9x team; HCSNES contributors |
 | Emulator cores | `cores/` | Each core's own license (GPL, LGPL, BSD, MIT, MAME, non-commercial, ...) | Upstream libretro authors; see [cores.md](cores.md) |
 
 ### Libraries built into the menu
