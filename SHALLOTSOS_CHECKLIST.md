@@ -269,6 +269,15 @@ User's to-do list (October 2026):
       Auto-Load, GameSwitcher looks and keys, Options highlight, new ROMs
       appearing, power-off save and boot resume
 - [ ] Waiting on the user: mockups for media apps and play tracking
+- [ ] Emulator performance (user priority, next big task):
+      - Yoshi's Island (SNES, SuperFX2) is slow on ShallotsOS but fine on
+        stock. Measure FPS on both; check the Sharp filter's software
+        scaling cost (the user's games run with Sharp); compare
+        snes9x2005_plus / snes9x2002 / snes9x2010 and the stock emulator;
+        review core build flags, frameskip, CPU clock and present path
+        using the DBG lag report
+      - Same pass for other heavy systems (PS1 via ps1r / qpsx, GBA, etc.)
+      - PS2: not possible on this hardware (told the user)
 
 ## Ideas offered, not started
 
