@@ -291,6 +291,13 @@ User's to-do list (October 2026):
 
 ## Ideas offered, not started
 
+- [ ] gamelist.xml support (user suggested, October 2026; waiting on the
+      go-ahead and scope): read EmulationStation `gamelist.xml` and Onion's
+      `miyoogamelist.xml` in each ROM folder for `<path>`, `<name>`,
+      `<image>` / `<thumbnail>` (and maybe `<desc>`); parsed once per folder
+      change into the file cache; display names optional (setting), art
+      paths tried before the Imgs/.res lookup
+
 - [ ] GameSwitcher hints and theme picker previews
 - [ ] Search tile on the home screen
 - [ ] Boot screen
