@@ -196,10 +196,17 @@ User's to-do list (October 2026):
       (values on the right with arrows, scrolling with a counter), with a
       status bar (game name, room for the battery icon)
 - [x] Slot/value arrows pointed inwards; fixed
-- [ ] Theme font didn't load on the device (menu and in-game toast stayed in
-      GamePocket capitals). FrogUI writes `font=` correctly (checked);
-      picoarch now also falls back to ShallotsOS's Exo 2 directly and logs
-      `DBG menu: ...` lines. Needs the log if it still fails
+- [x] Device test: menu look, theme font (Exo 2, mixed case), status bar,
+      save/load slots and the toast all confirmed
+- [x] 30 user save slots plus **Auto** (Auto-Save, `.st9`) and **Switcher**
+      (GameSwitcher / power-off, `.st10`) in Load; Save offers 1-30 only.
+      Slots 1-8 keep `.st0`-`.st7`, 9-30 are `.st11`-`.st32` (no migration).
+      Resuming or loading Auto/Switcher no longer makes them the SELECT+R2
+      save slot
+- [ ] Device test: 30 slots, Auto and Switcher in Load
+- [ ] Theme font now loads (fallback to ShallotsOS's Exo 2 added). Check the
+      `DBG menu: font ...` log line: confirms whether other themes' fonts
+      come through skin.txt or only the fallback is used
 - [x] Save/Load slots switched with Left/Right in the menu row (SpruceOS
       style), background shows the slot's screenshot or "Empty"; A saves or
       loads and returns to the game with a toast
