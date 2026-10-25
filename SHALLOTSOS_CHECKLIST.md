@@ -45,6 +45,8 @@ Latest test build:
 5. Music/Videos/Books/Images folders at the card root: files show up under
    Apps; Books opens EPUB/PDF (needs `cubegm/ebook` from TreeFrogUI).
 6. In-game toast after a sleep power-off (rounded card, no cut-off).
+7. Picture themes such as BMO Noire: backgrounds the right way up (the
+   "FILE EDIT VIEW HELP" bar at the top, hints at the bottom).
 
 ## Done
 
@@ -61,6 +63,10 @@ Latest test build:
       Settings > Appearance > OnionOS Theme
 - [x] Default "ShallotsOS" theme and its generator script, plus the Exo 2 font
 - [x] Theme asset test (`tests/test_onion_theme.sh`) and docs
+- [x] `background.png` turned 180° on load like Onion (Miyoo themes store it
+      upside down: 50 of the 56 picture backgrounds in the official theme
+      collection); fixes e.g. BMO Noire's mirrored bottom bar. The ShallotsOS
+      theme's background is stored the Miyoo way too
 - [x] Classic (non-Onion) UI left pixel-identical to upstream
 - [x] ShallotsOS boot logo replaces the TreeFrogUI one (both panel formats,
       from `tools/onion_theme/make_boot_logo.py`); the overlay ships the

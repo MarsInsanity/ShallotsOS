@@ -850,6 +850,21 @@ static const OImg *image(int id) {
     }
     if (skin_path_ex(name, path, sizeof path, !theme_only_image(id)))
       img_load_file(im, path, 0, 0);
+    /* Miyoo themes store background.png upside down (stock MainUI blits it
+     * straight to the rotated panel); Onion turns it round on load too. */
+    if (id == IMG_BACKGROUND && im->px) {
+      int n = im->w * im->h;
+      for (int i = 0, j = n - 1; i < j; i++, j--) {
+        uint16_t p = im->px[i];
+        im->px[i] = im->px[j];
+        im->px[j] = p;
+        if (im->a) {
+          uint8_t t = im->a[i];
+          im->a[i] = im->a[j];
+          im->a[j] = t;
+        }
+      }
+    }
     im->loaded = 1;
   }
   return im->px ? im : NULL;

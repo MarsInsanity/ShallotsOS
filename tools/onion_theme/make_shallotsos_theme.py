@@ -485,7 +485,8 @@ def change_sound(path):
 def main():
     out = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "assets/onion/Themes/ShallotsOS"
     skin = out / "skin"
-    save(background(), skin / "background.png")
+    # Stored upside down, as Miyoo themes are: Onion and ShallotsOS turn it round.
+    save(background().rotate(180), skin / "background.png")
     save(bar(60), skin / "bg-title.png")
     save(bar(60, top_line=True), skin / "tips-bar-bg.png")
     save(gs_top_bar(), skin / "extra/gs-top-bar.png")
