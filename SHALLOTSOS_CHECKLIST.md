@@ -76,6 +76,10 @@ Latest test build:
 - [x] Options submenus and Save/Load State lists use the theme's highlight
       colour, like the main menu (the white bar hid the selected item)
 
+### Settings layout
+
+- [x] Volume moved next to Brightness in General (was under System)
+
 ### In-game keys setting
 
 - [x] Settings > Library > In-game Menu Keys: **FN** (tap = menu, hold =
@@ -125,8 +129,13 @@ Latest test build:
       frequency policy), hides the stock battery overlay again in games, and
       drops audio queued around the sleep. Also re-checks the CPU policy every
       few seconds
+- [x] Logs power presses and each sleep's frame gap vs. kernel-suspend time
+      (`logs/picoarch.log` when `log.txt` exists) to tell real suspend from a
+      paused game
 - [ ] Needs a device test with Disable Sleep off; it stays on by default
       (upstream's choice) until sleep is confirmed solid
+- [ ] Decide on power-off after a long sleep (Miyoo Mini-style) once the log
+      shows whether sleep is a real suspend (light) or a paused game (drains)
 
 ### File cache
 
