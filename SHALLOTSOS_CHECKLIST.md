@@ -29,8 +29,8 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40193155121
-  (ShallotsOS `901d147`, picoarch `4dbec17`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40193966655
+  (ShallotsOS `74af0d3`, picoarch `a053de9`)
 
 ## User to-do (device tests)
 
@@ -193,7 +193,13 @@ User's to-do list (October 2026):
       full-width highlight bar in the theme colour, A/B hint bar; theme font
       (Exo 2) in mixed case with an OnionOS theme
 - [x] Options pages and Player/Emulator controls drawn in the same style
-      (values on the right with arrows, scrolling with a counter)
+      (values on the right with arrows, scrolling with a counter), with a
+      status bar (game name, room for the battery icon)
+- [x] Slot/value arrows pointed inwards; fixed
+- [ ] Theme font didn't load on the device (menu and in-game toast stayed in
+      GamePocket capitals). FrogUI writes `font=` correctly (checked);
+      picoarch now also falls back to ShallotsOS's Exo 2 directly and logs
+      `DBG menu: ...` lines. Needs the log if it still fails
 - [x] Save/Load slots switched with Left/Right in the menu row (SpruceOS
       style), background shows the slot's screenshot or "Empty"; A saves or
       loads and returns to the game with a toast
