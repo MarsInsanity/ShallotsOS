@@ -1854,12 +1854,10 @@ void onion_render_home(uint16_t *fb, const OnionHomeItem *items, int count,
     const OImg *tile = image(IMG_HOME_FIRST + kind * 2 + (active ? 1 : 0));
     int x = ox + 10 + slot * 155;
     if (tile) {
-      int y = 101 - (tile->h - 278) * 7 / 10;
-      if (y < 60)
-        y = 60;
-      if (y + tile->h > SCREEN_HEIGHT - 60)
-        y = SCREEN_HEIGHT - 60 - tile->h;
-      img_draw(fb, tile, x, y);
+      /* MainUI centres each tile image on its 156 px slot at y = 230,
+       * whatever its size (measured from theme previews: 156x278 tiles at
+       * y 91, 156x328 at 66, BMO Noire's 794x500 scene layers at -20). */
+      img_draw(fb, tile, x + (156 - tile->w) / 2, 230 - tile->h / 2);
     } else {
       draw_card(fb, x + 8, 110, 140, 260, active ? palette.select_bg : palette.legend_bg, 255);
     }

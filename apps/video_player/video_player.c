@@ -730,11 +730,13 @@ static int backlight_level(int raw) {
     return level > 100 ? 100 : level;
 }
 
-/* Polled every ~100 ms; returns true when a slider should be (re)drawn now. */
+/* Polled every ~20 ms; returns true when a slider should be (re)drawn now.
+ * cubevol draws its slider the moment a key changes the value, so the
+ * sooner the change is seen, the less of the stock slider shows. */
 static bool level_poll(int64_t now) {
     static int64_t last_poll;
     static int last_vol = -1, last_light = -1;
-    if (now - last_poll < 100) return false;
+    if (now - last_poll < 20) return false;
     last_poll = now;
     unsigned char vbuf[260] = {0};
     int light = 0;
@@ -1029,7 +1031,7 @@ int main(int argc, char **argv) {
          * often so cubevol's own slider can't stay on top of it. */
         bool level_now = have_overlay && level_poll(now);
         if (now < level_until) {
-            draw_interval = 100;
+            draw_interval = 33;   /* paint over cubevol's slider while it redraws */
             if (hud_until < level_until) hud_until = level_until;
         }
         if (level_now) last_draw = 0;

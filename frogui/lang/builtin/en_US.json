@@ -54,6 +54,7 @@
   "value.game_keys_hold": "Hold SEL/START",
   "value.game_keys_combo": "SEL+START",
   "settings.start_in_recents": "Start in Recents",
+  "settings.show_recents": "Show Recents on Home",
   "settings.gameplay": "GAMEPLAY",
   "settings.power_resume": "Resume After Power-Off",
   "settings.quick_resume": "Quick Resume",

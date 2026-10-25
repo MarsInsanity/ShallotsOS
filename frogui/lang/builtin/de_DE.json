@@ -54,6 +54,7 @@
   "value.game_keys_hold": "SEL/START lang",
   "value.game_keys_combo": "SEL+START",
   "settings.start_in_recents": "In 'Zuletzt gespielt' starten",
+  "settings.show_recents": "Show Recents on Home",
   "settings.gameplay": "GAMEPLAY",
   "settings.power_resume": "Nach Ausschalten fortsetzen",
   "settings.quick_resume": "Schnelle Fortsetzung",

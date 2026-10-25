@@ -30,34 +30,25 @@ page.
 Latest test build:
 
 - https://github.com/MarsInsanity/ShallotsOS/actions/runs/40199740326
-  (ShallotsOS `cab89d7`, picoarch `6d4473e`)
+  (ShallotsOS `cab89d7`, picoarch `c371123`)
 
 ## User to-do (device tests)
 
 1. Install the latest test build (link above), replacing files when asked.
-2. Save/Load slots: Left/Right goes through 1-30 in Save; Load also offers
-   Auto and Switcher; slot 9 and above save and load.
-3. Emulator controls pages list the built-in SELECT+R2/L2/R1 shortcuts.
-4. FN on the R36SX still works as before: tap = in-game menu, hold =
-   GameSwitcher, FN in the menu opens the GameSwitcher; FN+volume still
-   changes brightness.
-5. START in the menu does nothing new on the R36SX (it only opens the
-   GameSwitcher on consoles without FN).
-6. Settings > Library > In-game Menu Keys still offers FN on the R36SX.
-7. Picture themes: BMO Noire and Aubergine backgrounds the right way up.
-   Also check the ShallotsOS theme and one other theme you use still look
-   the same.
-8. Aubergine (or any theme without console icons): Game Boy Color has an
-   icon.
-9. Music: change volume and brightness while a song plays; the slider shows
-   at the top in the player's style.
-10. Music/Videos/Books/Images folders at the card root: files show up under
-    Apps; Books opens EPUB/PDF (needs `cubegm/ebook` from TreeFrogUI).
-11. Sleep power-off: after waking, the in-game toast is a rounded card in
-    the theme font, not cut off.
-12. Power-off save and resume still work after the power-watch change (hold
-    power in a game, boot, the game resumes).
-13. When convenient: low-battery save at 5%.
+2. BMO Noire: Settings > Library > Show Recents on Home off; the home scenes
+   (Favorites, Games, Apps, Settings) line up like the theme's preview. Also
+   check another theme's home tiles (now 10 px higher, as on Onion).
+3. Load slots: after resuming from the GameSwitcher or power-off, Load >
+   Switcher has that state and loads it; Auto shows only with Auto save &
+   load on; resume on next launch still works once.
+4. Music: change volume/brightness while a song plays; the stock slider
+   should at most flash for a frame.
+5. Music app: with files in both `/Music` and `roms/music`, a `roms/music`
+   folder appears at the top and B returns from it.
+6. FPS counter (in-game menu Options or the HUD toggle): rounded card in the
+   theme font.
+7. Books (needs `cubegm/ebook` from TreeFrogUI), Videos and Images folders.
+8. When convenient: low-battery save at 5%.
 
 ## Done
 
@@ -85,6 +76,17 @@ Latest test build:
       SELECT+START (picoarch falls back the same way); the power-button watch
       runs only on the R36SX family (SF3000 has a real power switch). Checked
       at 854x480 in the host build; picoarch builds with the SF3000 toolchain
+- [x] Home tiles placed like MainUI: centred on their slot at y = 230 (from
+      theme previews), so large scene images (BMO Noire) line up; plus
+      Settings > Library > Show Recents on Home
+- [x] In-game Load: Switcher keeps the last GameSwitcher / power-off state
+      (a `.resume` marker now decides resuming); Auto and Switcher are only
+      offered when they hold a state
+- [x] Music player: level slider checked every 20 ms and repainted every
+      33 ms so cubevol's stock slider barely shows
+- [x] Media apps show every folder with files (root first, then e.g.
+      `roms/music` as a folder entry)
+- [x] FPS / CPU HUD drawn as a TTF card like the toast
 - [x] Draft of every component's open-source license in README.md
       ("License & Attribution" tables) and LICENSE.md section 4; awaiting the
       user's review of the open points

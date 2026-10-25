@@ -441,6 +441,10 @@ static char activity_marquee_key[MAX_PATH_LEN];
 static int activity_marquee_offset;
 static unsigned activity_marquee_tick;
 static char apps_root_path[MAX_PATH_LEN] = "";
+/* The media app being browsed and its main folder; its other folders with
+ * files (say roms/music next to /Music) are listed there as extra folders. */
+static char apps_home_path[MAX_PATH_LEN] = "";
+static int apps_home_app = -1;
 static bool game_switcher_fullscreen = false;
 /* OnionOS GameSwitcher: view (ONION_GS_*), what the header shows (0 = the
  * name "GameSwitcher", 1 = this game's play time, 2 = game / total time),
@@ -985,6 +989,7 @@ static bool switcher_active(void) {
     return viewing_recents && (onion_theme_active() ? viewing_switcher : settings_game_switcher);
 }
 static int settings_load_recents = 0;   /* start FrogUI in the recents view: 0=off, 1=on */
+static int settings_show_recents = 1;   /* OnionOS home: Recents tile (Onion's "Show recents") */
 enum { ROM_SOURCE_SD, ROM_SOURCE_OTG, ROM_SOURCE_COUNT };
 static int settings_rom_source = ROM_SOURCE_SD;
 static const char *rom_source_names[ROM_SOURCE_COUNT] = {"SD", "OTG"};
@@ -1020,7 +1025,7 @@ typedef struct {
 static const SRow settings_rows[] = {
     { RT_HEADER, "settings.appearance" }, { RT_ONION_THEME, "settings.onion_theme" }, { RT_THEME, "settings.theme" }, { RT_THEME_PACK, "settings.background_theme_pack" }, { RT_STYLE, "settings.style" }, { RT_ICON_PACK, "settings.icon_pack" }, { RT_TOGGLE, "settings.center_text", &settings_center_text }, { RT_TOGGLE, "settings.friendly_system_names", &settings_friendly_names }, { RT_FONT, "settings.font" }, { RT_RANGE, "settings.font_size", &settings_font_size, 18, 26, 1 }, { RT_TOGGLE, "settings.battery_colour_mode", &settings_battery_color }, { RT_TOGGLE, "settings.stock_battery_indicator", &settings_stock_battery }, { RT_TOGGLE, "settings.background_images", &settings_backgrounds }, { RT_RANGE, "settings.background_dim", &settings_background_dim, 0, 100, 5 }, { RT_WALLPAPER, "settings.wallpaper" }, { RT_WALLFIT, "settings.background_image_fit" },
     { RT_HEADER, "settings.general" }, { RT_LANGUAGE, "settings.language", &settings_language }, { RT_RANGE, "settings.brightness", &settings_brightness, 0, 100, SETTINGS_BRIGHTNESS_STEP }, { RT_RANGE, "settings.volume", &settings_volume, 0, 100, 5 }, { RT_TOGGLE, "settings.animations", &settings_anim }, { RT_TOGGLE, "settings.menu_sounds", &settings_menu_sounds }, { RT_TOGGLE, "settings.hide_extensions", &settings_hide_extensions }, { RT_TOGGLE, "settings.hide_empty_folders", &settings_hide_empty },
-    { RT_HEADER, "settings.library" }, { RT_ROM_SOURCE, "settings.rom_source" }, { RT_OTG_STATUS, "settings.otg_storage" }, { RT_TOGGLE, "settings.game_switcher", &settings_game_switcher }, { RT_RANGE, "settings.game_keys", &settings_game_keys, 0, 2, 1 }, { RT_TOGGLE, "settings.start_in_recents", &settings_load_recents },
+    { RT_HEADER, "settings.library" }, { RT_ROM_SOURCE, "settings.rom_source" }, { RT_OTG_STATUS, "settings.otg_storage" }, { RT_TOGGLE, "settings.game_switcher", &settings_game_switcher }, { RT_RANGE, "settings.game_keys", &settings_game_keys, 0, 2, 1 }, { RT_TOGGLE, "settings.start_in_recents", &settings_load_recents }, { RT_TOGGLE, "settings.show_recents", &settings_show_recents },
     { RT_HEADER, "settings.gameplay" }, { RT_TOGGLE, "settings.power_resume", &settings_power_resume }, { RT_TOGGLE, "settings.quick_resume", &settings_quick_resume }, { RT_TOGGLE, "settings.autosave_autoload", &settings_autosave_autoload }, { RT_TOGGLE, "settings.custom_aspect_ratios", &settings_custom_aspect_ratios },
     { RT_HEADER, "settings.system" }, { RT_TOGGLE, "settings.file_cache", &settings_file_cache }, { RT_CACHE_REBUILD, "settings.rebuild_file_cache" }, { RT_TOGGLE, "settings.disable_sleep", &settings_disable_sleep }, { RT_RANGE, "settings.sleep_poweroff", &settings_sleep_poweroff, 0, 7, 1 }, { RT_ACTION, "settings.button_mapping" }, { RT_INFO, "settings.version" },
 };
@@ -1458,6 +1463,8 @@ static void settings_load_file(void) {
                 if (strcmp(val, game_keys_values[k]) == 0) settings_game_keys = k;
         } else if (strcmp(line, "load_recents") == 0) {
             settings_load_recents = (strcmp(val, "on") == 0) ? 1 : 0;
+        } else if (strcmp(line, "show_recents") == 0) {
+            settings_show_recents = (strcmp(val, "on") == 0) ? 1 : 0;
         } else if (strcmp(line, "rom_source") == 0) {
             settings_rom_source = (strcasecmp(val, "otg") == 0)
                                 ? ROM_SOURCE_OTG : ROM_SOURCE_SD;
@@ -1559,6 +1566,7 @@ static void settings_save_file(void) {
     fprintf(f, "game_switcher=%s\n", onoff_names[settings_game_switcher]);
     fprintf(f, "game_keys=%s\n", game_keys_values[settings_game_keys]);
     fprintf(f, "load_recents=%s\n", onoff_names[settings_load_recents]);
+    fprintf(f, "show_recents=%s\n", onoff_names[settings_show_recents]);
     fprintf(f, "rom_source=%s\n", rom_source_names[settings_rom_source]);
     fprintf(f, "disable_sleep=%s\n", onoff_names[settings_disable_sleep]);
     fprintf(f, "sleep_poweroff=%d\n", sleep_poweroff_secs[settings_sleep_poweroff]);
@@ -2052,6 +2060,8 @@ static void refresh_cache_if_roms_changed(void) {
     dbg(msg);
 }
 
+static void apps_add_other_locations(const char *path);
+
 static void scan_directory(const char *path) {
     /* An unopenable dir is NOT an early return: fall through with an empty
      * listing so the root still gets its Settings/Recents rows. The old
@@ -2170,6 +2180,7 @@ static void scan_directory(const char *path) {
             entry_count++;
         }
     }
+    apps_add_other_locations(path);
 done:
     if (!entries) entry_count = 0;   /* belt: renderer must never walk NULL */
     viewing_recents = false;
@@ -2789,24 +2800,75 @@ static const char *app_player(const AppEntry *a) {
     return NULL;
 }
 
-/* The app's folder: at the card root (Music, Videos, Books, Images...),
- * then OnionOS's Media/, then the TreeFrogUI location in roms/. */
-static const char *app_folder_path(int index, char *out, size_t out_size) {
-    if (index < 0 || index >= (int)(sizeof(app_defs) / sizeof(app_defs[0]))) return NULL;
+/* The app's possible folders in order: the card root (Music, Videos,
+ * Books, Images...), OnionOS's Media/, then the TreeFrogUI ones in roms/.
+ * Writes the k-th one that exists to out. */
+static bool app_location(int index, int k, char *out, size_t out_size) {
     const AppEntry *a = &app_defs[index];
-    if (!a->folder_a) return NULL;
     struct stat st;
     for (int i = 0; i < MEDIA_ROOT_N; i++) {
         if (strcmp(media_roots[i].folder, a->key)) continue;
         snprintf(out, out_size, "%s/%s", SDCARD_BASE, media_roots[i].dir);
-        if (stat(out, &st) == 0 && S_ISDIR(st.st_mode)) return out;
+        if (stat(out, &st) == 0 && S_ISDIR(st.st_mode) && k-- == 0) return true;
     }
     const char *candidates[3] = { a->folder_a, a->folder_b, NULL };
     for (int i = 0; candidates[i]; i++) {
         snprintf(out, out_size, "%s/%s", ROMS_PATH, candidates[i]);
-        if (stat(out, &st) == 0 && S_ISDIR(st.st_mode)) return out;
+        if (stat(out, &st) == 0 && S_ISDIR(st.st_mode) && k-- == 0) return true;
     }
-    return NULL;
+    return false;
+}
+
+static bool dir_has_files(const char *path) {
+    DIR *d = opendir(path);
+    if (!d) return false;
+    struct dirent *e;
+    bool any = false;
+    while (!any && (e = readdir(d)))
+        any = e->d_name[0] != '.';
+    closedir(d);
+    return any;
+}
+
+/* The app's main folder: the first of its folders that holds anything, or
+ * the first that exists (so an empty /Music never hides roms/music). */
+static const char *app_folder_path(int index, char *out, size_t out_size) {
+    if (index < 0 || index >= (int)(sizeof(app_defs) / sizeof(app_defs[0]))) return NULL;
+    if (!app_defs[index].folder_a) return NULL;
+    for (int k = 0; app_location(index, k, out, out_size); k++)
+        if (dir_has_files(out)) return out;
+    return app_location(index, 0, out, out_size) ? out : NULL;
+}
+
+/* Name of an extra folder entry: the path below the card, or the full path
+ * (an OTG drive). The '/' in it can't occur in a real file name. */
+static const char *apps_location_name(const char *path) {
+    size_t n = strlen(SDCARD_BASE);
+    return strncmp(path, SDCARD_BASE "/", n + 1) == 0 ? path + n + 1 : path;
+}
+
+static void apps_location_path(const char *name, char *out, size_t size) {
+    if (name[0] == '/') snprintf(out, size, "%s", name);
+    else snprintf(out, size, "%s/%s", SDCARD_BASE, name);
+}
+
+/* In the app's main folder, list its other folders that hold files first. */
+static void apps_add_other_locations(const char *path) {
+    if (apps_home_app < 0 || strcmp(path, apps_home_path) != 0) return;
+    char loc[MAX_PATH_LEN];
+    for (int k = 0; app_location(apps_home_app, k, loc, sizeof loc); k++) {
+        if (!strcmp(loc, apps_home_path) || !dir_has_files(loc)) continue;
+        if (entry_count >= entry_capacity) {
+            entry_capacity = entry_capacity ? entry_capacity * 2 : INITIAL_ENTRIES_CAPACITY;
+            DirEntry *grown = realloc(entries, (size_t)entry_capacity * sizeof(*entries));
+            if (!grown) return;
+            entries = grown;
+        }
+        memmove(&entries[1], &entries[0], (size_t)entry_count * sizeof(*entries));
+        snprintf(entries[0].name, sizeof entries[0].name, "%s", apps_location_name(loc));
+        entries[0].is_dir = 1;
+        entry_count++;
+    }
 }
 
 /* Create the root media folders (Music, Videos, Books, Images) for apps
@@ -2839,6 +2901,8 @@ static void scan_apps_tab(void) {
     strncpy(current_path, ROMS_PATH, MAX_PATH_LEN - 1);
     current_path[MAX_PATH_LEN - 1] = '\0';
     apps_root_path[0] = '\0';
+    apps_home_path[0] = '\0';
+    apps_home_app = -1;
     entry_count = 0;
     const char *tf_device = getenv("TF_DEVICE");
     for (int i = 0; i < (int)(sizeof(app_defs) / sizeof(app_defs[0])); i++) {
@@ -4361,12 +4425,22 @@ static void onion_open_home_item(int kind) {
     }
 }
 
+/* Home tiles in use: Recents can be hidden, as with Onion's "Show recents"
+ * (themes such as BMO Noire are drawn for a home screen without it). */
+static bool onion_home_shown(int i) {
+    return onion_home_kinds[i] != ONION_HOME_RECENT || settings_show_recents;
+}
+
 static void handle_home_input(void) {
-    if (input_repeat(FROG_BTN_LEFT) && home_selected > 0)
-        home_selected--;
-    if (input_repeat(FROG_BTN_RIGHT) && home_selected < ONION_HOME_N - 1)
-        home_selected++;
+    int step = input_repeat(FROG_BTN_LEFT) ? -1 : input_repeat(FROG_BTN_RIGHT) ? 1 : 0;
+    for (int i = home_selected + step; step && i >= 0 && i < ONION_HOME_N; i += step)
+        if (onion_home_shown(i)) {
+            home_selected = i;
+            break;
+        }
     if (home_selected >= ONION_HOME_N) home_selected = ONION_HOME_N - 1;
+    while (!onion_home_shown(home_selected) && home_selected < ONION_HOME_N - 1)
+        home_selected++;
     if (input_was_pressed(FROG_BTN_A))
         onion_open_home_item(onion_home_kinds[home_selected]);
 }
@@ -4684,6 +4758,8 @@ static void handle_input(void) {
                 current_path[MAX_PATH_LEN - 1] = '\0';
                 strncpy(apps_root_path, app_path, MAX_PATH_LEN - 1);
                 apps_root_path[MAX_PATH_LEN - 1] = '\0';
+                snprintf(apps_home_path, sizeof apps_home_path, "%s", app_path);
+                apps_home_app = app_index;
                 viewing_apps = false;
                 scan_directory(current_path);
                 apps_browsing = true;
@@ -4694,6 +4770,13 @@ static void handle_input(void) {
         } else if (strcmp(entries[selected_index].name, RECENTS_ENTRY_NAME) == 0) {
             ui_transition_start(1);
             enter_recents_view();
+        } else if (entries[selected_index].is_dir && apps_browsing &&
+                   strchr(entries[selected_index].name, '/')) {
+            /* One of the app's other folders, which acts as its own top. */
+            ui_transition_start(1);
+            apps_location_path(entries[selected_index].name, current_path, sizeof current_path);
+            snprintf(apps_root_path, sizeof apps_root_path, "%s", current_path);
+            scan_directory(current_path);
         } else if (entries[selected_index].is_dir) {
             ui_transition_start(1);
             char new_path[MAX_PATH_LEN];
@@ -4725,6 +4808,19 @@ static void handle_input(void) {
             return;
         } else if (viewing_recents) {
             switch_main_tab(MAIN_TAB_GAMES);
+            return;
+        } else if (apps_browsing && strcmp(current_path, apps_root_path) == 0 &&
+                   strcmp(apps_root_path, apps_home_path) != 0) {
+            /* From an app's extra folder back to its main folder. */
+            ui_transition_start(-1);
+            const char *child = apps_location_name(apps_root_path);
+            char name[256];
+            snprintf(name, sizeof name, "%s", child);
+            snprintf(current_path, sizeof current_path, "%s", apps_home_path);
+            snprintf(apps_root_path, sizeof apps_root_path, "%s", apps_home_path);
+            scan_directory(current_path);
+            for (int i = 0; i < entry_count; i++)
+                if (!strcmp(entries[i].name, name)) { selected_index = i; break; }
             return;
         } else if (apps_browsing && strcmp(current_path, apps_root_path) == 0) {
             /* Return from a media folder to the Apps tab, not the Games root. */
@@ -5502,11 +5598,16 @@ static bool render_onion_frame(void) {
         return false;
     if (viewing_home) {
         OnionHomeItem items[ONION_HOME_N];
+        int n = 0, sel = 0;
         for (int i = 0; i < ONION_HOME_N; i++) {
-            items[i].kind = onion_home_kinds[i];
-            items[i].label = onion_home_label(onion_home_kinds[i]);
+            if (!onion_home_shown(i))
+                continue;
+            if (i <= home_selected)
+                sel = n;
+            items[n].kind = onion_home_kinds[i];
+            items[n++].label = onion_home_label(onion_home_kinds[i]);
         }
-        onion_render_home(framebuffer, items, ONION_HOME_N, home_selected);
+        onion_render_home(framebuffer, items, n, sel);
     } else if (settings_menu_active) {
         render_onion_settings();
     } else if (switcher_active()) {

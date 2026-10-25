@@ -54,6 +54,7 @@
   "value.game_keys_hold": "Hold SEL/START",
   "value.game_keys_combo": "SEL+START",
   "settings.start_in_recents": "プレイ履歴から開始",
+  "settings.show_recents": "Show Recents on Home",
   "settings.gameplay": "ゲームプレイ",
   "settings.power_resume": "Resume After Power-Off",
   "settings.quick_resume": "クイック再開",

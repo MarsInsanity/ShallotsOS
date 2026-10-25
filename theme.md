@@ -18,6 +18,9 @@ With an OnionOS theme selected, the whole interface uses the OnionOS layout:
   the selection highlight, toggles and arrows, and the A/B hint bar with a
   position counter. Box art appears on the right of game lists.
 - **Recents**: the list of recently played games.
+- **Show Recents on Home** (Settings → Library): turn it off to drop the
+  Recents tile, like Onion's "Show recents" tweak. Some themes, such as BMO
+  Noire, are drawn for a home screen without it.
 - **GameSwitcher** (FN in the menu, or hold FN in a game; START in the menu
   on consoles without FN): laid out like
   OnionOS's. The last screenshot of each game fills the screen, the header
