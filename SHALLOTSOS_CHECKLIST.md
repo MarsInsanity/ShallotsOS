@@ -29,7 +29,8 @@ page.
 
 Latest test build:
 
-- (being rebuilt with picoarch included)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40147275516
+  (ShallotsOS `ee746a7`, picoarch `576fbe8`)
 
 ## Done
 
