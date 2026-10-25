@@ -116,3 +116,10 @@ const RecentGame* recent_games_get_list(void) {
 int recent_games_get_count(void) {
     return recent_count;
 }
+void recent_games_remove(int index) {
+    if (index < 0 || index >= recent_count) return;
+    memmove(&recent_games[index], &recent_games[index + 1],
+            (size_t)(recent_count - index - 1) * sizeof(RecentGame));
+    recent_count--;
+    recent_games_save();
+}

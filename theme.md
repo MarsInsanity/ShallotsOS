@@ -17,8 +17,14 @@ With an OnionOS theme selected, the whole interface uses the OnionOS layout:
 - **Game lists, Favorites, Apps and Settings**: OnionOS lists with the title bar,
   the selection highlight, toggles and arrows, and the A/B hint bar with a
   position counter. Box art appears on the right of game lists.
-- **Recents**: the GameSwitcher, with the theme's top and bottom bars over the
-  last screenshot of each game. Y hides the bars.
+- **Recents**: the list of recently played games.
+- **GameSwitcher** (FN in the menu, or hold FN in a game): laid out like
+  OnionOS's. The last screenshot of each game fills the screen, the header
+  shows play time and the battery, and the game name sits on a dark bar with
+  arrows. Left/Right changes game and A resumes it. Y switches between the
+  normal and minimal views, and holding Y goes fullscreen. X removes the game
+  from history, SELECT changes the header (title, game time, or game and total
+  time), and B or START goes back to the main menu.
 
 B at the top of Games, Favorites, Recents, Apps or Settings returns to the home
 screen. Search (X), the core and extension picker (SELECT) and favouriting (Y)
@@ -63,7 +69,7 @@ Themes/Silky by DiMo/
 | `icon-A-54`, `icon-B-54`, arrows, `extra/toggle-on` / `extra/toggle-off` | Yes |
 | Battery icons `power-*-icon`, `ic-power-charge-100%` | Yes (see the note below) |
 | Console grid cards `bg-game-item-n` / `bg-game-item-f` | Yes |
-| GameSwitcher bars `extra/gs-top-bar`, `extra/gs-bottom-bar` | Yes |
+| GameSwitcher bars `extra/gs-top-bar`, `extra/gs-bottom-bar`, arrows `extra/arrowLeft` / `extra/arrowRight`, legend `extra/gs-legend` | Yes. As in OnionOS, a theme without the bars gets the normal header and footer, and a custom bottom bar is drawn as-is (its button legend is part of the image). |
 | Console icons `icons/<name>.png` and `icons/sel/<name>.png` | Yes. OnionOS icon names such as `fc`, `sfc`, `md` and `ps` are matched to the ShallotsOS ROM folders. Systems without a theme icon use the selected **Icon Pack**. |
 | App icons `icons/app/<name>.png` | Yes, for the apps ShallotsOS has |
 | `sound/change.wav` | Yes, when **Menu Sounds** is on |
@@ -74,7 +80,8 @@ Themes/Silky by DiMo/
 Themes are designed for 640×480, the native resolution of the R36SX, R36 HD and
 GB350, so they appear exactly as designed on those devices. On 854×480 panels
 (SF3000 family) the full-width bars and background stretch to the panel and the
-tiles and grid stay centred.
+tiles and grid stay centred. The GameSwitcher bars widen through a plain part of
+the bar so their logo and button legend keep their shape.
 
 **Fonts.** OnionOS themes often name fonts that OnionOS keeps in
 `/mnt/SDCARD/miyoo/app/`. ShallotsOS looks for the font in the theme folder, then

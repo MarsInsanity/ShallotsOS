@@ -52,6 +52,19 @@ Device: R36SX v2.7 on the R36SX v2.6 firmware (`install_first/r36sx/`).
 - [x] Options submenus and Save/Load State lists use the theme's highlight
       colour, like the main menu (the white bar hid the selected item)
 
+### GameSwitcher look (matches OnionOS's gs_render.h)
+
+- [x] Full-screen capture, header with play time ("2h 3m / 8h 53m") and
+      battery, 60 px game-name bar at 75% black with arrows
+- [x] Theme `extra/gs-top-bar` / `extra/gs-bottom-bar` replace the header and
+      footer (bottom bar drawn as-is); without them, the normal header and
+      footer. Arrows `extra/arrowLeft/Right`; `extra/gs-legend` shown for 5 s
+- [x] Y: normal/minimal view, hold Y: fullscreen; X: remove from history
+      (with prompt); SELECT: cycle header; START or B: main menu. The view
+      and header choice are saved
+- [x] ShallotsOS theme: logo in the top bar and button legend in the bottom
+      bar, like Onion's default theme; bars widen cleanly on 854 px panels
+
 ### File cache
 
 - [x] The file cache refreshes itself after ROMs are added or removed:
@@ -63,19 +76,11 @@ Device: R36SX v2.7 on the R36SX v2.6 firmware (`install_first/r36sx/`).
 ## In progress
 
 - [ ] Confirm the picoarch CI build passes and produces the artifact
-- [ ] Make the GameSwitcher match OnionOS exactly:
-  - [ ] Header shows play time ("2h 3m / 8h 53m") and battery, using the
-        theme's `extra/gs-top-bar` when it exists (else the normal header)
-  - [ ] Game-name bar above the footer: 75% black, white title font, left
-        and right arrows when there are more games
-  - [ ] Footer uses the theme's `extra/gs-bottom-bar` as-is (Onion draws no
-        text on it); otherwise the normal footer with "A RESUME / B BACK"
-        and the game count
-  - [ ] Y: switch normal/minimal view; hold Y: fullscreen
-  - [ ] X: remove the game from history (with confirmation)
-  - [ ] SELECT: cycle the header (title / game time / game + total time)
-  - [ ] ShallotsOS theme: draw its `gs-top-bar` with the logo and its
-        `gs-bottom-bar` with the button legend, like Onion's default theme
+- [ ] Save on shutdown and resume on boot (OnionOS-style): powering off in a
+      game suspends it, and the next boot resumes it
+- [ ] Check that the file cache also refreshes after USB mode (the card can
+      change while the console is on)
+
 ## Next
 
 - [ ] Test on the device: FN tap/hold, FN+volume, suspend/resume, fake08

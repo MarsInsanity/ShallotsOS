@@ -739,7 +739,8 @@ enum {
   IMG_TOGGLE_ON, IMG_TOGGLE_OFF, IMG_BG_FOOTER, IMG_BUTTON_A, IMG_BUTTON_B,
   IMG_ARROW_LEFT, IMG_ARROW_RIGHT, IMG_PREVIEW_BG, IMG_DOT_ACTIVE,
   IMG_DOT_NEUTRAL, IMG_GAME_ITEM_N, IMG_GAME_ITEM_F, IMG_GS_TOP,
-  IMG_GS_BOTTOM, IMG_FAVORITE_MARK, IMG_FOLDER,
+  IMG_GS_BOTTOM, IMG_FAVORITE_MARK, IMG_FOLDER, IMG_GS_ARROW_LEFT,
+  IMG_GS_ARROW_RIGHT, IMG_GS_LEGEND,
   IMG_HOME_FIRST, /* ic-<kind>-n then ic-<kind>-f for each home tile */
   IMG_COUNT = IMG_HOME_FIRST + 12
 };
@@ -752,7 +753,7 @@ static const char *const image_names[IMG_HOME_FIRST] = {
     "icon-A-54", "icon-B-54", "icon-left-arrow-24", "icon-right-arrow-24",
     "preview-bg", "dot-a", "dot-n", "bg-game-item-n", "bg-game-item-f",
     "extra/gs-top-bar", "extra/gs-bottom-bar", "ic-favorite-mark",
-    "icon-folder",
+    "icon-folder", "extra/arrowLeft", "extra/arrowRight", "extra/gs-legend",
 };
 
 static const char *const home_image_keys[6] = {"recent", "favorite", "game",
@@ -812,7 +813,8 @@ static int icon_missing_count, icon_missing_next;
 /* Onion order: profile override, theme skin, then the system fallback. Images
  * under extra/ fall back to the flat resource folder in Onion; ours keeps the
  * extra/ subfolder inside the fallback skin. */
-static int skin_path(const char *name, char *out, size_t size) {
+static int skin_path_ex(const char *name, char *out, size_t size,
+                        int fallback) {
   snprintf(out, size, ONION_OVERRIDES_DIR "/skin/%s.png", name);
   if (file_exists(out))
     return 1;
@@ -821,8 +823,16 @@ static int skin_path(const char *name, char *out, size_t size) {
     if (file_exists(out))
       return 1;
   }
+  if (!fallback)
+    return 0;
   snprintf(out, size, ONION_FALLBACK_DIR "/skin/%s.png", name);
   return file_exists(out);
+}
+
+/* The GameSwitcher bars and legend are optional theme art: a theme without
+ * them gets the plain header and footer, not another theme's bars. */
+static int theme_only_image(int id) {
+  return id == IMG_GS_TOP || id == IMG_GS_BOTTOM || id == IMG_GS_LEGEND;
 }
 
 static const OImg *image(int id) {
@@ -838,7 +848,7 @@ static const OImg *image(int id) {
     } else {
       snprintf(name, sizeof name, "%s", image_names[id]);
     }
-    if (skin_path(name, path, sizeof path))
+    if (skin_path_ex(name, path, sizeof path, !theme_only_image(id)))
       img_load_file(im, path, 0, 0);
     im->loaded = 1;
   }
@@ -2047,40 +2057,158 @@ int onion_render_preview(uint16_t *fb, const Thumbnail *art) {
   return left;
 }
 
-void onion_render_switcher_bars(uint16_t *fb, const char *title,
-                                const char *info, int current, int total) {
-  if (!fb)
+/* Yes/no prompt over the current screen, like Onion's theme_renderInfoPanel
+ * with its A/B hint: the screen is dimmed and the lines centred. */
+void onion_render_prompt(uint16_t *fb, const char *message, const char *a_label,
+                         const char *b_label) {
+  if (!fb || !message)
     return;
-  int H = SCREEN_HEIGHT;
-  const OImg *top = image(IMG_GS_TOP), *bottom = image(IMG_GS_BOTTOM);
-  if (top)
-    img_draw_wide(fb, top, 0, 0);
-  else
-    draw_card(fb, -20, -20, SCREEN_WIDTH + 40, 60, 0, 160);
-  int top_h = top ? top->h : 40;
-  if (title) {
-    use_font(FONT_TITLE, cfg.title.size * 3 / 4 > 18 ? cfg.title.size * 3 / 4 : 18);
-    char fitted[256];
-    fit_text(title, fitted, sizeof fitted, SCREEN_WIDTH - 2 * 110, 0);
-    int w = font_measure_text_bold(fitted, 0);
-    text_centered_y(fb, (SCREEN_WIDTH - w) / 2, top_h / 2, fitted,
-                    cfg.title.color, 0);
-  }
-  onion_draw_battery(fb, right_x(596), top_h / 2);
-  int bottom_h = bottom ? bottom->h : 40;
-  if (bottom)
-    img_draw_wide(fb, bottom, H - bottom_h, 0);
-  else
-    draw_card(fb, -20, H - 40, SCREEN_WIDTH + 40, 60, 0, 160);
-  use_font(FONT_HINT, cfg.hint.size * 3 / 5 > 16 ? cfg.hint.size * 3 / 5 : 16);
-  int cy = H - bottom_h / 2;
-  if (info && *info)
-    text_centered_y(fb, 20, cy, info, cfg.hint.color, 0);
-  if (total > 0) {
-    char count[32];
-    snprintf(count, sizeof count, "%d/%d", current, total);
-    int w = font_measure_text_bold(count, 0);
-    text_centered_y(fb, right_x(620) - w, cy, count, cfg.total.color, 0);
+  int W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+  for (int i = 0; i < W * H; i++)
+    fb[i] = blend565(fb[i], 0, 0xBE);
+  use_font(FONT_TITLE, cfg.title.size);
+  int lines = 1;
+  for (const char *p = message; *p; p++)
+    lines += *p == '\n';
+  int line_h = text_height() + 4;
+  int y = H / 2 - (lines * line_h) / 2 + line_h / 2;
+  const char *p = message;
+  while (*p) {
+    char line[160];
+    size_t len = strcspn(p, "\n");
+    snprintf(line, sizeof line, "%.*s", (int)len, p);
+    int w = font_measure_text_bold(line, 0);
+    text_centered_y(fb, (W - w) / 2, y, line, 0xFFFF, 0);
+    y += line_h;
+    p += len;
+    if (*p == '\n')
+      p++;
   }
   font_face_use(-1, 0);
+  onion_render_footer(fb, a_label, b_label, 0, 0);
+}
+
+/* GameSwitcher bars hold artwork at both ends (logo, button legend), so a
+ * wider panel repeats a plain stretch instead of scaling the art: the 4 px
+ * tile nearest the middle that matches the bar's edge. Images are dithered
+ * on load, so tiles keep the 4 px pattern and colours compare loosely. */
+static int near565(uint16_t a, uint16_t b) {
+  int dr = (a >> 11) - (b >> 11), dg = ((a >> 5) & 63) - ((b >> 5) & 63);
+  int db = (a & 31) - (b & 31);
+  return dr * dr <= 1 && dg * dg <= 4 && db * db <= 1;
+}
+
+static int plain_tile(const OImg *im) {
+  int mid = im->w / 8 * 4;
+  for (int d = 0; d < im->w / 2; d += 4) {
+    for (int k = -1; k <= 1; k += 2) {
+      int c = mid + d * k;
+      if (c < 4 || c + 4 > im->w)
+        continue;
+      int same = 1;
+      for (int y = 0; y < im->h && same; y++)
+        for (int i = 0; i < 4 && same; i++) {
+          size_t a = (size_t)y * im->w + c + i, b = (size_t)y * im->w + 4 + i;
+          same = im->a[a] == im->a[b] && near565(im->px[a], im->px[b]);
+        }
+      if (same)
+        return c;
+    }
+  }
+  return mid;
+}
+
+static void img_draw_bar(uint16_t *fb, const OImg *im, int y) {
+  if (!im || !im->px)
+    return;
+  int extra = SCREEN_WIDTH - im->w;
+  if (extra <= 0 || im->w < 16) {
+    img_draw(fb, im, 0, y);
+    return;
+  }
+  int c = plain_tile(im);
+  img_draw_ex(fb, im, 0, 0, c, im->h, 0, y, c, im->h, 255);
+  for (int x = 0; x < extra; x += 4) {
+    int w = extra - x < 4 ? extra - x : 4;
+    img_draw_ex(fb, im, c, 0, w, im->h, c + x, y, w, im->h, 255);
+  }
+  img_draw_ex(fb, im, c, 0, im->w - c, im->h, c + extra, y, im->w - c,
+              im->h, 255);
+}
+
+/* Onion's GameSwitcher (src/gameSwitcher/gs_render.h): a 60 px game-name bar
+ * at 75% black with arrows, above the footer in the normal view and at the
+ * bottom in the minimal one. The theme's extra/gs-top-bar and
+ * extra/gs-bottom-bar replace the header and footer when present; a custom
+ * footer is drawn as-is, so its button legend is part of the image. */
+void onion_render_switcher(uint16_t *fb, int view, const char *header,
+                           const char *game, int has_prev, int has_next,
+                           int current, int total, int show_legend,
+                           const char *a_label, const char *b_label) {
+  if (!fb)
+    return;
+  int W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+  const OImg *top = image(IMG_GS_TOP), *bottom = image(IMG_GS_BOTTOM);
+  int header_h = top ? (top->h > 1 ? top->h : 0) : 60;
+  int footer_h = bottom ? (bottom->h > 1 ? bottom->h : 0) : 60;
+
+  if (view != ONION_GS_FULLSCREEN && game) {
+    int bar_h = 60;
+    int y0 = H - bar_h - (view == ONION_GS_NORMAL ? footer_h : 0);
+    for (int y = y0 < 0 ? 0 : y0; y < y0 + bar_h && y < H; y++) {
+      uint16_t *row = fb + (size_t)y * W;
+      for (int x = 0; x < W; x++)
+        row[x] = blend565(row[x], 0, 0xBE);
+    }
+    const OImg *al = image(IMG_GS_ARROW_LEFT), *ar = image(IMG_GS_ARROW_RIGHT);
+    if (!al)
+      al = image(IMG_ARROW_LEFT);
+    if (!ar)
+      ar = image(IMG_ARROW_RIGHT);
+    int padding = (al ? al->w : 24) + 20;
+    if (has_prev && al)
+      img_draw(fb, al, 10, y0 + 30 - al->h / 2);
+    if (has_next && ar)
+      img_draw(fb, ar, right_x(630) - ar->w, y0 + 30 - ar->h / 2);
+    use_font(FONT_TITLE, cfg.title.size);
+    char fitted[256];
+    fit_text(game, fitted, sizeof fitted, W - 2 * padding, 0);
+    int w = font_measure_text_bold(fitted, 0);
+    int x = (W - w) / 2;
+    if (x < padding)
+      x = padding;
+    text_centered_y(fb, x, y0 + 30, fitted, 0xFFFF, 0);
+    font_face_use(-1, 0);
+  }
+
+  if (view == ONION_GS_NORMAL) {
+    if (bottom) {
+      if (footer_h)
+        img_draw_bar(fb, bottom, H - bottom->h);
+    } else {
+      onion_render_footer(fb, a_label, b_label, current, total);
+    }
+    if (top) {
+      if (header_h) {
+        img_draw_bar(fb, top, 0);
+        if (header && *header) {
+          use_font(FONT_TITLE, cfg.title.size);
+          char fitted[256];
+          fit_text(header, fitted, sizeof fitted, W - 2 * 130, 0);
+          int w = font_measure_text_bold(fitted, 0);
+          text_centered_y(fb, (W - w) / 2, header_h / 2, fitted,
+                          cfg.title.color, 0);
+          font_face_use(-1, 0);
+        }
+        onion_draw_battery(fb, right_x(596), header_h / 2);
+      }
+    } else {
+      onion_render_header(fb, header, 0);
+    }
+  }
+
+  const OImg *legend = image(IMG_GS_LEGEND);
+  if (show_legend && legend && view != ONION_GS_FULLSCREEN)
+    img_draw(fb, legend, W - legend->w,
+             view == ONION_GS_NORMAL ? header_h : 0);
 }

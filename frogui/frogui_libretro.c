@@ -442,6 +442,12 @@ static int activity_marquee_offset;
 static unsigned activity_marquee_tick;
 static char apps_root_path[MAX_PATH_LEN] = "";
 static bool game_switcher_fullscreen = false;
+/* OnionOS GameSwitcher: view (ONION_GS_*), what the header shows (0 = the
+ * name "GameSwitcher", 1 = this game's play time, 2 = game / total time),
+ * the remove-from-history prompt and the legend timeout. */
+static int gs_view = 0, gs_view_restore = 0, gs_header_mode = 2;
+static bool gs_confirm_remove = false;
+static long long gs_legend_until = 0;
 enum { MAIN_TAB_RECENTS, MAIN_TAB_GAMES, MAIN_TAB_APPS, MAIN_TAB_SETTINGS };
 /* Keep view changes nearly immediate. Three blended frames provide a short,
  * consistent crossfade without making tab navigation wait for a panel slide. */
@@ -1399,6 +1405,10 @@ static void settings_load_file(void) {
             settings_background_dim = atoi(val);
         } else if (strcmp(line, "file_cache") == 0) {
             settings_file_cache = (strcmp(val, "on") == 0) ? 1 : 0;
+        } else if (strcmp(line, "switcher_view") == 0) {
+            gs_view = gs_view_restore = strcmp(val, "minimal") == 0 ? ONION_GS_MINIMAL : ONION_GS_NORMAL;
+        } else if (strcmp(line, "switcher_header") == 0) {
+            gs_header_mode = strcmp(val, "title") == 0 ? 0 : strcmp(val, "game") == 0 ? 1 : 2;
         } else if (strcmp(line, "folder_cache") == 0) {
             /* Legacy alias: preserve the user's old cache preference. */
             settings_file_cache = (strcmp(val, "on") == 0) ? 1 : 0;
@@ -1500,6 +1510,12 @@ static void settings_save_file(void) {
     fprintf(f, "backgrounds=%s\n", onoff_names[settings_backgrounds]);
     fprintf(f, "background_dim=%d\n", settings_background_dim);
     fprintf(f, "file_cache=%s\n", onoff_names[settings_file_cache]);
+    /* Fullscreen is temporary (hold Y), as in Onion: keep the view under it. */
+    fprintf(f, "switcher_view=%s\n",
+            (gs_view == ONION_GS_FULLSCREEN ? gs_view_restore : gs_view) == ONION_GS_MINIMAL
+            ? "minimal" : "normal");
+    fprintf(f, "switcher_header=%s\n", gs_header_mode == 0 ? "title"
+                                       : gs_header_mode == 1 ? "game" : "total");
     fprintf(f, "battery_color=%s\n", onoff_names[settings_battery_color]);
     fprintf(f, "stock_battery=%s\n", onoff_names[settings_stock_battery]);
     fprintf(f, "game_switcher=%s\n", onoff_names[settings_game_switcher]);
@@ -2101,6 +2117,51 @@ static long playtime_lookup(const char *path) {
     return sec;
 }
 
+/* Total seconds played across every game in playtime.txt. */
+static long playtime_total(void) {
+    FILE *f = fopen("/mnt/sdcard/frogui/playtime.txt", "r");
+    if (!f) return 0;
+    char line[1100]; long sec = 0;
+    while (fgets(line, sizeof line, f))
+        if (strchr(line, '\t')) sec += atol(line);
+    fclose(f);
+    return sec;
+}
+
+/* Onion's str_serializeTime: "2h 3m", "4m 10s" or "12s". */
+static void format_play_time(long secs, char *out, size_t n) {
+    long h = secs / 3600, m = secs % 3600 / 60;
+    if (h > 0)       snprintf(out, n, "%ldh %ldm", h, m);
+    else if (m > 0)  snprintf(out, n, "%ldm %lds", m, secs % 60);
+    else             snprintf(out, n, "%lds", secs);
+}
+
+/* GameSwitcher header title for gs_header_mode (Onion's SELECT cycle). The
+ * play-time files are only read when the selected game changes. */
+static void gs_header_text(const char *path, char *out, size_t n) {
+    static char cached_path[MAX_PATH_LEN] = "";
+    static long game_secs, total_secs;
+    static int cached_mode = -1;
+    if (gs_header_mode == 0) {
+        snprintf(out, n, "%s", tr_or("onion.game_switcher", "GameSwitcher"));
+        return;
+    }
+    if (cached_mode != gs_header_mode || strcmp(cached_path, path) != 0) {
+        snprintf(cached_path, sizeof cached_path, "%s", path);
+        cached_mode = gs_header_mode;
+        game_secs = playtime_lookup(path);
+        total_secs = gs_header_mode == 2 ? playtime_total() : 0;
+    }
+    char game[32], total[32];
+    format_play_time(game_secs, game, sizeof game);
+    if (gs_header_mode == 2) {
+        format_play_time(total_secs, total, sizeof total);
+        snprintf(out, n, "%s / %s", game, total);
+    } else {
+        snprintf(out, n, "%s", game);
+    }
+}
+
 /* ---------------- OnionOS-style game switcher (recents as box-art carousel) ----
  * Art = the newest gameplay screenshot picoarch wrote (.scr.bmp or .st<N>.bmp);
  * if no capture exists, fall back to box art/title artwork. Toggled by
@@ -2268,23 +2329,24 @@ static void render_game_switcher(uint16_t *framebuffer) {
         memcpy(framebuffer, cached_frame, (size_t)pixels * sizeof(uint16_t));
     else
         render_fill_rect(framebuffer, bx, by, bw, bh, 0x0000);
-    if (!cached_drawn)
+    if (!cached_drawn && !onion_theme_active())
         font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, bx + UI_S(16), by + bh/2,
                        "(no screenshot - open the in-game menu once)", COLOR_TEXT);
 
     if (onion_theme_active()) {
-        /* Onion GameSwitcher: themed top/bottom bars, Y hides them. */
-        if (!game_switcher_fullscreen) {
-            char info[96] = "";
-            long secs = playtime_lookup(g->full_path);
-            if (secs >= 3600)
-                snprintf(info, sizeof info, "%ldh %ldm", secs/3600, (secs%3600)/60);
-            else if (secs >= 60)
-                snprintf(info, sizeof info, "%ldm", secs/60);
-            else if (secs > 0)
-                snprintf(info, sizeof info, "%lds", secs);
-            onion_render_switcher_bars(framebuffer, g->game_name, info, selected_index + 1, n);
-        }
+        char header[96];
+        gs_header_text(g->full_path, header, sizeof header);
+        onion_render_switcher(framebuffer, gs_view, header, g->game_name,
+                              selected_index > 0, selected_index + 1 < n,
+                              selected_index + 1, n,
+                              monotonic_ms() < gs_legend_until,
+                              tr_or("onion.resume", "RESUME"),
+                              tr_or("onion.back", "BACK"));
+        if (gs_confirm_remove)
+            onion_render_prompt(framebuffer,
+                                tr_or("onion.remove_history",
+                                      "Are you sure you want to\nremove game from history?"),
+                                tr_or("onion.yes", "YES"), tr_or("onion.no", "NO"));
         return;
     }
 
@@ -4053,6 +4115,7 @@ static void onion_open_switcher(void) {
     viewing_switcher = true;
     selected_index = 0;
     scroll_offset = 0;
+    gs_legend_until = monotonic_ms() + 5000;
 }
 
 /* Snapshot of cubevol's volume and backlight. The volume buttons never reach
@@ -4097,6 +4160,68 @@ static bool fn_pressed(void) {
         return false;
     fn_tracking = false;
     return !fn_combo && fn_combo_probe() == fn_sig;
+}
+
+/* OnionOS GameSwitcher keys (Onion's gs_keystate.h): Y switches the normal
+ * and minimal views and holding it goes fullscreen, X removes the game from
+ * history after a prompt, SELECT cycles the header, START goes back to the
+ * main menu. Returns true when the key was used. */
+static bool handle_onion_switcher_input(void) {
+    static long long y_down_ms = 0;
+    static bool y_long = false;
+    long long now = monotonic_ms();
+    if (gs_confirm_remove) {
+        if (input_was_pressed(FROG_BTN_A)) {
+            recent_games_remove(selected_index);
+            gs_confirm_remove = false;
+            int keep = selected_index;
+            enter_recents_view();
+            viewing_switcher = true;
+            selected_index = keep < entry_count ? keep : entry_count - 1;
+            if (selected_index < 0) selected_index = 0;
+        } else if (input_was_pressed(FROG_BTN_B)) {
+            gs_confirm_remove = false;
+        }
+        return true;
+    }
+    if (input_is_pressed(FROG_BTN_Y)) {
+        if (!y_down_ms) {
+            y_down_ms = now;
+            y_long = false;
+        } else if (!y_long && gs_view != ONION_GS_FULLSCREEN && now - y_down_ms >= 1250) {
+            gs_view_restore = gs_view;
+            gs_view = ONION_GS_FULLSCREEN;
+            y_long = true;
+        }
+        return true;
+    }
+    if (y_down_ms) {
+        if (!y_long) {
+            gs_view = gs_view == ONION_GS_FULLSCREEN ? gs_view_restore
+                    : gs_view == ONION_GS_NORMAL ? ONION_GS_MINIMAL : ONION_GS_NORMAL;
+            settings_save_file();
+        }
+        y_down_ms = 0;
+        return true;
+    }
+    if (input_was_pressed(FROG_BTN_X)) {
+        if (recent_games_get_count() > 0) gs_confirm_remove = true;
+        return true;
+    }
+    if (input_was_pressed(FROG_BTN_SELECT)) {
+        gs_header_mode = (gs_header_mode + 1) % 3;
+        gs_legend_until = now + 5000;
+        settings_save_file();
+        return true;
+    }
+    if (input_was_pressed(FROG_BTN_START)) {
+        ui_transition_start(-1);
+        switch_main_tab(MAIN_TAB_GAMES);
+        viewing_switcher = false;
+        viewing_home = true;
+        return true;
+    }
+    return false;
 }
 
 static void onion_open_home_item(int kind) {
@@ -4225,6 +4350,9 @@ static void handle_input(void) {
         handle_home_input();
         return;
     }
+
+    if (switcher_active() && onion_theme_active() && handle_onion_switcher_input())
+        return;
 
     /* Top-level tabs use shoulders only. D-pad Left/Right belongs to the
      * current view (including Vertical) and must never change tabs. */
@@ -4718,6 +4846,7 @@ void retro_init(void) {
         recent_games_get_count() > 0) {
         enter_recents_view();
         viewing_switcher = onion_theme_active();
+        gs_legend_until = monotonic_ms() + 5000;
     } else if (settings_load_recents && recent_games_get_count() > 0)
         enter_recents_view();   /* "Start in Recents" setting */
     else if (onion_theme_active() && !settings_menu_active)
@@ -5476,6 +5605,8 @@ void retro_run(void) {
             sig = sig*33u + (unsigned)scroll_offset;
             sig = sig*33u + (unsigned)(viewing_recents*16 + viewing_favourites*8 + viewing_apps*4 + apps_browsing*2 + viewing_activity + viewing_search*32);
             sig = sig*33u + (unsigned)game_switcher_fullscreen;
+            sig = sig*33u + (unsigned)(gs_view * 8 + gs_header_mode * 2 + gs_confirm_remove);
+            sig = sig*33u + (unsigned)(monotonic_ms() < gs_legend_until) + (unsigned)entry_count * 2u;
             sig = sig*33u + (unsigned)(viewing_home ? 64 + home_selected : 0);
             for (const char *p = current_path; *p; p++) sig = sig*33u + (unsigned char)*p;
         }

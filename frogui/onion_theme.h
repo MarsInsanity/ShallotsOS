@@ -90,9 +90,17 @@ int onion_list_rows(int large);
 /* Box art beside a game list (Onion draws preview-bg behind it). Returns the
  * left edge it occupies so list labels can stop short of it. */
 int onion_render_preview(uint16_t *fb, const Thumbnail *art);
-/* GameSwitcher bars over a full-screen capture. */
-void onion_render_switcher_bars(uint16_t *fb, const char *title,
-                                const char *info, int current, int total);
+/* GameSwitcher overlay for a full-screen capture already in fb. `header` is
+ * the header title (Onion shows play time there); `game` the selected game.
+ * The legend (extra/gs-legend) is drawn when show_legend is set. */
+/* Yes/no prompt (lines split on '\n') over a dimmed screen. */
+void onion_render_prompt(uint16_t *fb, const char *message, const char *a_label,
+                         const char *b_label);
+enum { ONION_GS_NORMAL, ONION_GS_MINIMAL, ONION_GS_FULLSCREEN };
+void onion_render_switcher(uint16_t *fb, int view, const char *header,
+                           const char *game, int has_prev, int has_next,
+                           int current, int total, int show_legend,
+                           const char *a_label, const char *b_label);
 /* App/console icon lookups (paths owned by the module, valid until the next
  * call). Return NULL when the theme does not provide one. */
 const char *onion_theme_app_icon(const char *app_key);

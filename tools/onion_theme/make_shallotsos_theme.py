@@ -305,6 +305,90 @@ def arrow(direction):
     return finish(im)
 
 
+def gs_arrow(direction):
+    # GameSwitcher name-bar arrows (Onion's extra/arrowLeft and arrowRight).
+    im = canvas(20, 32)
+    d = ImageDraw.Draw(im)
+    pts = [(6, 6), (14, 16), (6, 26)] if direction > 0 else [(14, 6), (6, 16), (14, 26)]
+    stroke(d, pts, TEXT + (255,), 3)
+    return finish(im)
+
+
+def gs_top_bar():
+    # Like Onion's default theme: the logo is part of the GameSwitcher header.
+    im = bar(40)
+    mark = logo()
+    mark = mark.resize((mark.width * 30 // mark.height, 30), Image.LANCZOS)
+    im.alpha_composite(mark, (14, 5))
+    return im
+
+
+def pill_icon(label, w):
+    font = ImageFont.truetype(str(EXO), 13 * SS)
+    im = canvas(w, 22)
+    d = ImageDraw.Draw(im)
+    rrect(d, (0, 0, w, 22), 11, fill=ACCENT + (255,))
+    box = d.textbbox((0, 0), label, font=font)
+    d.text((w * SS / 2 - (box[0] + box[2]) / 2, 11 * SS - (box[1] + box[3]) / 2),
+           label, font=font, fill=TEXT)
+    return finish(im)
+
+
+def legend_glyph(kind):
+    # 24x24 white glyphs for the GameSwitcher button legend.
+    im = canvas(24, 24)
+    d = ImageDraw.Draw(im)
+    c = TEXT + (255,)
+    if kind == "fullscreen":
+        for x, y, dx, dy in ((3, 3, 1, 1), (21, 3, -1, 1), (3, 21, 1, -1), (21, 21, -1, -1)):
+            stroke(d, [(x + 6 * dx, y), (x, y), (x, y + 6 * dy)], c, 2)
+    elif kind == "remove":
+        stroke(d, [(4, 6), (20, 6)], c, 2)
+        stroke(d, [(9, 6), (9, 3), (15, 3), (15, 6)], c, 2)
+        stroke(d, [(6, 6), (7, 21), (17, 21), (18, 6)], c, 2)
+        stroke(d, [(10, 10), (10, 17)], c, 2)
+        stroke(d, [(14, 10), (14, 17)], c, 2)
+    elif kind == "time":
+        arc(d, 12, 13, 8, 0, 360, c, 2)
+        stroke(d, [(12, 13), (12, 8)], c, 2)
+        stroke(d, [(10, 3), (14, 3)], c, 2)
+        stroke(d, [(18, 5), (20, 7)], c, 2)
+    elif kind == "home":
+        stroke(d, [(3, 12), (12, 4), (21, 12)], c, 2)
+        stroke(d, [(6, 10), (6, 20), (18, 20), (18, 10)], c, 2)
+        stroke(d, [(10, 20), (10, 14), (14, 14), (14, 20)], c, 2)
+    return finish(im)
+
+
+def gs_bottom_bar():
+    # Like Onion's default theme: the button legend is part of the footer
+    # image (Onion draws nothing over a custom gs-bottom-bar).
+    im = bar(40, top_line=True)
+    d = ImageDraw.Draw(im)
+    font = ImageFont.truetype(str(EXO), 20)
+    x = 12
+    for letter, label in (("A", "RESUME"), ("B", "EXIT")):
+        btn = button_icon(letter).resize((26, 26), Image.LANCZOS)
+        im.alpha_composite(btn, (x, 7))
+        x += 26 + 5
+        box = d.textbbox((0, 0), label, font=font)
+        d.text((x - box[0], 20 - (box[1] + box[3]) / 2), label, font=font, fill=TEXT)
+        x += box[2] - box[0] + 18
+    items = [(button_icon("Y").resize((26, 26), Image.LANCZOS), "fullscreen"),
+             (button_icon("X").resize((26, 26), Image.LANCZOS), "remove"),
+             (pill_icon("SELECT", 56), "time"),
+             (pill_icon("START", 50), "home")]
+    x = 640 - 12
+    for btn, glyph in reversed(items):
+        g = legend_glyph(glyph)
+        x -= g.width
+        im.alpha_composite(g, (x, 8))
+        x -= 4 + btn.width
+        im.alpha_composite(btn, (x, 20 - btn.height // 2))
+        x -= 14
+    return im
+
+
 def toggle(on):
     im = canvas(60, 32)
     d = ImageDraw.Draw(im)
@@ -402,8 +486,10 @@ def main():
     save(background(), skin / "background.png")
     save(bar(60), skin / "bg-title.png")
     save(bar(60, top_line=True), skin / "tips-bar-bg.png")
-    save(bar(40), skin / "extra/gs-top-bar.png")
-    save(bar(40, top_line=True), skin / "extra/gs-bottom-bar.png")
+    save(gs_top_bar(), skin / "extra/gs-top-bar.png")
+    save(gs_bottom_bar(), skin / "extra/gs-bottom-bar.png")
+    save(gs_arrow(-1), skin / "extra/arrowLeft.png")
+    save(gs_arrow(1), skin / "extra/arrowRight.png")
     save(list_highlight(60), skin / "bg-list-s.png")
     save(list_highlight(90), skin / "bg-list-l.png")
     save(Image.new("RGBA", (640, 4), (255, 255, 255, 14)), skin / "div-line-h.png")

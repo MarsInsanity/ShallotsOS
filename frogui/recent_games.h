@@ -30,4 +30,7 @@ const RecentGame* recent_games_get_list(void);
 // Get count of recent games
 int recent_games_get_count(void);
 
+// Remove one game from history and save it
+void recent_games_remove(int index);
+
 #endif // RECENT_GAMES_H
