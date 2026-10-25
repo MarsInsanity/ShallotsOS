@@ -39,6 +39,7 @@
   "settings.wallpaper": "Wallpaper",
   "settings.background_image_fit": "Background Image Fit",
   "settings.hide_extensions": "Hide Extensions",
+  "settings.gamelist_names": "Names from gamelist.xml",
   "settings.hide_empty_folders": "Hide Empty Folders",
   "settings.library": "LIBRARY",
   "settings.rom_source": "ROM Source",

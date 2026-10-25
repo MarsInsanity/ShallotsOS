@@ -43,6 +43,7 @@
   "settings.wallpaper": "Hintergrundbild",
   "settings.background_image_fit": "Hintergrundbild-Anpassung",
   "settings.hide_extensions": "Dateiendungen ausblenden",
+  "settings.gamelist_names": "Names from gamelist.xml",
   "settings.hide_empty_folders": "Leere Ordner ausblenden",
   "settings.custom_aspect_ratios": "Alle Seitenverhältnisse",
   "settings.library": "BIBLIOTHEK",

@@ -43,10 +43,13 @@ Latest test build:
    filter, then ~30 s with Sharp (Options > Audio and video), rewind off;
    same for a PS1 game; note which PS1 core (ps1r / qpsx) and send
    `logs/picoarch.log`.
-5. Music volume bar: send the `VIDEO_PLAYER:` lines from `/mnt/sdcard/log.txt`
+5. gamelist.xml: scrape a few systems with Skraper (Recalbox front-end),
+   check box art, then turn on Settings > General > Names from gamelist.xml.
+   Note how long big folders take to open the first time.
+6. Music volume bar: send the `VIDEO_PLAYER:` lines from `/mnt/sdcard/log.txt`
    (the file at the card root, not the one in `logs/`).
-6. Books (needs `cubegm/ebook` from TreeFrogUI), Videos and Images folders.
-7. When convenient: low-battery save at 5%.
+7. Books (needs `cubegm/ebook` from TreeFrogUI), Videos and Images folders.
+8. When convenient: low-battery save at 5%.
 
 ## Done
 
@@ -103,6 +106,14 @@ Latest test build:
 - [x] Lag report in logs/picoarch.log every 5 s of play ("DBG lag: fps,
       frame max, present avg/max, audio queue, SDL queue, CPU governor/freq")
       to find the intermittent input lag that the menu clears
+- [x] gamelist.xml / miyoogamelist.xml (`frogui/gamelist.c`): `<image>` /
+      `<thumbnail>` as box art first, `<name>` with Settings > General >
+      Names from gamelist.xml (off by default) in lists and the
+      GameSwitcher; relative and foreign absolute paths; entities/CDATA;
+      parsed once per file change, 6 LRU lists in memory (6,000 games /
+      6.7 MB: 14 ms on the host); scraper folders (media, Imgs...) hidden
+      from game lists; artwork miss cache keyed on the gamelists too.
+      Recents list names and `<desc>` not yet
 - [x] Draft of every component's open-source license in README.md
       ("License & Attribution" tables) and LICENSE.md section 4; awaiting the
       user's review of the open points
@@ -291,12 +302,6 @@ User's to-do list (October 2026):
 
 ## Ideas offered, not started
 
-- [ ] gamelist.xml support (user suggested, October 2026; waiting on the
-      go-ahead and scope): read EmulationStation `gamelist.xml` and Onion's
-      `miyoogamelist.xml` in each ROM folder for `<path>`, `<name>`,
-      `<image>` / `<thumbnail>` (and maybe `<desc>`); parsed once per folder
-      change into the file cache; display names optional (setting), art
-      paths tried before the Imgs/.res lookup
 
 - [ ] GameSwitcher hints and theme picker previews
 - [ ] Search tile on the home screen

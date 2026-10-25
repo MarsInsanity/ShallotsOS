@@ -43,6 +43,7 @@
   "settings.wallpaper": "Sfondo",
   "settings.background_image_fit": "Adatta immagine di sfondo",
   "settings.hide_extensions": "Nascondi estensioni",
+  "settings.gamelist_names": "Names from gamelist.xml",
   "settings.hide_empty_folders": "Nascondi cartelle vuote",
   "settings.custom_aspect_ratios": "Tutte le proporzioni",
   "settings.library": "LIBRERIA",

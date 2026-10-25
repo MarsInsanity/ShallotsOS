@@ -38,6 +38,7 @@
 #include "core_override.h"
 #include "ext_filter.h"
 #include "onion_theme.h"
+#include "gamelist.h"
 #include "common/i18n.h"
 
 #define SDCARD_BASE  "/mnt/sdcard"
@@ -914,6 +915,7 @@ static int settings_center_text = 0;   /* center labels in the vertical system l
 static int settings_friendly_names = 0; /* expand system folder codes in either style */
 static int settings_hide_empty = 1;     /* hide rom folders with no games: 0=off, 1=on */
 static int settings_hide_extensions = 1; /* hide file extensions in the browser: 0=off, 1=on */
+static int settings_gamelist_names = 0; /* game names from gamelist.xml / miyoogamelist.xml */
 static int settings_backgrounds = 1;     /* show per-system background images: 0=off (solid theme bg), 1=on */
 static int settings_background_dim = 15; /* darken background artwork: 0=unchanged, 100=black */
 static int settings_file_cache = 1;      /* cache folder listings (mtime-keyed) for fast nav: 0=off, 1=on */
@@ -1024,7 +1026,7 @@ typedef struct {
 
 static const SRow settings_rows[] = {
     { RT_HEADER, "settings.appearance" }, { RT_ONION_THEME, "settings.onion_theme" }, { RT_THEME, "settings.theme" }, { RT_THEME_PACK, "settings.background_theme_pack" }, { RT_STYLE, "settings.style" }, { RT_ICON_PACK, "settings.icon_pack" }, { RT_TOGGLE, "settings.center_text", &settings_center_text }, { RT_TOGGLE, "settings.friendly_system_names", &settings_friendly_names }, { RT_FONT, "settings.font" }, { RT_RANGE, "settings.font_size", &settings_font_size, 18, 26, 1 }, { RT_TOGGLE, "settings.battery_colour_mode", &settings_battery_color }, { RT_TOGGLE, "settings.stock_battery_indicator", &settings_stock_battery }, { RT_TOGGLE, "settings.background_images", &settings_backgrounds }, { RT_RANGE, "settings.background_dim", &settings_background_dim, 0, 100, 5 }, { RT_WALLPAPER, "settings.wallpaper" }, { RT_WALLFIT, "settings.background_image_fit" },
-    { RT_HEADER, "settings.general" }, { RT_LANGUAGE, "settings.language", &settings_language }, { RT_RANGE, "settings.brightness", &settings_brightness, 0, 100, SETTINGS_BRIGHTNESS_STEP }, { RT_RANGE, "settings.volume", &settings_volume, 0, 100, 5 }, { RT_TOGGLE, "settings.animations", &settings_anim }, { RT_TOGGLE, "settings.menu_sounds", &settings_menu_sounds }, { RT_TOGGLE, "settings.hide_extensions", &settings_hide_extensions }, { RT_TOGGLE, "settings.hide_empty_folders", &settings_hide_empty },
+    { RT_HEADER, "settings.general" }, { RT_LANGUAGE, "settings.language", &settings_language }, { RT_RANGE, "settings.brightness", &settings_brightness, 0, 100, SETTINGS_BRIGHTNESS_STEP }, { RT_RANGE, "settings.volume", &settings_volume, 0, 100, 5 }, { RT_TOGGLE, "settings.animations", &settings_anim }, { RT_TOGGLE, "settings.menu_sounds", &settings_menu_sounds }, { RT_TOGGLE, "settings.hide_extensions", &settings_hide_extensions }, { RT_TOGGLE, "settings.gamelist_names", &settings_gamelist_names }, { RT_TOGGLE, "settings.hide_empty_folders", &settings_hide_empty },
     { RT_HEADER, "settings.library" }, { RT_ROM_SOURCE, "settings.rom_source" }, { RT_OTG_STATUS, "settings.otg_storage" }, { RT_TOGGLE, "settings.game_switcher", &settings_game_switcher }, { RT_RANGE, "settings.game_keys", &settings_game_keys, 0, 2, 1 }, { RT_TOGGLE, "settings.start_in_recents", &settings_load_recents }, { RT_TOGGLE, "settings.show_recents", &settings_show_recents },
     { RT_HEADER, "settings.gameplay" }, { RT_TOGGLE, "settings.power_resume", &settings_power_resume }, { RT_TOGGLE, "settings.quick_resume", &settings_quick_resume }, { RT_TOGGLE, "settings.autosave_autoload", &settings_autosave_autoload }, { RT_TOGGLE, "settings.custom_aspect_ratios", &settings_custom_aspect_ratios },
     { RT_HEADER, "settings.system" }, { RT_TOGGLE, "settings.file_cache", &settings_file_cache }, { RT_CACHE_REBUILD, "settings.rebuild_file_cache" }, { RT_TOGGLE, "settings.disable_sleep", &settings_disable_sleep }, { RT_RANGE, "settings.sleep_poweroff", &settings_sleep_poweroff, 0, 7, 1 }, { RT_ACTION, "settings.button_mapping" }, { RT_INFO, "settings.version" },
@@ -1433,6 +1435,8 @@ static void settings_load_file(void) {
             settings_hide_empty = (strcmp(val, "on") == 0) ? 1 : 0;
         } else if (strcmp(line, "hide_extensions") == 0) {
             settings_hide_extensions = (strcmp(val, "on") == 0) ? 1 : 0;
+        } else if (strcmp(line, "gamelist_names") == 0) {
+            settings_gamelist_names = (strcmp(val, "on") == 0) ? 1 : 0;
         } else if (strcmp(line, "backgrounds") == 0) {
             settings_backgrounds = (strcmp(val, "on") == 0) ? 1 : 0;
         } else if (strcmp(line, "background_dim") == 0) {
@@ -1552,6 +1556,7 @@ static void settings_save_file(void) {
     fprintf(f, "friendly_system_names=%s\n", onoff_names[settings_friendly_names]);
     fprintf(f, "hide_empty=%s\n", onoff_names[settings_hide_empty]);
     fprintf(f, "hide_extensions=%s\n", onoff_names[settings_hide_extensions]);
+    fprintf(f, "gamelist_names=%s\n", onoff_names[settings_gamelist_names]);
     fprintf(f, "backgrounds=%s\n", onoff_names[settings_backgrounds]);
     fprintf(f, "background_dim=%d\n", settings_background_dim);
     fprintf(f, "file_cache=%s\n", onoff_names[settings_file_cache]);
@@ -1895,6 +1900,7 @@ static void cache_file_for(const char *path, char *out, size_t n) {
 }
 
 static void cache_clear(void) {
+    gamelist_forget();
     DIR *dir = opendir(CACHE_DIR);
     if (!dir) return;
     struct dirent *e;
@@ -2062,6 +2068,23 @@ static void refresh_cache_if_roms_changed(void) {
 
 static void apps_add_other_locations(const char *path);
 
+/* The gamelist name for a file in dir, when that setting is on (else NULL).
+ * Not in the Apps' media folders: music and books keep their file names. */
+static const char *gamelist_label(const char *dir, const char *file) {
+    if (!settings_gamelist_names || media_root_folder(dir) || is_image_library_path(dir))
+        return NULL;
+    char path[MAX_PATH_LEN];
+    snprintf(path, sizeof path, "%s/%s", dir, file);
+    return gamelist_name(path);
+}
+
+/* Scraper artwork folders inside a system folder are not game folders. */
+static int is_artwork_folder_name(const char *name) {
+    return !strcasecmp(name, "Imgs") || !strcasecmp(name, "media") ||
+           !strcasecmp(name, "images") || !strcasecmp(name, "downloaded_images") ||
+           !strcasecmp(name, "manuals") || !strcasecmp(name, "videos");
+}
+
 static void scan_directory(const char *path) {
     /* An unopenable dir is NOT an early return: fall through with an empty
      * listing so the root still gets its Settings/Recents rows. The old
@@ -2110,6 +2133,8 @@ static void scan_directory(const char *path) {
             }
             /* Always hide the internal "menu" folder at the root. */
             if (isdir && at_root && strcasecmp(e->d_name, "menu") == 0) continue;
+            if (isdir && !at_root && !is_image_library_path(path) && !media_root_folder(path) &&
+                is_artwork_folder_name(e->d_name)) continue;
             if (isdir && at_root && is_psp_folder(e->d_name)) continue;
             /* Media libraries live under Apps, not in the Games tab. */
             if (isdir && at_root && is_app_folder_name(e->d_name)) continue;
@@ -2350,6 +2375,11 @@ static void render_game_switcher(uint16_t *framebuffer) {
     if (selected_index < 0) selected_index = 0;
     if (selected_index >= n) selected_index = n - 1;
     const RecentGame *g = &list[selected_index];
+    const char *g_title = g->game_name;
+    if (settings_gamelist_names) {
+        const char *listed = gamelist_name(g->full_path);
+        if (listed) g_title = listed;
+    }
 
     /* Onion-style: keep the capture at full panel geometry in both modes and
      * paint UI on top. Resizing around the bars distorts gameplay captures. */
@@ -2425,7 +2455,7 @@ static void render_game_switcher(uint16_t *framebuffer) {
     if (onion_theme_active()) {
         char header[96];
         gs_header_text(g->full_path, header, sizeof header);
-        onion_render_switcher(framebuffer, gs_view, header, g->game_name,
+        onion_render_switcher(framebuffer, gs_view, header, g_title,
                               selected_index > 0, selected_index + 1 < n,
                               selected_index + 1, n,
                               monotonic_ms() < gs_legend_until,
@@ -2444,20 +2474,20 @@ static void render_game_switcher(uint16_t *framebuffer) {
     int byb = SCREEN_HEIGHT - barh;
     render_fill_rect(framebuffer, 0, byb, SCREEN_WIDTH, barh, COLOR_SELECT_BG);
     if (game_switcher_fullscreen) {
-        int nw = font_measure_text(g->game_name);
+        int nw = font_measure_text(g_title);
         int nx = (SCREEN_WIDTH - nw) / 2;
         if (selected_index > 0)
             font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, PADDING,
                            byb + UI_S(8), "<", COLOR_SELECT_TEXT);
         font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, nx,
-                       byb + UI_S(8), g->game_name, COLOR_SELECT_TEXT);
+                       byb + UI_S(8), g_title, COLOR_SELECT_TEXT);
         if (selected_index + 1 < n)
             font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT,
                            SCREEN_WIDTH - PADDING - font_measure_text(">"),
                            byb + UI_S(8), ">", COLOR_SELECT_TEXT);
     } else {
         font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, PADDING,
-                       byb + UI_S(8), g->game_name, COLOR_SELECT_TEXT);
+                       byb + UI_S(8), g_title, COLOR_SELECT_TEXT);
         char info[96];
         long secs = playtime_lookup(g->full_path);
         if (secs >= 3600)
@@ -5542,8 +5572,9 @@ static void render_onion_browser(void) {
         } else if (entries[idx].is_dir && strcmp(current_path, ROMS_PATH) == 0) {
             shown = system_display_name(entries[idx].name);
         }
-        snprintf(labels[i], sizeof labels[i], "%s", shown);
-        if (settings_hide_extensions && !entries[idx].is_dir) {
+        const char *listed = !entries[idx].is_dir ? gamelist_label(current_path, entries[idx].name) : NULL;
+        snprintf(labels[i], sizeof labels[i], "%s", listed ? listed : shown);
+        if (!listed && settings_hide_extensions && !entries[idx].is_dir) {
             char *dot = strrchr(labels[i], '.');
             if (dot && dot != labels[i]) *dot = '\0';
         }
@@ -5956,7 +5987,10 @@ void retro_run(void) {
                     shown = system_display_name(entries[idx].name);
                 /* Hide file extension (.gb/.gba/...) when enabled — display only,
                  * the real name in entries[] is still used to launch. Files only. */
-                if (settings_hide_extensions && !entries[idx].is_dir) {
+                const char *listed = !entries[idx].is_dir ? gamelist_label(current_path, entries[idx].name) : NULL;
+                if (listed) {
+                    shown = listed;
+                } else if (settings_hide_extensions && !entries[idx].is_dir) {
                     strncpy(disp, entries[idx].name, sizeof disp - 1);
                     disp[sizeof disp - 1] = '\0';
                     char *dot = strrchr(disp, '.');

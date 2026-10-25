@@ -154,6 +154,32 @@ Older headerless `.rgb565` thumbnail sets also work at these fixed sizes: `64×6
 
 In-game savestate and last-screen images are captured automatically and need no manual setup.
 
+### Skraper and gamelist.xml
+
+ShallotsOS reads EmulationStation `gamelist.xml` files (Skraper's
+Recalbox / RetroPie output) and OnionOS `miyoogamelist.xml` files. Put the
+gamelist in the system's ROM folder (or a folder above a game's sub-folder):
+
+```text
+roms/snes/gamelist.xml
+roms/snes/media/images/Super Mario World 2 - Yoshi's Island (USA, Europe).png
+```
+
+- The `<image>` of each game (or its `<thumbnail>`) is used as its box art,
+  before the `.res/` / `Imgs/` lookup. Relative paths (`./media/...`) and
+  paths written on another device (`/recalbox/share/roms/snes/media/...`)
+  both work.
+- **Settings > General > Names from gamelist.xml** shows each game's
+  `<name>` instead of its file name, in game lists and the GameSwitcher.
+  It is off by default.
+- Scraper folders inside a system folder (`media`, `Imgs`, `images`,
+  `downloaded_images`, `manuals`, `videos`) are not listed as games.
+- A changed gamelist is picked up on its own; Settings > Rebuild File Cache
+  also clears everything read so far.
+
+Recommended Skraper setup: front-end **Recalbox**, ROM folder = the card's
+`roms` folder, image width about 250 px, videos off.
+
 ---
 
 ## Appearance settings

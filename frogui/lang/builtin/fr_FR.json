@@ -43,6 +43,7 @@
   "settings.wallpaper": "Fond d'écran",
   "settings.background_image_fit": "Ajustement de l'image de fond",
   "settings.hide_extensions": "Masquer les extensions",
+  "settings.gamelist_names": "Names from gamelist.xml",
   "settings.hide_empty_folders": "Masquer les dossiers vides",
   "settings.custom_aspect_ratios": "Tous les rapports d'aspect",
   "settings.library": "BIBLIOTHÈQUE",

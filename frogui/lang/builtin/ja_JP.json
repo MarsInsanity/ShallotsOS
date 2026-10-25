@@ -43,6 +43,7 @@
   "settings.wallpaper": "壁紙",
   "settings.background_image_fit": "背景イメージのフィット",
   "settings.hide_extensions": "拡張子を隠す",
+  "settings.gamelist_names": "Names from gamelist.xml",
   "settings.hide_empty_folders": "空フォルダを隠す",
   "settings.custom_aspect_ratios": "すべてのアスペクト比",
   "settings.library": "ライブラリ",

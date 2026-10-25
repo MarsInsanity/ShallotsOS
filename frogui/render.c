@@ -1,6 +1,7 @@
 #include "render.h"
 #include "common/i18n.h"
 #include "font.h"
+#include "gamelist.h"
 #include "stb_image.h" /* decls only; impl lives in banner.c */
 #include <dirent.h>
 #include <stdio.h>
@@ -510,7 +511,9 @@ static uint64_t artwork_hash(const char *s) {
 }
 
 static uint64_t artwork_folder_signature(const char *game_path) {
-  static const char *folders[] = {".res", "Imgs", "images", "Images", NULL};
+  /* The gamelists too: a new or rescraped one can bring new pictures. */
+  static const char *folders[] = {".res", "Imgs", "images", "Images",
+                                  "gamelist.xml", "miyoogamelist.xml", NULL};
   const char *slash = game_path ? strrchr(game_path, '/') : NULL;
   if (!slash)
     return 0;
@@ -600,6 +603,18 @@ int load_game_artwork(const char *game_path, ArtworkKind kind,
   if (artwork_miss_contains(game_hash, folder_sig, kind)) {
     free_thumbnail(thumb);
     return 0;
+  }
+  /* A gamelist.xml / miyoogamelist.xml picture comes first for box art. */
+  if (kind == ARTWORK_BOXART) {
+    char img[1024];
+    if (gamelist_image(game_path, img, sizeof img)) {
+      char *dot = strrchr(img, '.');
+      char *slash = strrchr(img, '/');
+      if (dot && (!slash || dot > slash))
+        *dot = '\0';
+      if (load_thumbnail(img, thumb))
+        return 1;
+    }
   }
   for (int f = 0; folders[f]; f++) {
     for (int s = 0; suffixes[s]; s++) {

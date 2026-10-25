@@ -18,7 +18,7 @@ if [ ! -f "$OUT/sheenbidi.o" ]; then
     gcc $CFLAGS $INC -DSB_CONFIG_UNITY -w -c external/SheenBidi/Source/SheenBidi.c \
         -o "$OUT/sheenbidi.o"
 fi
-SRCS="frogui_libretro.c render.c font.c recent_games.c theme.c onion_theme.c
+SRCS="frogui_libretro.c render.c font.c recent_games.c theme.c onion_theme.c gamelist.c
       favorites.c banner.c backlight.c input.c core_override.c ext_filter.c
       common/i18n.c tests/host/render_harness.c"
 gcc $CFLAGS $INC $SRCS "$OUT/harfbuzz.o" "$OUT/sheenbidi.o" \

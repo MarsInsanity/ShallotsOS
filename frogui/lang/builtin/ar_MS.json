@@ -43,6 +43,7 @@
   "settings.wallpaper": "خلفية الشاشة",
   "settings.background_image_fit": "ملاءمة صورة الخلفية",
   "settings.hide_extensions": "إخفاء الامتدادات",
+  "settings.gamelist_names": "Names from gamelist.xml",
   "settings.hide_empty_folders": "إخفاء المجلدات الفارغة",
   "settings.custom_aspect_ratios": "جميع نسب الأبعاد",
   "settings.library": "المكتبة",
