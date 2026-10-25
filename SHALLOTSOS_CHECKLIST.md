@@ -76,6 +76,14 @@ Latest test build:
 - [x] Options submenus and Save/Load State lists use the theme's highlight
       colour, like the main menu (the white bar hid the selected item)
 
+### In-game keys setting
+
+- [x] Settings > Library > In-game Menu Keys: **FN** (tap = menu, hold =
+      GameSwitcher), **Hold SEL/START** (hold SELECT = menu, hold START =
+      GameSwitcher, taps still reach the game), or **SEL+START/L1**
+      (SELECT+START = menu, SELECT+L1 = GameSwitcher). FN and SELECT+START
+      keep working in every mode
+
 ### GameSwitcher look (matches OnionOS's gs_render.h)
 
 - [x] Full-screen capture, header with play time ("2h 3m / 8h 53m") and
@@ -116,7 +124,7 @@ Latest test build:
 
 ## In progress
 
-- [ ] Waiting on the user: SELECT/START instead of FN in game (which layout)
+- (nothing right now; waiting on device test results)
 
 ## Next
 

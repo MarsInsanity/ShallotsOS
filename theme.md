@@ -24,7 +24,10 @@ With an OnionOS theme selected, the whole interface uses the OnionOS layout:
   arrows. Left/Right changes game and A resumes it. Y switches between the
   normal and minimal views, and holding Y goes fullscreen. X removes the game
   from history, SELECT changes the header (title, game time, or game and total
-  time), and B or START goes back to the main menu.
+  time), and B or START goes back to the main menu. In a game, Settings →
+  Library → **In-game Menu Keys** picks how the menu and the GameSwitcher
+  open: FN (tap / hold), hold SELECT / hold START, or SELECT+START /
+  SELECT+L1.
 
 B at the top of Games, Favorites, Recents, Apps or Settings returns to the home
 screen. Search (X), the core and extension picker (SELECT) and favouriting (Y)

@@ -971,6 +971,11 @@ static int onion_apply(void) {
 int frogui_battery_color_mode(void) { return settings_battery_color; }
 static int frogui_stock_battery_indicator(void) { return settings_stock_battery; }
 static int settings_game_switcher = 1;  /* recents as box-art carousel: 0=off, 1=on */
+/* In-game keys for the emulator menu / GameSwitcher, read by picoarch:
+ * 0 = FN (tap / hold), 1 = hold SELECT / hold START, 2 = SELECT+START /
+ * SELECT+L1. */
+static int settings_game_keys = 0;
+static const char *const game_keys_values[3] = {"fn", "hold", "combo"};
 /* Whether the GameSwitcher is on screen. OnionOS layouts show it only when
  * opened as the GameSwitcher; the classic layouts replace the Recents list. */
 static bool switcher_active(void) {
@@ -1007,7 +1012,7 @@ typedef struct {
 static const SRow settings_rows[] = {
     { RT_HEADER, "settings.appearance" }, { RT_ONION_THEME, "settings.onion_theme" }, { RT_THEME, "settings.theme" }, { RT_THEME_PACK, "settings.background_theme_pack" }, { RT_STYLE, "settings.style" }, { RT_ICON_PACK, "settings.icon_pack" }, { RT_TOGGLE, "settings.center_text", &settings_center_text }, { RT_TOGGLE, "settings.friendly_system_names", &settings_friendly_names }, { RT_FONT, "settings.font" }, { RT_RANGE, "settings.font_size", &settings_font_size, 18, 26, 1 }, { RT_TOGGLE, "settings.battery_colour_mode", &settings_battery_color }, { RT_TOGGLE, "settings.stock_battery_indicator", &settings_stock_battery }, { RT_TOGGLE, "settings.background_images", &settings_backgrounds }, { RT_RANGE, "settings.background_dim", &settings_background_dim, 0, 100, 5 }, { RT_WALLPAPER, "settings.wallpaper" }, { RT_WALLFIT, "settings.background_image_fit" },
     { RT_HEADER, "settings.general" }, { RT_LANGUAGE, "settings.language", &settings_language }, { RT_RANGE, "settings.brightness", &settings_brightness, 0, 100, SETTINGS_BRIGHTNESS_STEP }, { RT_TOGGLE, "settings.animations", &settings_anim }, { RT_TOGGLE, "settings.menu_sounds", &settings_menu_sounds }, { RT_TOGGLE, "settings.hide_extensions", &settings_hide_extensions }, { RT_TOGGLE, "settings.hide_empty_folders", &settings_hide_empty },
-    { RT_HEADER, "settings.library" }, { RT_ROM_SOURCE, "settings.rom_source" }, { RT_OTG_STATUS, "settings.otg_storage" }, { RT_TOGGLE, "settings.game_switcher", &settings_game_switcher }, { RT_TOGGLE, "settings.start_in_recents", &settings_load_recents },
+    { RT_HEADER, "settings.library" }, { RT_ROM_SOURCE, "settings.rom_source" }, { RT_OTG_STATUS, "settings.otg_storage" }, { RT_TOGGLE, "settings.game_switcher", &settings_game_switcher }, { RT_RANGE, "settings.game_keys", &settings_game_keys, 0, 2, 1 }, { RT_TOGGLE, "settings.start_in_recents", &settings_load_recents },
     { RT_HEADER, "settings.gameplay" }, { RT_TOGGLE, "settings.quick_resume", &settings_quick_resume }, { RT_TOGGLE, "settings.autosave_autoload", &settings_autosave_autoload }, { RT_TOGGLE, "settings.custom_aspect_ratios", &settings_custom_aspect_ratios },
     { RT_HEADER, "settings.system" }, { RT_RANGE, "settings.volume", &settings_volume, 0, 100, 5 }, { RT_TOGGLE, "settings.file_cache", &settings_file_cache }, { RT_CACHE_REBUILD, "settings.rebuild_file_cache" }, { RT_TOGGLE, "settings.disable_sleep", &settings_disable_sleep }, { RT_ACTION, "settings.button_mapping" }, { RT_INFO, "settings.version" },
 };
@@ -1420,6 +1425,9 @@ static void settings_load_file(void) {
             settings_disable_sleep = (strcmp(val, "on") == 0) ? 1 : 0;
         } else if (strcmp(line, "game_switcher") == 0) {
             settings_game_switcher = (strcmp(val, "on") == 0) ? 1 : 0;
+        } else if (strcmp(line, "game_keys") == 0) {
+            for (int k = 0; k < 3; k++)
+                if (strcmp(val, game_keys_values[k]) == 0) settings_game_keys = k;
         } else if (strcmp(line, "load_recents") == 0) {
             settings_load_recents = (strcmp(val, "on") == 0) ? 1 : 0;
         } else if (strcmp(line, "rom_source") == 0) {
@@ -1519,6 +1527,7 @@ static void settings_save_file(void) {
     fprintf(f, "battery_color=%s\n", onoff_names[settings_battery_color]);
     fprintf(f, "stock_battery=%s\n", onoff_names[settings_stock_battery]);
     fprintf(f, "game_switcher=%s\n", onoff_names[settings_game_switcher]);
+    fprintf(f, "game_keys=%s\n", game_keys_values[settings_game_keys]);
     fprintf(f, "load_recents=%s\n", onoff_names[settings_load_recents]);
     fprintf(f, "rom_source=%s\n", rom_source_names[settings_rom_source]);
     fprintf(f, "disable_sleep=%s\n", onoff_names[settings_disable_sleep]);
@@ -4926,6 +4935,14 @@ static int settings_row_value(const SRow *r, char *value, size_t size) {
         snprintf(value, size, "%s", tr(*r->val ? "value.on" : "value.off"));
         return ONION_ROW_TOGGLE;
     case RT_RANGE:
+        if (r->val == &settings_game_keys) {
+            static const char *const keys[3] = {"value.game_keys_fn", "value.game_keys_hold",
+                                                "value.game_keys_combo"};
+            static const char *const fallback[3] = {"FN", "Hold SEL/START",
+                                                    "SEL+START/L1"};
+            snprintf(value, size, "%s", tr_or(keys[*r->val], fallback[*r->val]));
+            return ONION_ROW_VALUE;
+        }
         snprintf(value, size, r->val == &settings_font_size ? "%d px" : "%d%%", *r->val);
         return ONION_ROW_VALUE;
     default:
