@@ -31,8 +31,8 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40242112773
-  (ShallotsOS `766180d`, picoarch `7624661`, HCSNES `c3c190d`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40242387710
+  (ShallotsOS `cceb844`, picoarch `7624661`, HCSNES `c3c190d`)
 
 ## User to-do (device tests)
 
