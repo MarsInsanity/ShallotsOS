@@ -427,20 +427,22 @@ def battery(level, charging=False):
     return finish(im)
 
 
-def logo():
-    font = ImageFont.truetype(str(EXO), 30 * SS)
-    im = canvas(200, 42)
+def logo(k=1):
+    # k scales the whole logo (the boot screen draws it larger).
+    font = ImageFont.truetype(str(EXO), 30 * k * SS)
+    im = canvas(200 * k, 42 * k)
     d = ImageDraw.Draw(im)
     # Bulb mark: a small shallot made of two arcs and a sprout.
-    cx, cy = 14, 23
-    d.ellipse(((cx - 10) * SS, (cy - 9) * SS, (cx + 10) * SS, (cy + 12) * SS), fill=ACCENT + (255,))
-    stroke(d, [(cx, cy - 9), (cx + 1, cy - 17)], COPPER + (255,), 3)
-    stroke(d, [(cx - 4, cy - 2), (cx - 2, cy + 8)], (255, 255, 255, 120), 2)
-    x = 30 * SS
+    cx, cy = 14 * k, 23 * k
+    d.ellipse(((cx - 10 * k) * SS, (cy - 9 * k) * SS, (cx + 10 * k) * SS, (cy + 12 * k) * SS),
+              fill=ACCENT + (255,))
+    stroke(d, [(cx, cy - 9 * k), (cx + 1 * k, cy - 17 * k)], COPPER + (255,), 3 * k)
+    stroke(d, [(cx - 4 * k, cy - 2 * k), (cx - 2 * k, cy + 8 * k)], (255, 255, 255, 120), 2 * k)
+    x = 30 * k * SS
     for text, color in (("shallots", ACCENT + (255,)), ("os", TEXT + (255,))):
         box = d.textbbox((0, 0), text, font=font)
-        d.text((x, 21 * SS - (box[1] + box[3]) / 2), text, font=font, fill=color)
-        x += box[2] - box[0] + 1 * SS
+        d.text((x, 21 * k * SS - (box[1] + box[3]) / 2), text, font=font, fill=color)
+        x += box[2] - box[0] + 1 * k * SS
     return finish(im)
 
 

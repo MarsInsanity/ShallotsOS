@@ -48,6 +48,9 @@ Latest test build:
 - [x] Default "ShallotsOS" theme and its generator script, plus the Exo 2 font
 - [x] Theme asset test (`tests/test_onion_theme.sh`) and docs
 - [x] Classic (non-Onion) UI left pixel-identical to upstream
+- [x] ShallotsOS boot logo replaces the TreeFrogUI one (both panel formats,
+      from `tools/onion_theme/make_boot_logo.py`); the overlay ships the
+      640x480 one
 - [x] GitHub Actions overlay build (artifact `ShallotsOS-overlay`), which
       also builds the latest picoarch so one download has everything
 
@@ -95,7 +98,10 @@ Latest test build:
       idle input.
 - [x] The next boot resumes that game from slot 10, even with Quick Resume
       off. The marker is removed first, so a broken game can't boot-loop.
-- [x] Letting go of power while the console stays on drops the save
+- [x] Letting go of power during the firmware's power-off screen keeps the
+      save (first try dropped it: the shutdown takes a few seconds). It is
+      only dropped if the game still runs 10 s after release, or is left
+      normally. SIGTERM from the shutdown also saves. No screen flash.
 - [ ] Needs a device test: the input register (+0x50) is inferred from the
       ALi/HiChip GPIO layout that `powergpio` matches
 
@@ -110,7 +116,7 @@ Latest test build:
 
 ## In progress
 
-- (nothing right now; waiting on device test results)
+- [ ] Waiting on the user: SELECT/START instead of FN in game (which layout)
 
 ## Next
 

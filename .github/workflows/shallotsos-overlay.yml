@@ -11,6 +11,7 @@ on:
     paths:
       - 'frogui/**'
       - 'assets/onion/**'
+      - 'sdcard/cubegm/xgame-logo.bmp'
       - '.github/workflows/shallotsos-overlay.yml'
   workflow_dispatch:
     inputs:
@@ -83,6 +84,8 @@ jobs:
           mkdir -p "$out/cubegm/cores" "$out/frogui/onion/fonts" "$out/frogui/lang" "$out/Themes"
           cp frogui/out/frogui_libretro.so "$out/cubegm/cores/"
           cp "$HOME/sf3000-work/picoarch/picoarch" "$HOME/sf3000-work/picoarch/picoarch_hi" "$out/cubegm/"
+          # Boot logo for 640x480 panels (R36SX, R36HD, GB350).
+          cp sdcard/cubegm/xgame-logo.bmp "$out/cubegm/"
           cp -a assets/onion/Themes/. "$out/Themes/"
           cp -a assets/onion/Themes/ShallotsOS/skin assets/onion/Themes/ShallotsOS/icons \
                 assets/onion/Themes/ShallotsOS/config.json "$out/frogui/onion/"
@@ -96,6 +99,9 @@ jobs:
 
             cubegm/cores/frogui_libretro.so  ShallotsOS menu
             cubegm/picoarch, picoarch_hi     emulator frontend and in-game menu
+            cubegm/xgame-logo.bmp            ShallotsOS boot logo (640x480 panels:
+                                             R36SX, R36HD, GB350; skip it on an
+                                             854x480 SF3000-family console)
             Themes/ShallotsOS/               default OnionOS-format theme
             frogui/onion/                    fallback skin and Exo 2 font
             frogui/lang/builtin/             translations
