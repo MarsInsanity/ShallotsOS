@@ -7,7 +7,7 @@
 #include "core_override.h"
 
 #define OVERRIDE_FILE "/mnt/sdcard/frogui/core_overrides.txt"
-#define MAX_OVERRIDES 512
+#define MAX_OVERRIDES 2048   /* per-game choices kept by the TreeFrogUI folder move */
 #define KEY_LEN       512
 #define CORE_LEN      256
 

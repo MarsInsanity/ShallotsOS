@@ -178,7 +178,8 @@ roms/snes/media/images/Super Mario World 2 - Yoshi's Island (USA, Europe).png
   also clears everything read so far.
 
 Recommended Skraper setup: front-end **Recalbox**, ROM folder = the card's
-`roms` folder, image width about 250 px, videos off.
+`roms` folder, image width about 250 px, videos off. ShallotsOS's folders
+have Recalbox's names, so Skraper recognises every system on its own.
 
 ---
 

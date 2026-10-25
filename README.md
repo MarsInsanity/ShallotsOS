@@ -84,112 +84,109 @@ not provide an arbitrary HCGE viewport/crop control; see
 ---
 ## ROM folder setup
 
-**How to add games:**
-1. On your PC, open the SD card. Find the **`roms`** folder (it's at the root, the top level of the card).
-2. Inside `roms`, make a folder named for the system you want, exactly as in the table below. Example: for Game Boy Advance games, make `roms/GBA`.
-3. Copy your game files into that folder.
-4. Put the card back in, launch TreeFrogUI, and the system shows up.
+ShallotsOS uses **Recalbox's folder names**: one folder per system inside
+`roms`, such as `roms/nes`, `roms/gbc`, `roms/megadrive` or `roms/psx`
+([Recalbox systems list](https://wiki.recalbox.com/en/tutorials/themes/tree/systems-list)).
+They are created on first boot, and empty ones are hidden from the Games list.
 
-The **folder name is what picks the emulator** (so `GBA` runs Game Boy Advance, `FC` runs NES, etc). Some systems accept a few different names, all listed below.
+**How to add games:** copy the game files into the system's folder, then put
+the card back in. New games are found on their own.
 
-| Folder Name(s) | Target Console / System | Core Shared Library (`.so`) |
-|---|---|---|
-| **FC**, **nes** | NES / Famicom | `fceumm_libretro.so` |
-| **NES**, **nesq** | NES / Famicom (fast) | `quicknes_libretro.so` |
-| **nest** | NES / Famicom (accurate) | `nestopia_libretro.so` |
-| **fds** | Famicom Disk System | `fceumm_libretro.so` |
-| **SFC**, **snes** | Super Famicom / SNES | `snes9x2005_plus_libretro.so` |
-| **snes02** | SNES (accurate / alt) | `snes9x2002_libretro.so` |
-| **GBA**, **gba** | Game Boy Advance | `gpsp_libretro.so` |
-| **mgba**, **gbaf** | Game Boy Advance (accurate) | `mgba_libretro.so` |
-| **gbav** | Game Boy Advance (alt) | `vba_next_libretro.so` |
-| **gb**, **dblcherrygb** | Game Boy / Color | `gambatte_libretro.so` |
-| **gbgb** | Game Boy (Gearboy) | `gearboy_libretro.so` |
-| **gbb** | Game Boy (TGBDual) | `tgbdual_libretro.so` |
-| **MD**, **SMS**, **sega** | Mega Drive / Genesis / Master System | `picodrive_libretro.so` |
-| **32x** | Sega 32X (may run slow) | `picodrive_libretro.so` |
-| **GG**, **gg** | Game Gear | `gearsystem_libretro.so` |
-| **gpgx** | Mega Drive (accurate) | `genesis_plus_gx_libretro.so` |
-| **segacd** | Sega CD / Mega CD | `genesis_plus_gx_libretro.so` |
-| **PS**, **ps1**, **psx** | PlayStation - 📖 [setup guide](docs/cores/ps1.md) | `pcsx_rearmed_libretro.so` |
-| **qpsx** | PlayStation (experimental QPSX MIPS recompiler; not fully integrated) | `qpsx_libretro.so` |
-| **psp** | PSP - optional standalone SF3000 PPSSPP port, falls back to `ppsspp_libretro.so` | `ppsspp` / `ppsspp_libretro.so` |
-| **nds** | Nintendo DS - experimental standalone DSperate port with HCGE scaling | `dsperate/run_sf3000.sh` |
-| **pce** | PC Engine / TurboGrafx-16 - 📖 [notes](docs/cores/pce.md) | `mednafen_pce_fast_libretro.so` |
-| **pcesgx** | PC Engine SuperGrafx | `mednafen_supergrafx_libretro.so` |
-| **pcfx** | PC-FX | `mednafen_pcfx_libretro.so` |
-| **pc8800** | NEC PC-8800 | `quasi88_libretro.so` |
-| **ngpc** | Neo Geo Pocket / Color | `race_libretro.so` |
-| **geolith** | Neo Geo AES/MVS | `geolith_libretro.so` |
-| **wswan** | WonderSwan / Color | `mednafen_wswan_libretro.so` |
-| **wsv** | Watara Supervision | `potator_libretro.so` |
-| **vb** | Virtual Boy | `mednafen_vb_libretro.so` |
-| **a26** | Atari 2600 | `stella2014_libretro.so` |
-| **a5200** | Atari 5200 | `a5200_libretro.so` |
-| **a78** | Atari 7800 | `prosystem_libretro.so` |
-| **a800** | Atari 800 | `atari800_libretro.so` |
-| **lnx** | Atari Lynx | `handy_libretro.so` |
-| **atari-st** | Atari ST | `castaway_libretro.so` |
-| **amiga** | Commodore Amiga - 📖 [setup guide](docs/cores/amiga.md) | `uae_libretro.so` |
-| **c64** | Commodore 64 | `vice_x64_libretro.so` |
-| **c64sc** | Commodore 64 (accurate) | `vice_x64sc_libretro.so` |
-| **c64f**, **c64fc** | Commodore 64 (Frodo) | `frodo_libretro.so` |
-| **vic20** | Commodore VIC-20 | `vice_xvic_libretro.so` |
-| **msx** | MSX | `bluemsx_libretro.so` |
-| **spec** | ZX Spectrum | `fuse_libretro.so` |
-| **zx81** | ZX81 | `81_libretro.so` |
-| **col** | ColecoVision | `gearcoleco_libretro.so` |
-| **amstrad** | Amstrad CPC | `cap32_libretro.so` |
-| **amstradb** | Amstrad CPC (CPC+) | `cap32_libretro.so` |
-| **thom** | Thomson MO/TO | `theodore_libretro.so` |
-| **xmil** | Sharp X68000 | `x68k_libretro.so` |
-| **pico286** | DOS / PC (8086-286, standalone) - 📖 [setup guide](docs/cores/pico286.md) | `pico286` + `x86BOOT.img` |
-| **j2me** | J2ME / MIDP 2.0 games (`.jar` / `.jad`) - 📖 [setup guide](docs/cores/j2me.md) | `j2me_libretro.so` |
-| **classicube** | ClassiCube Minecraft Classic worlds (`.cw`) - 📖 [setup guide](docs/cores/classicube.md), based on [Sajnaps / FroggyCraft](https://github.com/Synaps33/FroggyCraft) | `classicube_libretro.so` |
-| **mcpe** | Minecraft Pocket Edition 0.6.1, based on [Synaps33 / FroggyPE](https://github.com/Synaps33/FroggyPE) | `mcpe_libretro.so` |
-| **openclaw** | Captain Claw - 📖 [setup guide](docs/cores/openclaw.md), based on [Synaps33 / FroggyClaw](https://github.com/Synaps33/FroggyClaw) | `openclaw_libretro.so` |
-| **diablo** | Diablo 1 / DevilutionX (standalone) - 📖 [setup guide](docs/cores/diablo.md), based on [DevilutionX](https://github.com/diasurgical/DevilutionX) and [FroggyDiablo](https://github.com/tzubertowski/FroggyDiablo) | `devilutionx` |
-| **Quake** | Quake | `tyrquake_libretro.so` |
-| **quake2** | Quake II (heavy) - 📖 [setup guide](docs/cores/quake2.md) | `vitaquake2_libretro.so` |
-| **prboom** | Doom / Doom II / Final Doom / Heretic / Hexen | `prboom_libretro.so` |
-| **wolf3d** | Wolfenstein 3D - 📖 [setup guide](docs/cores/wolf3d.md) | `ecwolf_libretro.so` |
-| **outrun** | Out Run | `cannonball_libretro.so` |
-| **cavestory** | Cave Story | `nxengine_libretro.so` |
-| **flashback** | Flashback | `reminiscence_libretro.so` |
-| **xrick** | Rick Dangerous | `xrick_libretro.so` |
-| **jnb** | Jump 'n Bump | `jumpnbump_libretro.so` |
-| **gw** | Game & Watch | `gw_libretro.so` |
-| **pico8** | PICO-8 (fake08) - also accepts legacy `fake08` folder | `fake08_libretro.so` |
-| **retro8** | PICO-8 (retro8) | `retro8_libretro.so` |
-| **lowres-nx** | LowRes NX | `lowresnx_libretro.so` |
-| **tic80** | TIC-80 fantasy console | `tic80_libretro.so` |
-| **pokem** | Pokémon Mini | `pokemini_libretro.so` |
-| **m2k** | MAME 2000 (MAME 0.37b5 romset) | `mame2000_libretro.so` |
-| **cps1** | Capcom CPS-1 arcade | `fbalpha2012_cps1_libretro.so` |
-| **cps2** | Capcom CPS-2 arcade | `fbalpha2012_cps2_libretro.so` |
-| **cps3** | Capcom CPS-3 arcade (experimental, slow) | `fbalpha2012_cps3_libretro.so` |
-| **neogeo** | Neo Geo arcade | `fbalpha2012_neogeo_libretro.so` |
-| **int** | Mattel Intellivision | `freeintv_libretro.so` |
-| **fcf** | Fairchild Channel F | `freechaf_libretro.so` |
-| **cdg** | CD+G Karaoke | `pocketcdg_libretro.so` |
-| **chip8** | CHIP-8 | `jaxe_libretro.so` |
-| **arduboy** | Arduboy (Ardens - fast) | `ardens_libretro.so` |
-| **arduous** | Arduboy (arduous/simavr - cycle-accurate, slower) | `arduous_libretro.so` |
-| **vec** | Vectrex | `vecx_libretro.so` |
-| **o2em** | Odyssey² / Videopac | `o2em_libretro.so` |
-| **gme** | Game Music Emu | `gme_libretro.so` |
-| **gong** | Pong clone | `gong_libretro.so` |
-| **vapor** | VaporSpec | `vaporspec_libretro.so` |
-| **rockbox** | Music player (MP3/FLAC/OGG…, standalone) - 📖 [setup guide](docs/cores/rockbox.md) | `rockbox` |
-| **music** | Simple themed music player (MP3/M4A/AAC/WAV/FLAC/OGG/Opus, standalone) | `video_player` |
-| **videos** | Hardware video player (MP4/MKV/AVI/MOV/MPEG/TS/WebM, standalone) | `video_player` |
-| **images** | Hardware image viewer (JPG/PNG/BMP/GIF/WebP/TIFF…, standalone) | `image_viewer` |
+**Picking an emulator:** the folder no longer decides the emulator. Each
+system starts on its default (first in the table). Press **Y** on a game for
+its menu: **Emulator** (Left/Right), **Apply to** *This game* or *Whole
+system*, then A. Y on a system in the Games list sets the emulator for the
+whole system. The same menu has **Search** and **Add to / Remove from
+Favourites**.
 
-See [cores.md](cores.md) for detailed build status and source repositories of TreeFrogUI external cores.
+**Coming from TreeFrogUI:** on the first boot, ShallotsOS offers to move your
+games out of TreeFrogUI's folders (`nesq`, `gbav`, `sega`, `a26`, `ps1`...)
+into these. Games, saves, save states, artwork and gamelists are moved, never
+deleted; Recents, Favourites, play time and per-game emulator choices follow
+them, and games from an emulator folder (`nesq` = QuickNES) keep that
+emulator. A mixed folder is split by file type (`.gbc` files in `gb` go to
+`gbc`, `.sms` / `.gg` in `sega` go to `mastersystem` / `gamegear`). A file
+whose name is taken in the new folder stays where it was. Choosing Cancel
+powers the console off and asks again next time.
 
-**PICO-8 (fake08):** place carts in `roms/pico8/` (the legacy `roms/fake08/` folder still works). Both `.p8` (text source) and `.p8.png` (cart image) formats are supported.
+| Folder | System | Emulators (default first; Y on a game to change) | Old TreeFrogUI folders |
+|---|---|---|---|
+| **nes** | Nintendo Entertainment System | `fceumm`, `quicknes`, `nestopia` | `FC`, `nesq`, `nest` |
+| **fds** | Family Computer Disk System | `fceumm` |  |
+| **snes** | Super Nintendo Entertainment System | `snes9x2005_plus`, `snes9x2002`, `snes9x2005`, `snes9x2010` | `SFC`, `snes02` |
+| **gb** | Game Boy | `gambatte`, `gearboy`, `tgbdual` | `gbgb`, `gbb`, `dblcherrygb` |
+| **gbc** | Game Boy Color | `gambatte`, `gearboy`, `tgbdual` |  |
+| **gba** | Game Boy Advance | `gpsp`, `gpsp_multicore`, `vba_next`, `mgba` | `gbac`, `gbav`, `mgba`, `gbaf` |
+| **nds** | Nintendo DS | DSperate (standalone) |  |
+| **virtualboy** | Virtual Boy | `mednafen_vb` | `vb` |
+| **pokemini** | Pokémon Mini | `pokemini` | `pokem` |
+| **gw** | Game and Watch | `gw` |  |
+| **megadrive** | Sega Megadrive | `picodrive`, `genesis_plus_gx` | `sega`, `MD`, `gpgx` |
+| **mastersystem** | Sega Master System / Mark III | `picodrive`, `genesis_plus_gx`, `gearsystem` | `SMS` |
+| **gamegear** | Sega Game Gear | `gearsystem`, `genesis_plus_gx`, `picodrive` | `gg`, `GG` |
+| **sg1000** | Sega SG1000 | `genesis_plus_gx`, `gearsystem` |  |
+| **segacd** | Sega CD | `genesis_plus_gx`, `picodrive` |  |
+| **sega32x** | Sega 32X | `picodrive` | `32x` |
+| **psx** | Sony Playstation 1 | `pcsx4all` (standalone), `pcsx_rearmed`, `qpsx` | `ps1`, `PS`, `ps1r`, `qpsx` |
+| **psp** | Sony Playstation Portable | `ppsspp` (standalone), `ppsspp` |  |
+| **pcengine** | PC Engine | `mednafen_pce_fast`, `mednafen_supergrafx` | `pce` |
+| **supergrafx** | Supergrafx | `mednafen_supergrafx` | `pcesgx` |
+| **pcfx** | NEC PC-FX | `mednafen_pcfx` |  |
+| **pc88** | NEC PC-88 | `quasi88` | `pc8800` |
+| **ngp** | Neo-Geo Pocket | `race` |  |
+| **ngpc** | Neo-Geo Pocket Color | `race` |  |
+| **neogeo** | Neo-Geo AES | `fbalpha2012_neogeo`, `geolith`, `fbneo` | `geolith` |
+| **mame** | Mame | `mame2000`, `mame2003_plus` | `m2k`, `arcade` |
+| **fbneo** | FinalBurn Neo | `fbneo` |  |
+| **wswan** | WonderSwan | `mednafen_wswan` |  |
+| **wswanc** | WonderSwan Color | `mednafen_wswan` |  |
+| **supervision** | Watara Supervision | `potator` | `wsv` |
+| **atari2600** | Atari 2600 | `stella2014` | `a26` |
+| **atari5200** | Atari 5200 | `a5200` | `a5200` |
+| **atari7800** | Atari 7800 | `prosystem` | `a78` |
+| **atari800** | Atari 8bits | `atari800` | `a800` |
+| **lynx** | Lynx | `handy` | `lnx` |
+| **atarist** | Atari ST | `castaway` | `atari-st` |
+| **colecovision** | Colecovision | `gearcoleco` | `col` |
+| **intellivision** | Mattel Intellivision | `freeintv` | `int` |
+| **channelf** | Fairchild Channel F | `freechaf` | `fcf` |
+| **o2em** | Odyssey2 | `o2em` |  |
+| **vectrex** | Vectrex | `vecx` | `vec` |
+| **msx1** | MSX1 | `bluemsx` | `msx` |
+| **c64** | Commodore 64 | `vice_x64`, `frodo` | `c64sc`, `c64f`, `c64fc` |
+| **vic20** | Commodore VIC-20 | `vice_xvic` |  |
+| **amiga600** | Amiga ECS/OCS | `uae` | `amiga` |
+| **amstradcpc** | AmstradCPC | `cap32` | `amstrad`, `amstradb` |
+| **zxspectrum** | ZXSpectrum | `fuse` | `spec` |
+| **zx81** | ZX81 | `81` |  |
+| **thomson** | Thomson | `theodore` | `thom` |
+| **x68000** | Sharp X68000 | `x68k` | `xmil` |
+| **dos** | Dos (x86) | `pico286` (standalone) | `pico286` |
+| **pico8** | PICO-8 | `fake08`, `retro8` | `fake08`, `retro8` |
+| **tic80** | TIC-80 | `tic80` |  |
+| **lowresnx** | LowRes NX | `lowresnx` | `lowres-nx` |
+| **arduboy** | Arduboy | `ardens`, `arduous` | `arduous` |
+| **scummvm** | ScummVM | `scummvm` |  |
+| **quake** | Quake | `tyrquake` |  |
+| **quake2** | Quake 2 | `vitaquake2` |  |
+| **doom** | Doom | `prboom` | `prboom` |
+| **wolfenstein3d** | Wolfenstein 3D | `ecwolf` | `wolf3d` |
+| **cavestory** | Cave Story | `nxengine` |  |
+| **flashback** | Flashback | `reminiscence` |  |
+| **rickdangerous** | Rick Dangerous | `xrick` | `xrick` |
+| **outrun** | Out Run | `cannonball` |  |
+| **gong** | Gong | `gong` |  |
 
-**Arduboy:** the `arduboy` folder uses the **Ardens** core (a fast custom AVR emulator) and accepts both `.hex` and `.arduboy` files. The `arduous` folder runs the older simavr-based **arduous** core (cycle-accurate but much slower; `.hex` only) - use it only if a game misbehaves under Ardens.
+Folders without a Recalbox system keep their TreeFrogUI names and work as
+before: `cps1`, `cps2`, `cps3` (FB Alpha 2012 per board), `j2me`, `classicube`,
+`mcpe`, `openclaw`, `diablo`, `jnb`, `chip8`, `cdg`, `gme`, `vapor`, `rockbox`,
+and the media apps (`Music`, `Videos`, `Books`, `Images`).
+
+See [cores.md](cores.md) for detailed build status and source repositories of the external cores.
+
+**PICO-8 (fake08):** place carts in `roms/pico8/`. Both `.p8` (text source) and `.p8.png` (cart image) formats are supported.
+
+**Arduboy:** `roms/arduboy` runs the **Ardens** core (fast; `.hex` and `.arduboy`). Pick **Arduous** with Y for the older cycle-accurate simavr core (`.hex` only) if a game misbehaves.
 
 ### Systems that need extra setup
 
@@ -197,16 +194,16 @@ A few systems need more than "drop the ROM in the folder" - either extra compani
 
 | System | What's different | Guide |
 |---|---|---|
-| Arcade (`cps1`/`cps2`/`neogeo`/`m2k`) | Romsets are version-locked per core, Neo Geo needs a BIOS | 📖 [docs/cores/arcade.md](docs/cores/arcade.md) |
-| DOS / PC (`pico286`) | Needs FreeDOS (bundled), floppy vs hard-disk images | 📖 [docs/cores/pico286.md](docs/cores/pico286.md) |
+| Arcade (`cps1`/`cps2`/`neogeo`/`mame`) | Romsets are version-locked per core, Neo Geo needs a BIOS | 📖 [docs/cores/arcade.md](docs/cores/arcade.md) |
+| DOS / PC (`dos`) | Needs FreeDOS (bundled), floppy vs hard-disk images | 📖 [docs/cores/pico286.md](docs/cores/pico286.md) |
 | Rockbox music player (`rockbox`) | Standalone app, themes | 📖 [docs/cores/rockbox.md](docs/cores/rockbox.md) |
-| Commodore Amiga (`amiga`) | Needs your own Kickstart ROM | 📖 [docs/cores/amiga.md](docs/cores/amiga.md) |
-| Wolfenstein 3D (`wolf3d`) | Needs the game data **and** the engine's own resource pack | 📖 [docs/cores/wolf3d.md](docs/cores/wolf3d.md) |
-| Doom / Heretic / Hexen (`prboom`) | Supply a legally obtained IWAD (`doom1.wad`, `heretic1.wad`, `hexen.wad`, etc.) | Put the IWAD in `roms/prboom/` |
+| Commodore Amiga (`amiga600`) | Needs your own Kickstart ROM | 📖 [docs/cores/amiga.md](docs/cores/amiga.md) |
+| Wolfenstein 3D (`wolfenstein3d`) | Needs the game data **and** the engine's own resource pack | 📖 [docs/cores/wolf3d.md](docs/cores/wolf3d.md) |
+| Doom / Heretic / Hexen (`doom`) | Supply a legally obtained IWAD (`doom1.wad`, `heretic1.wad`, `hexen.wad`, etc.) | Put the IWAD in `roms/doom/` |
 | Quake II (`quake2`) | Game data goes in a required `baseq2/` subfolder | 📖 [docs/cores/quake2.md](docs/cores/quake2.md) |
 | Diablo 1 (`diablo`) | Requires the legally owned `DIABDAT.MPQ` game data file | 📖 [docs/cores/diablo.md](docs/cores/diablo.md) |
 | Captain Claw (`openclaw`) | Requires the legally owned `CLAW.REZ` game data file | 📖 [docs/cores/openclaw.md](docs/cores/openclaw.md) |
-| PlayStation 1 (`PS`/`ps1`/`psx`/`ps1r`) | Two cores, BIOS strongly recommended | 📖 [docs/cores/ps1.md](docs/cores/ps1.md) |
+| PlayStation 1 (`psx`) | Two cores, BIOS strongly recommended | 📖 [docs/cores/ps1.md](docs/cores/ps1.md) |
 
 ---
 

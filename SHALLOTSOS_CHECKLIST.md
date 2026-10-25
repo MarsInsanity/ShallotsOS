@@ -34,22 +34,18 @@ Latest test build:
 
 ## User to-do (device tests)
 
-1. Install the latest test build (link above), replacing files when asked.
-2. Load > Auto preview after leaving a game once (Auto save & load on).
-3. Lag: keep `log.txt` at the card root. When the lag starts, keep playing
-   ~15 s, then open the menu and go back to the game, play ~15 s more and
-   send `logs/picoarch.log`.
-4. Performance baseline: play Yoshi's Island ~30 s with the Bilinear
-   filter, then ~30 s with Sharp (Options > Audio and video), rewind off;
-   same for a PS1 game; note which PS1 core (ps1r / qpsx) and send
-   `logs/picoarch.log`.
-5. gamelist.xml: scrape a few systems with Skraper (Recalbox front-end),
-   check box art, then turn on Settings > General > Names from gamelist.xml.
-   Note how long big folders take to open the first time.
-6. Music volume bar: send the `VIDEO_PLAYER:` lines from `/mnt/sdcard/log.txt`
-   (the file at the card root, not the one in `logs/`).
-7. Books (needs `cubegm/ebook` from TreeFrogUI), Videos and Images folders.
-8. When convenient: low-battery save at 5%.
+1. Back up the SD card first (this build moves games between folders).
+2. Install the latest test build (link above), replacing files when asked.
+3. First boot: the prompt appears; A moves the games. Check a few systems
+   (nes, gb / gbc split, megadrive / mastersystem / gamegear, psx), that
+   saves and save states still load, Recents and Favourites still launch,
+   and the old TreeFrogUI folders are gone (or hold only name clashes).
+4. Y menu on a game: change the emulator for this game, then for the whole
+   system; Search and Add to Favourites from the menu; Y on a system.
+5. Skraper (Recalbox front-end) now finds the systems by folder name.
+6. Earlier items still open: Auto preview, lag report log, performance
+   baseline (Yoshi's Island / PS1), music volume bar `VIDEO_PLAYER:` lines,
+   Books / Videos / Images, low-battery save.
 
 ## Done
 
@@ -114,6 +110,22 @@ Latest test build:
       6.7 MB: 14 ms on the host); scraper folders (media, Imgs...) hidden
       from game lists; artwork miss cache keyed on the gamelists too.
       Recents list names and `<desc>` not yet
+- [x] Recalbox folder structure (`frogui/systems.c`, 65 systems with
+      Recalbox names, full names and emulators, default first), FrogUI and
+      OnionOS icons and names for them, Games list sorted by display name
+- [x] First-boot move from TreeFrogUI's folders (`frogui/migrate.c`):
+      prompt (A move, B power off and ask again); renames only, never
+      deletes; splits mixed folders by extension (.gbc out of gb, sega into
+      megadrive / mastersystem / gamegear); saves, save states, screenshots,
+      cheats and art follow each game; Recents, Favourites, play time,
+      emulator choices and resume files rewritten; alternate-emulator
+      folders become per-game choices (nesq = QuickNES); name clashes stay
+      put; empty TreeFrogUI folders removed. Tested on a host card copy
+- [x] Y menu (OnionOS / SpruceOS style): Search, Emulator (Left/Right),
+      Apply to This game / Whole system, Add/Remove Favourite; Y on a system
+      sets its emulator; launch uses game choice, then system choice, then
+      the default; standalone emulators allowed as choices; Y hint now
+      "Y-MENU"; override list raised to 2048 entries
 - [x] Draft of every component's open-source license in README.md
       ("License & Attribution" tables) and LICENSE.md section 4; awaiting the
       user's review of the open points

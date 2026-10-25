@@ -1,4 +1,5 @@
 #include "onion_theme.h"
+#include "systems.h"
 
 #include "common/i18n.h"
 #include "font.h"
@@ -1578,6 +1579,10 @@ static const OImg *console_icon(const char *folder, int selected) {
       names[n++] = console_aliases[i].icons;
       break;
     }
+  /* ShallotsOS (Recalbox) folder names: the system's Onion icon name. */
+  const ShSystem *sys = systems_find_exact(folder);
+  if (sys && n < 4 && strcasecmp(sys->icon, folder))
+    names[n++] = sys->icon;
   char path[ONION_PATH_MAX];
   for (int s = selected ? 0 : 1; s < 2; s++) {
     for (int i = 0; i < n; i++) {

@@ -36,6 +36,8 @@
 #include "backlight.h"
 #include "input.h"
 #include "core_override.h"
+#include "systems.h"
+#include "migrate.h"
 #include "ext_filter.h"
 #include "onion_theme.h"
 #include "gamelist.h"
@@ -224,6 +226,9 @@ static const ConsoleMapping console_mappings[] = {
 
 static const char* get_core_for_folder(const char *folder) {
     if (!folder) return NULL;
+    /* ShallotsOS (Recalbox) folders: the system's first installed emulator. */
+    const char *sys_core = systems_default_core(systems_find_exact(folder));
+    if (sys_core) return sys_core;
     for (int i = 0; console_mappings[i].console_name; i++)
         if (strcasecmp(console_mappings[i].console_name, folder) == 0)
             return console_mappings[i].core_path;
@@ -468,6 +473,8 @@ static int ui_toast_frames = 0;
  * counters: a 240-frame confirmation used to disappear in a fraction of a
  * second, before a deliberately held face button had even passed debounce. */
 static bool usb_mode_confirm_active = false;
+/* First boot on a TreeFrogUI card: 1 asking, 2 "moving" shown, 3 move now. */
+static int mig_state = 0;
 static bool usb_mode_initiated_active = false;
 static bool usb_mode_wait_for_release = false;
 static long long usb_mode_initiated_at_ms = 0;
@@ -1743,6 +1750,13 @@ static const char *system_display_name(const char *folder) {
     if (strcmp(folder, RECENTS_ENTRY_NAME) == 0) return tr("folder.recents");
     if (strcmp(folder, FAVOURITES_ENTRY_NAME) == 0) return tr("folder.favourites");
     if (!settings_friendly_names) return folder;
+    /* ShallotsOS (Recalbox) folders: Recalbox's own names, translatable. */
+    const ShSystem *sys = systems_find_exact(folder);
+    if (sys) {
+        char key[96];
+        snprintf(key, sizeof key, "system.%s", sys->folder);
+        return tr_or(key, sys->name);
+    }
     for (size_t i = 0; i < sizeof(system_labels) / sizeof(system_labels[0]); i++)
         if (strcasecmp(folder, system_labels[i].folder) == 0) {
             return system_labels[i].label[0] ? system_labels[i].label
@@ -1836,6 +1850,15 @@ static int direntry_cmp(const void *a, const void *b) {
     const DirEntry *x = a, *y = b;
     if (x->is_dir != y->is_dir) return y->is_dir - x->is_dir;
     return strcasecmp(x->name, y->name);
+}
+
+static const char *system_display_name(const char *folder);
+static int direntry_display_cmp(const void *a, const void *b) {
+    const DirEntry *x = a, *y = b;
+    if (x->is_dir != y->is_dir) return y->is_dir - x->is_dir;
+    char nx[128];
+    snprintf(nx, sizeof nx, "%s", system_display_name(x->name));   /* may share a buffer */
+    return strcasecmp(nx, system_display_name(y->name));
 }
 
 static int folder_has_games(const char *path, int depth) {
@@ -2186,6 +2209,10 @@ static void scan_directory(const char *path) {
         }
         entry_count = write;
     }
+    /* The Games list in display-name order, like Recalbox (Game Boy before
+     * Sega Game Gear), when the friendly names are shown. */
+    if (at_root && settings_friendly_names && entry_count > 1)
+        qsort(entries, entry_count, sizeof(DirEntry), direntry_display_cmp);
     /* Favourites remains part of the Games library. Recents and Settings are
      * real top-level tabs and must never appear as fake system folders. */
     if (strcmp(path, ROMS_PATH) == 0) {
@@ -3324,9 +3351,18 @@ static void launch_by_path(const char *path) {
     char *slash = strrchr(dir, '/');
     if (slash) *slash = '\0';
     const char *ov = core_override_lookup(path, dir);
+    if (!ov && folder) {
+        /* The Y menu's "Whole system" choice, for games in sub-folders too. */
+        char sys_key[MAX_PATH_LEN];
+        snprintf(sys_key, sizeof sys_key, "%s/%s", ROMS_PATH, folder);
+        if (strcmp(sys_key, dir) != 0) ov = core_override_lookup(NULL, sys_key);
+    }
+    if (ov && access(ov, F_OK) != 0) ov = NULL;   /* that emulator was removed */
     const char *core = ov ? ov : get_core_for_folder(folder);
     if (!core) core = get_core_for_extension(path);
-    if (ov)
+    if (ov && is_standalone_bin(ov))
+        request_standalone_launch(ov, path);   /* PCSX4ALL, PPSSPP, DSperate... */
+    else if (ov)
         request_game_launch(ov, path);         /* explicit override → libretro */
     else if (core) {
         /* ps1 folder maps to pcsx_rearmed by default but we prefer the standalone
@@ -3592,6 +3628,209 @@ static void handle_core_picker(void) {
             scan_directory(current_path);
         extf_dirty = false;
     }
+}
+
+/* ---- Y menu: search, emulator, favourite (OnionOS / SpruceOS style) --------
+ * Y on a game, or on a system in the Games list, opens a short menu: Search,
+ * the emulator (Left/Right through the system's installed emulators, or
+ * Default), whether that choice is for this game or every game of the
+ * system, and Add/Remove Favourite. A applies the row, B closes. */
+enum { GM_SEARCH, GM_EMU, GM_SCOPE, GM_FAV, GM_ROWS };
+static bool gm_active = false;
+static int gm_row, gm_core, gm_ncores, gm_scope;   /* gm_core 0 = Default; scope 0 game, 1 system */
+static const char *gm_cores[8];
+static const ShSystem *gm_sys;
+static bool gm_is_game;
+static char gm_dir[MAX_PATH_LEN], gm_name[256], gm_rom[MAX_PATH_LEN], gm_sys_key[MAX_PATH_LEN];
+static char gm_title[192];
+
+static bool gm_row_shown(int r) {
+    if (r == GM_EMU) return gm_sys && gm_ncores > 0;
+    if (r == GM_SCOPE) return gm_is_game && gm_sys && gm_ncores > 0;
+    if (r == GM_FAV) return gm_is_game;
+    return true;
+}
+
+static int gm_core_index(const char *core) {
+    for (int i = 0; core && i < gm_ncores; i++)
+        if (!strcmp(gm_cores[i], core)) return i + 1;
+    return 0;
+}
+
+static void game_menu_open(const char *dir, const char *name, bool is_game) {
+    snprintf(gm_dir, sizeof gm_dir, "%s", dir);
+    snprintf(gm_name, sizeof gm_name, "%s", name);
+    snprintf(gm_rom, sizeof gm_rom, "%s/%s", dir, name);
+    gm_is_game = is_game;
+    const char *folder = get_console_folder(gm_rom);
+    gm_sys = systems_find(folder);
+    gm_ncores = systems_cores(gm_sys, gm_cores, 8);
+    snprintf(gm_sys_key, sizeof gm_sys_key, "%s/%s", ROMS_PATH, folder ? folder : "");
+    const char *game_ov = is_game ? core_override_lookup(gm_rom, NULL) : NULL;
+    const char *sys_ov = core_override_lookup(NULL, gm_sys_key);
+    if (game_ov) { gm_scope = 0; gm_core = gm_core_index(game_ov); }
+    else if (sys_ov) { gm_scope = 1; gm_core = gm_core_index(sys_ov); }
+    else { gm_scope = is_game ? 0 : 1; gm_core = 0; }
+    if (is_game) {
+        const char *listed = gamelist_label(dir, name);
+        snprintf(gm_title, sizeof gm_title, "%s", listed ? listed : name);
+        char *dot = listed ? NULL : strrchr(gm_title, '.');
+        if (dot && dot != gm_title) *dot = '\0';
+    } else {
+        snprintf(gm_title, sizeof gm_title, "%s", gm_sys ? gm_sys->name : system_display_name(name));
+    }
+    gm_row = GM_SEARCH;
+    gm_active = true;
+}
+
+static void gm_toggle_favourite(void) {
+    const char *folder = get_console_folder(gm_dir);
+    const char *core = get_core_for_folder(folder);
+    if (!core) core = get_core_for_extension(gm_name);
+    char game_name[256];
+    snprintf(game_name, sizeof game_name, "%s", gm_name);
+    char *dot = strrchr(game_name, '.');
+    if (dot) *dot = '\0';
+    if (core) {
+        int was_favourite = favorites_is_favorited(core, game_name);
+        favorites_toggle(core, game_name, gm_rom);
+        ui_toast_show(was_favourite ? "Removed from Favourites" : "Added to Favourites");
+    }
+}
+
+static void gm_apply_emulator(void) {
+    const char *core = gm_core ? gm_cores[gm_core - 1] : NULL;
+    char msg[160];
+    if (gm_scope == 0) {
+        core_override_set(gm_rom, core);
+        snprintf(msg, sizeof msg, "%s", core ? tr_or("gm.saved_game", "Emulator set for this game")
+                                            : tr_or("gm.default_game", "This game uses the system's emulator"));
+    } else {
+        core_override_set(gm_sys_key, core);
+        if (gm_is_game) core_override_set(gm_rom, NULL);   /* this game follows the system */
+        snprintf(msg, sizeof msg, "%s", core ? tr_or("gm.saved_system", "Emulator set for the whole system")
+                                            : tr_or("gm.default_system", "System back to its default emulator"));
+    }
+    ui_toast_show(msg);
+}
+
+static void handle_game_menu(void) {
+    int step = input_repeat(FROG_BTN_UP) ? -1 : input_repeat(FROG_BTN_DOWN) ? 1 : 0;
+    if (step)
+        for (int i = 0, r = gm_row; i < GM_ROWS; i++) {
+            r = (r + step + GM_ROWS) % GM_ROWS;
+            if (gm_row_shown(r)) { gm_row = r; break; }
+        }
+    int lr = input_repeat(FROG_BTN_LEFT) ? -1 : input_repeat(FROG_BTN_RIGHT) ? 1 : 0;
+    if (lr && gm_row == GM_EMU)
+        gm_core = (gm_core + lr + gm_ncores + 1) % (gm_ncores + 1);
+    if (lr && gm_row == GM_SCOPE)
+        gm_scope = !gm_scope;
+    if (input_was_pressed(FROG_BTN_A)) {
+        gm_active = false;
+        if (gm_row == GM_SEARCH) {
+            search_query[0] = '\0';
+            search_kbd_r = 0; search_kbd_c = 0;
+            snprintf(search_scope, sizeof search_scope, "%s", gm_is_game ? gm_dir : gm_rom);
+            search_kbd_active = true;
+        } else if (gm_row == GM_EMU || gm_row == GM_SCOPE) {
+            gm_apply_emulator();
+        } else if (gm_row == GM_FAV) {
+            gm_toggle_favourite();
+        }
+        return;
+    }
+    if (input_was_pressed(FROG_BTN_B) || input_was_pressed(FROG_BTN_Y))
+        gm_active = false;
+}
+
+/* Row text for both looks: label, and the value on the right ("" if none). */
+static void gm_row_text(int r, char *label, size_t ls, char *value, size_t vs) {
+    char core[64];
+    value[0] = '\0';
+    switch (r) {
+    case GM_SEARCH:
+        snprintf(label, ls, "%s", tr_or("gm.search", "Search"));
+        break;
+    case GM_EMU:
+        snprintf(label, ls, "%s", tr_or("gm.emulator", "Emulator"));
+        if (gm_core) {
+            snprintf(value, vs, "%s", systems_core_label(gm_cores[gm_core - 1], core, sizeof core));
+        } else {
+            /* For one game, "no choice" means the system's choice. */
+            const char *sys_ov = gm_scope == 0 ? core_override_lookup(NULL, gm_sys_key) : NULL;
+            if (sys_ov && access(sys_ov, F_OK) != 0) sys_ov = NULL;
+            snprintf(value, vs, "%s (%s)",
+                     sys_ov ? tr_or("gm.system", "System") : tr_or("gm.default", "Default"),
+                     systems_core_label(sys_ov ? sys_ov : gm_cores[0], core, sizeof core));
+        }
+        break;
+    case GM_SCOPE:
+        snprintf(label, ls, "%s", tr_or("gm.apply_to", "Apply to"));
+        snprintf(value, vs, "%s", gm_scope ? tr_or("gm.whole_system", "Whole system")
+                                           : tr_or("gm.this_game", "This game"));
+        break;
+    case GM_FAV: {
+        const char *folder = get_console_folder(gm_dir);
+        const char *c = get_core_for_folder(folder);
+        if (!c) c = get_core_for_extension(gm_name);
+        char game_name[256];
+        snprintf(game_name, sizeof game_name, "%s", gm_name);
+        char *dot = strrchr(game_name, '.');
+        if (dot) *dot = '\0';
+        bool fav = c && favorites_is_favorited(c, game_name);
+        snprintf(label, ls, "%s", fav ? tr_or("gm.fav_remove", "Remove from Favourites")
+                                      : tr_or("gm.fav_add", "Add to Favourites"));
+        break;
+    }
+    }
+}
+
+static void render_game_menu(void) {
+    int rows[GM_ROWS], n = 0, cur = 0;
+    for (int r = 0; r < GM_ROWS; r++)
+        if (gm_row_shown(r)) {
+            if (r == gm_row) cur = n;
+            rows[n++] = r;
+        }
+    char labels[GM_ROWS][96], values[GM_ROWS][96];
+    for (int i = 0; i < n; i++)
+        gm_row_text(rows[i], labels[i], sizeof labels[i], values[i], sizeof values[i]);
+    if (onion_theme_active()) {
+        onion_render_background(framebuffer);
+        onion_render_header(framebuffer, gm_title, 0);
+        OnionListItem items[GM_ROWS];
+        memset(items, 0, sizeof items);
+        for (int i = 0; i < n; i++) {
+            items[i].label = labels[i];
+            items[i].value = values[i];
+            items[i].kind = values[i][0] ? ONION_ROW_VALUE : ONION_ROW_PLAIN;
+        }
+        onion_render_list(framebuffer, items, n, cur, 0, 0);
+        onion_render_footer(framebuffer, tr_or("onion.select", "SELECT"),
+                            tr_or("onion.back", "BACK"), 0, 0);
+        return;
+    }
+    if (banner_is_loaded())
+        banner_render(framebuffer);
+    else
+        render_clear_screen(framebuffer);
+    render_header(framebuffer, gm_title);
+    for (int i = 0; i < n; i++) {
+        char line[200];
+        if (values[i][0])
+            snprintf(line, sizeof line, "%s:  %s%s%s", labels[i],
+                     rows[i] == GM_EMU || rows[i] == GM_SCOPE ? "< " : "", values[i],
+                     rows[i] == GM_EMU || rows[i] == GM_SCOPE ? " >" : "");
+        else
+            snprintf(line, sizeof line, "%s", labels[i]);
+        int ry = START_Y + i * ITEM_HEIGHT;
+        if (i == cur)
+            render_text_pillbox(framebuffer, PADDING, ry, line, COLOR_SELECT_BG, COLOR_SELECT_TEXT, 7, 0);
+        else
+            font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, PADDING, ry, line, COLOR_TEXT);
+    }
+    render_legend(framebuffer, LEGEND_X_NONE, 0, 0);
 }
 
 /* Wizard covers every button except FN, which is only probed on devices that
@@ -4055,6 +4294,7 @@ static const char *system_icon_path(const char *folder, char *path, size_t size)
     /* Master System is stored as SMS on some cards, while the icon packs use
      * the shared Game Gear/Master System artwork key (gg). */
     else if (strcasecmp(folder, "sms") == 0) key = "gg";
+    else if (systems_find_exact(folder)) key = systems_icon_key(folder);
     if (settings_icon_pack_idx > 0 && settings_icon_pack_idx < icon_pack_count)
         snprintf(path, size, BANNER_DIR "/icon-packs/%s/%s.png",
                  icon_pack_files[settings_icon_pack_idx], key);
@@ -4499,6 +4739,41 @@ static void handle_input(void) {
             return;
     }
 
+    /* First boot: move the TreeFrogUI folders, or power off. */
+    if (mig_state == 1) {
+        if (input_was_pressed(FROG_BTN_A)) {
+            mig_state = 2;
+        } else if (input_was_pressed(FROG_BTN_B)) {
+            if (access(SHUTDOWN_BIN, X_OK) == 0)
+                request_builtin_launch(SHUTDOWN_BIN);
+            else if (environ_cb)
+                environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
+        }
+        return;
+    }
+    if (mig_state == 2)
+        return;   /* the "moving" screen is being drawn */
+    if (mig_state == 3) {
+        MigrateReport rep;
+        migrate_run(g_roms_path, &rep);
+        cache_clear();
+        unlink(ROMS_SIG_FILE);
+        unlink(ROMS_SIG_CHECKED);
+        refresh_cache_if_roms_changed();
+        recent_games_load();
+        favorites_load();
+        snprintf(current_path, sizeof current_path, "%s", ROMS_PATH);
+        scan_directory(ROMS_PATH);
+        char msg[96];
+        if (rep.kept || rep.failed)
+            snprintf(msg, sizeof msg, "Moved %d, %d left in old folders", rep.moved, rep.kept + rep.failed);
+        else
+            snprintf(msg, sizeof msg, "Moved %d games to the new folders", rep.moved);
+        ui_toast_show(msg);
+        mig_state = 0;
+        return;
+    }
+
     /* USB mode gets its own confirmation page.  Keeping this modal prevents
      * the second A press from falling through into the browser (which used to
      * look like a UI restart) and gives B a reliable cancel path. */
@@ -4550,6 +4825,11 @@ static void handle_input(void) {
     /* Core picker overlay: choose an override core for the current ROM/folder */
     if (core_picker_active) {
         handle_core_picker();
+        return;
+    }
+
+    if (gm_active) {
+        handle_game_menu();
         return;
     }
 
@@ -4713,26 +4993,15 @@ static void handle_input(void) {
                 scan_directory(ROMS_PATH);
                 strncpy(current_path, ROMS_PATH, MAX_PATH_LEN-1);
             }
-        } else if (!viewing_recents && !entries[selected_index].is_dir &&
+        } else if (!viewing_recents && !viewing_apps && !apps_browsing && !viewing_search &&
+                   !viewing_activity && !entries[selected_index].is_dir &&
                    strcmp(entries[selected_index].name, SETTINGS_ENTRY_NAME) != 0 &&
                    strcmp(entries[selected_index].name, RECENTS_ENTRY_NAME) != 0 &&
                    strcmp(entries[selected_index].name, FAVOURITES_ENTRY_NAME) != 0) {
-            /* Toggle favourite for current ROM */
-            const char *folder = get_console_folder(current_path);
-            const char *core   = get_core_for_folder(folder);
-            if (!core) core = get_core_for_extension(entries[selected_index].name);
-            char rom_path[MAX_PATH_LEN];
-            snprintf(rom_path, sizeof(rom_path), "%s/%s", current_path, entries[selected_index].name);
-            char game_name[256];
-            strncpy(game_name, entries[selected_index].name, sizeof(game_name)-1);
-            game_name[sizeof(game_name)-1] = '\0';
-            char *dot = strrchr(game_name, '.');
-            if (dot) *dot = '\0';
-            if (core) {
-                int was_favourite = favorites_is_favorited(core, game_name);
-                favorites_toggle(core, game_name, rom_path);
-                ui_toast_show(was_favourite ? "Removed from Favourites" : "Added to Favourites");
-            }
+            game_menu_open(current_path, entries[selected_index].name, true);
+        } else if (!viewing_recents && !viewing_apps && !apps_browsing && !viewing_search &&
+                   entries[selected_index].is_dir && strcmp(current_path, ROMS_PATH) == 0) {
+            game_menu_open(current_path, entries[selected_index].name, false);   /* a system */
         }
     }
 
@@ -5083,6 +5352,10 @@ void retro_init(void) {
     }
     strncpy(current_path, g_roms_path, MAX_PATH_LEN - 1);
     current_path[MAX_PATH_LEN - 1] = '\0';
+    if (!migrate_is_done()) {
+        if (migrate_needed(g_roms_path)) mig_state = 1;   /* ask before moving */
+        else migrate_finish(g_roms_path);                 /* fresh card */
+    }
     create_media_folders();
     refresh_cache_if_roms_changed();
     /* picoarch leaves a note when it powered the console off (asleep too
@@ -5424,6 +5697,44 @@ static void render_extf_kbd(void) {
                    y + KBD_NROWS * ch + UI_S(6),
                    tr("keyboard.ok_cancel"), COLOR_TEXT);
     render_legend(framebuffer, LEGEND_X_NONE, 0, 0);
+}
+
+static void render_migrate_prompt(void) {
+    const char *lines[] = {
+        tr_or("migrate.line1", "ShallotsOS sorts games like Recalbox:"),
+        tr_or("migrate.line2", "one folder per system: nes, gbc, psx..."),
+        tr_or("migrate.line3", "Move your games out of the TreeFrogUI folders?"),
+        tr_or("migrate.line4", "Games and saves are moved, never deleted."),
+    };
+    if (mig_state >= 2) {
+        const char *busy = tr_or("migrate.busy", "Moving your games...");
+        if (onion_theme_active()) {
+            onion_render_background(framebuffer);
+            onion_render_prompt(framebuffer, busy, NULL, NULL);
+        } else {
+            render_clear_screen(framebuffer);
+            font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT,
+                           (SCREEN_WIDTH - font_measure_text(busy)) / 2, SCREEN_HEIGHT / 2, busy, COLOR_TEXT);
+        }
+        return;
+    }
+    if (onion_theme_active()) {
+        char msg[512];
+        snprintf(msg, sizeof msg, "%s\n%s\n%s\n%s", lines[0], lines[1], lines[2], lines[3]);
+        onion_render_background(framebuffer);
+        onion_render_prompt(framebuffer, msg, tr_or("migrate.move", "MOVE"),
+                            tr_or("migrate.power_off", "CANCEL (POWER OFF)"));
+        return;
+    }
+    render_clear_screen(framebuffer);
+    render_header(framebuffer, "ShallotsOS");
+    int y = SCREEN_HEIGHT / 2 - UI_S(70);
+    for (int i = 0; i < 4; i++, y += UI_S(26))
+        font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT,
+                       (SCREEN_WIDTH - font_measure_text(lines[i])) / 2, y, lines[i], COLOR_TEXT);
+    const char *hint = tr_or("migrate.hint", "A: Move    B: Cancel (power off)");
+    render_text_pillbox(framebuffer, (SCREEN_WIDTH - font_measure_text(hint)) / 2, y + UI_S(14),
+                        hint, COLOR_SELECT_BG, COLOR_SELECT_TEXT, 7, 0);
 }
 
 static void render_usb_confirm(void) {
@@ -5870,6 +6181,8 @@ void retro_run(void) {
          * frame, leaving the old "USB MTP READY" framebuffer on screen until
          * an unrelated navigation key happened to invalidate it. */
         sig = sig*33u + (unsigned)usb_mode_confirm_active;
+        sig = sig*33u + (unsigned)mig_state;
+        sig = sig*33u + (unsigned)(gm_active ? 1 + gm_row * 64 + gm_core * 4 + gm_scope * 2 : 0);
         sig = sig*33u + (unsigned)usb_mode_initiated_active;
         sig = sig*33u + (unsigned)settings_menu_active;
         if (settings_menu_active) {
@@ -5922,7 +6235,10 @@ void retro_run(void) {
      * popup remains available. */
     fb1_clear_battery_zone();
 
-    if (usb_mode_confirm_active || usb_mode_initiated_active) {
+    if (mig_state) {
+        render_migrate_prompt();
+        if (mig_state == 2) mig_state = 3;   /* move on the next pass */
+    } else if (usb_mode_confirm_active || usb_mode_initiated_active) {
         render_usb_confirm();
     } else if (search_kbd_active) {
         render_search_kbd();
@@ -5930,6 +6246,8 @@ void retro_run(void) {
         render_extf_kbd();
     } else if (core_picker_active) {
         render_core_picker();
+    } else if (gm_active) {
+        render_game_menu();
     } else if (remap_wizard_active) {
         render_remap_wizard();
     } else if (onion_theme_active() && render_onion_frame()) {
