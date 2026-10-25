@@ -528,15 +528,72 @@ Donations go straight toward buying the next device to port to.
 
 ## License & Attribution
 
-This project is a compilation of multiple components, each retaining its original license:
+ShallotsOS is a compilation. Each part keeps its own license, listed below;
+no part is relicensed by being included here. The menu frontend is
+**non-commercial** (CC BY-NC-SA 4.0), so ShallotsOS as a whole may not be sold
+or bundled with devices for sale. Full license texts are in
+[LICENSE.md](LICENSE.md) and in the license files next to each component.
 
-- **TreeFrogUI for SF3000 (UI Port)**: Licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)** license. It is a heavily modified fork of [FrogUI](https://github.com/tzubertowski/frogui), created by Tomasz Zubertowski, Desoxyn, and Q_ta.
- - *Attribution*: Changes have been made to support the SF3000 hardware architecture, resolution, input handling, and directory layout.
- - *ShareAlike*: Any modifications or derivations of the UI frontend code must be distributed under the same CC BY-NC-SA 4.0 license.
- - *NonCommercial*: This software is strictly for non-commercial use. Selling or bundling it with commercial devices is prohibited.
-  - *Assets & Images*: The logo and original UI font were taken from the upstream [FrogUI](https://github.com/tzubertowski/frogui) repository, while the default system background images were sourced from the **[Art Book Next](https://github.com/anthonycaccese/art-book-next-es)** ES-DE theme by Anthony Caccese. These assets are used under their respective open-source and creative commons licenses.
-  - *Default UI font*: **BPreplay** (BPreplayBold) by **George Triantafyllakos / [Backpacker](https://www.fontsquirrel.com/fonts/bpreplay)**, used under its free license (same font used by MinUI / NextUI). Bundled in `frogui/fonts/`; selectable/replaceable in Settings → Font.
-- **picoarch (Frontend Integration)**: Uses code from `libpicofe` (triple-licensed under GNU GPL v2+, GNU LGPL v2.1+, or the MAME license) and neonloop's wrapper code (licensed under the **BSD 3-Clause License**).
-- **Emulator Cores**: Each emulator core located in the `cores/` directory is built from its respective upstream repository and retains its individual open-source license (such as GPL, BSD, MIT, or MAME license). See [cores.md](cores.md) and individual core subdirectories for details.
+### ShallotsOS and TreeFrogUI
 
-See the root [LICENSE.md](LICENSE.md) file for the full copyright notices and license texts.
+| Component | Where | License | Authors / source |
+|---|---|---|---|
+| Menu frontend (`frogui_libretro.so`) | `frogui/` | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) | Fork of [FrogUI](https://github.com/tzubertowski/frogui) by Tomasz Zubertowski, Desoxyn and Q_ta; TreeFrogUI SF3000 port; ShallotsOS changes |
+| OnionOS theme support and GameSwitcher | `frogui/onion_theme.c` | CC BY-NC-SA 4.0 (part of the frontend) | ShallotsOS. Reads the [OnionOS](https://github.com/OnionUI/Onion) theme format and follows Onion's screen layouts; no OnionOS source code is included (OnionOS itself is GPL-3.0) |
+| Music and video player | `apps/video_player/` | CC BY-NC-SA 4.0 (TreeFrogUI) | Uses the firmware's own HCRTOS `libffplayer` (not redistributed here) and libjpeg ([IJG license](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/README.ijg)) |
+| ShallotsOS theme, boot logo and their generator scripts | `assets/onion/Themes/ShallotsOS/`, `sdcard/cubegm/xgame-logo.bmp`, `tools/onion_theme/` | CC BY-NC-SA 4.0 | Original ShallotsOS artwork |
+| Built-in colour themes and translations | `frogui/` | CC BY-NC-SA 4.0 | TreeFrogUI / FrogUI contributors |
+
+### Emulator frontend and cores
+
+| Component | Where | License | Authors / source |
+|---|---|---|---|
+| picoarch (`picoarch`, `picoarch_hi`, in-game menu) | [MarsInsanity/ShallotsOS_picoarch](https://github.com/MarsInsanity/ShallotsOS_picoarch) | [BSD 3-Clause](https://opensource.org/license/bsd-3-clause) | neonloop; SF3000 port; ShallotsOS changes are under the license of the file they change |
+| libpicofe (menu and input library inside picoarch) | `libpicofe/` in picoarch | GPL v2+, LGPL v2.1+ or MAME license (your choice) | notaz and contributors |
+| Emulator cores | `cores/` | Each core's own license (GPL, LGPL, BSD, MIT, MAME, non-commercial, ...) | Upstream libretro authors; see [cores.md](cores.md) |
+
+### Libraries built into the menu
+
+| Library | License | Source |
+|---|---|---|
+| HarfBuzz (text shaping) | "Old MIT" | `frogui/external/harfbuzz/COPYING` |
+| SheenBidi (right-to-left text) | Apache 2.0 | `frogui/external/SheenBidi/LICENSE` |
+| FreeType (font rendering, linked from the SF3000 SDK) | FreeType License (FTL) or GPL v2 | [freetype.org](https://freetype.org/license.html) |
+| stb_image | Public domain or MIT | `frogui/stb_image.h` |
+| libretro API header | MIT | `frogui/libretro.h` |
+
+### Fonts
+
+| Font | Where | License | Author |
+|---|---|---|---|
+| Exo 2 Bold Italic (OnionOS fallback font) | `assets/onion/fonts/` | SIL OFL 1.1 | Natanael Gama |
+| TreeFrogLatin (DejaVu Sans) | `frogui/fonts/` | [Bitstream Vera / DejaVu license](https://dejavu-fonts.github.io/License.html) | Bitstream, DejaVu contributors |
+| TreeFrogUnicode (reduced WenQuanYi Zen Hei) | `frogui/fonts/` | GPL with font embedding exception | Wen Quan Yi Project |
+| Cascadia Code Bold | `frogui/fonts/` | SIL OFL 1.1 | Microsoft |
+| Nunito Bold (`alium_Nunito`) | `frogui/fonts/` | SIL OFL 1.1 | Vernon Adams; bundled as in [Allium](https://github.com/goweiwen/Allium) |
+| GamePocket | `frogui/fonts/` | SIL OFL 1.1 | AbFarid |
+| monogram | `frogui/fonts/` | CC0 1.0 (public domain) | datagoblin |
+| BPreplay (default TreeFrogUI font) | where bundled | Free license from the author | George Triantafyllakos / [Backpacker](https://www.fontsquirrel.com/fonts/bpreplay) |
+
+### Icons and artwork
+
+| Artwork | Where | License | Author / source |
+|---|---|---|---|
+| Console icons for themes without their own (the "System View" set) | `assets/system-icons/` | GPL-3.0 | KyleBing, [retro-game-console-icons](https://github.com/KyleBing/retro-game-console-icons) (Cosy) |
+| Ten OnionOS icon packs | `assets/icon-packs/` | Per pack: Arcticons is CC BY-SA 4.0, Cosy is GPL-3.0, the rest declare no license and rights stay with their creators | See [`assets/icon-packs/README.md`](assets/icon-packs/README.md) |
+| Default system backgrounds (Art Book Next) | `frogui/` | CC BY-NC-SA 4.0 | [Anthony Caccese](https://github.com/anthonycaccese/art-book-next-es) |
+| Background packs (Art Book NextUI, Nao Black and test sets) | theme packs | Their authors' terms | [Leviathanium/NextUI-Themes](https://github.com/Leviathanium/NextUI-Themes); see [theme.md](theme.md#background-theme-packs) |
+| FrogUI logo | `frogui/` | CC BY-NC-SA 4.0 | FrogUI contributors |
+
+### OnionOS themes you add
+
+ShallotsOS ships no OnionOS themes other than its own. Themes you copy into
+`Themes/` (for example from the [OnionUI/Themes](https://github.com/OnionUI/Themes)
+catalog) stay under their creators' terms. That catalog has no repository-wide
+license, so check each theme's readme before sharing it.
+
+### Website
+
+The ROM-scraper page in `site/` uses fflate (MIT, Arjun Barrett),
+mini-scraper (MIT, Yohan Lasorsa) and a WebAssembly build of rcheevos for
+RetroAchievements hashes (MIT, Miguel Piedrafita); their license files are in `site/assets/js/scraper/`.

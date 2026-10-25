@@ -66,3 +66,25 @@ POSSIBILITY OF SUCH DAMAGE.
 ## 3. Emulator Cores
 
 All emulator cores contained or cloned into the `cores/` directory are built from separate upstream source repositories. They are governed by their respective individual open-source licenses (GPL, LGPL, BSD, MIT, MAME, etc.). Please refer to the documentation or source files within each core's directory, or see [cores.md](cores.md) for links to the upstream repositories.
+
+---
+
+## 4. ShallotsOS Additions and Other Components
+
+ShallotsOS's own changes to the frontend (OnionOS theme support, the
+GameSwitcher, the media folders and settings), the ShallotsOS theme, the boot
+logo and their generator scripts are distributed under the same
+**CC BY-NC-SA 4.0** license as the TreeFrogUI frontend. ShallotsOS reads the
+OnionOS theme format but includes no OnionOS source code. ShallotsOS's
+changes to picoarch are under the license of the files they change.
+
+Bundled libraries, fonts, icons and artwork keep their own licenses: HarfBuzz
+("Old MIT"), SheenBidi (Apache 2.0), FreeType (FTL or GPL v2), stb_image
+(public domain or MIT), Exo 2, Cascadia Code, Nunito and GamePocket (SIL OFL
+1.1), DejaVu Sans (Bitstream Vera / DejaVu license), WenQuanYi Zen Hei (GPL with
+font exception), monogram (CC0), the Cosy console icons (GPL-3.0) and the
+icon packs listed in `assets/icon-packs/README.md`. The full list, with
+authors and links, is in the "License & Attribution" section of
+[README.md](README.md); the license texts are in the files next to each
+component.
+
