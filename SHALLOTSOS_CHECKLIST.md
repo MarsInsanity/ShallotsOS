@@ -34,18 +34,38 @@ Latest test build:
 
 ## User to-do (device tests)
 
-1. Back up the SD card first (this build moves games between folders).
-2. Install the latest test build (link above), replacing files when asked.
-3. First boot: the prompt appears; A moves the games. Check a few systems
-   (nes, gb / gbc split, megadrive / mastersystem / gamegear, psx), that
-   saves and save states still load, Recents and Favourites still launch,
-   and the old TreeFrogUI folders are gone (or hold only name clashes).
-4. Y menu on a game: change the emulator for this game, then for the whole
-   system; Search and Add to Favourites from the menu; Y on a system.
-5. Skraper (Recalbox front-end) now finds the systems by folder name.
-6. Earlier items still open: Auto preview, lag report log, performance
-   baseline (Yoshi's Island / PS1), music volume bar `VIDEO_PLAYER:` lines,
-   Books / Videos / Images, low-battery save.
+Before: back up the SD card; keep an empty `log.txt` at the card root.
+
+A. Folder move (first boot)
+1. Prompt appears; B powers off and it asks again next boot; A moves.
+2. Games in the right folders (nes, gb / gbc split, megadrive /
+   mastersystem / gamegear, psx, atari2600...); old folders gone; the
+   result message's "left in old folders" count, if any.
+3. Saves and save states load (one NES, one GB/GBC, one PS1 game).
+4. Recents, Favourites, play time (Activity Tracker), resume after
+   power-off still work.
+5. Former nesq / gbav-style games still run on their old emulator.
+6. Box art still shows; no Imgs / media folders listed as games.
+B. Y menu
+7. Y on a game: Search, Emulator Left/Right, Apply to This game / Whole
+   system, A saves (toast); the game then launches on that emulator.
+8. Y on a system in the Games list: whole-system emulator.
+9. Add / Remove Favourite from the menu; X still searches.
+C. Scraping
+10. Skraper (Recalbox front-end) recognises the systems; box art shows;
+    Settings > General > Names from gamelist.xml; big folders' first open
+    time.
+D. Still open from before
+11. Load > Auto preview shows the game (after leaving a game once).
+12. Music: hold volume; send the `VIDEO_PLAYER:` lines from `log.txt` at
+    the card root if the stock bar still shows.
+13. Kirby lag: when it happens, play 15 s, menu and back, 15 s more, send
+    `logs/picoarch.log`.
+14. Performance baseline: Yoshi's Island 30 s Bilinear + 30 s Sharp, one
+    PS1 game (note ps1r / qpsx / default), rewind off; send
+    `logs/picoarch.log`.
+15. Books (needs `cubegm/ebook`), Videos, Images apps.
+16. When convenient: low-battery save at 5%.
 
 ## Done
 
