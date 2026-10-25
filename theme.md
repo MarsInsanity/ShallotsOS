@@ -28,7 +28,9 @@ With an OnionOS theme selected, the whole interface uses the OnionOS layout:
   Library → **In-game Menu Keys** picks how the menu and the GameSwitcher
   open: FN (tap / hold), hold SELECT / hold START, or SELECT+START (tap /
   hold). Only the chosen keys work; FN stays free for system shortcuts in
-  the other two.
+  the other two. In those two, SELECT and START only reach the game once it
+  is clear they aren't a menu press (a quick tap is passed on when released),
+  and in the hold layout SELECT+START held for a second also opens the menu.
 
 B at the top of Games, Favorites, Recents, Apps or Settings returns to the home
 screen. Search (X), the core and extension picker (SELECT) and favouriting (Y)

@@ -102,6 +102,11 @@ Latest test build:
       opens the menu), **Hold SEL/START** (hold SELECT = menu, hold START =
       GameSwitcher, taps reach the game), **SEL+START** (tap = menu, hold =
       GameSwitcher). SELECT+L1 stays the screenshot shortcut
+- [x] Hold and SEL+START layouts hold SELECT/START back from the game until
+      decided: taps are replayed on release, combos pass on, menu presses
+      never reach the game (first test: Kirby lost its power-up and the menu
+      wouldn't open). Right-stick drift (arrives as A/B/X/Y) no longer turns
+      a hold into a combo. Hold layout: SELECT+START held 1 s = menu (way out)
 - [ ] Device test: each layout, and that FN does nothing in the other two
 
 ### GameSwitcher look (matches OnionOS's gs_render.h)
