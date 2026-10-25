@@ -2,7 +2,7 @@
 
 ← [back to README](../../README.md)
 
-PS1 games (`roms/psx`) run on the libretro **pcsx_rearmed** core (lightrec JIT) by default, inside picoarch: the in-game menu, save states, the GameSwitcher and resume after power-off all work. The standalone **PCSX4ALL** (its own menu on `SELECT + L`, none of those) and **QPSX** can be picked per game or per system with Y > Emulator. The two keep separate memory cards: switching emulator does not carry saves over.
+PS1 games (`roms/psx`) run on ShallotsOS's **PCSX4ALL** by default ([MarsInsanity/ShallotsOS_pcsx4all](https://github.com/MarsInsanity/ShallotsOS_pcsx4all), a standalone emulator with a fast MIPS recompiler). It works like the other systems: the same in-game menu as picoarch (FN, or the keys set in FrogUI's In-game Menu Keys), save slots with screenshots, SELECT+R2 / SELECT+L2, the GameSwitcher, resume after power-off and Auto-Save/Load. The libretro **pcsx_rearmed** (lightrec JIT) and **QPSX** can be picked per game or per system with Y > Emulator. The emulators keep separate memory cards: switching does not carry saves over.
 
 **Use a real BIOS.** Without one, both cores fall back to HLE, which causes **graphical glitches, worse performance, and broken/hanging memory-card saves** (e.g. Harvest Moon). Drop **any** PS1 BIOS in **`cubegm/bios/`** and both cores find it:
 
@@ -34,7 +34,7 @@ covers both PS1 emulators.
 > in Core Settings" dance is gone; it was only needed because the file wasn't
 > being found. If you ever want to force HLE, delete the BIOS from `cubegm/bios/`.
 
-**Speed toggles:** for heavy 3D games (e.g. Tekken 3) that don't run full speed, open the PCSX4ALL menu with **`SELECT + L`** and turn on **Pixel Skip** and/or **Interlace** - they trade a little image quality for a real speed boost.
+**Speed toggles:** for heavy 3D games (e.g. Tekken 3) that don't run full speed, open the in-game menu, then **Options > Audio and video**, and turn on **Pixel skip** and/or **Interlace** - they trade a little image quality for a real speed boost.
 
 ### Hi-Res Fix (for games that freeze or go black)
 

@@ -127,7 +127,7 @@ powers the console off and asks again next time.
 | **sg1000** | Sega SG1000 | `genesis_plus_gx`, `gearsystem` |  |
 | **segacd** | Sega CD | `genesis_plus_gx`, `picodrive` |  |
 | **sega32x** | Sega 32X | `picodrive` | `32x` |
-| **psx** | Sony Playstation 1 | `pcsx_rearmed`, `pcsx4all` (standalone), `qpsx` | `ps1`, `PS`, `ps1r`, `qpsx` |
+| **psx** | Sony Playstation 1 | `pcsx4all` (standalone), `pcsx_rearmed`, `qpsx` | `ps1`, `PS`, `ps1r`, `qpsx` |
 | **psp** | Sony Playstation Portable | `ppsspp` (standalone), `ppsspp` |  |
 | **pcengine** | PC Engine | `mednafen_pce_fast`, `mednafen_supergrafx` | `pce` |
 | **supergrafx** | Supergrafx | `mednafen_supergrafx` | `pcesgx` |
@@ -293,7 +293,7 @@ While playing a game, **SELECT** is the function key (like the MENU button on ot
 
 > Fast-forward and rewind are now **per-core toggles** (menu, Audio and video). They stay off until you enable them, so cores that don't need them keep full RAM and speed.
 
-PCSX4ALL (PS1) is a standalone emulator with its own menu and hotkeys.
+PCSX4ALL (PS1) is a standalone emulator, but ShallotsOS's build uses the same menu, keys, save slots, GameSwitcher and resume as picoarch.
 
 The experimental **QPSX** core uses the `roms/qpsx` folder and is not fully
 integrated yet. While a QPSX game is running, hold **START for about one
@@ -549,6 +549,7 @@ or bundled with devices for sale. Full license texts are in
 |---|---|---|---|
 | picoarch (`picoarch`, `picoarch_hi`, in-game menu) | [MarsInsanity/ShallotsOS_picoarch](https://github.com/MarsInsanity/ShallotsOS_picoarch) | [BSD 3-Clause](https://opensource.org/license/bsd-3-clause) | neonloop; SF3000 port; ShallotsOS changes are under the license of the file they change |
 | libpicofe (menu and input library inside picoarch) | `libpicofe/` in picoarch | GPL v2+, LGPL v2.1+ or MAME license (your choice) | notaz and contributors |
+| PCSX4ALL (PS1, `cubegm/pcsx4all`) | [MarsInsanity/ShallotsOS_pcsx4all](https://github.com/MarsInsanity/ShallotsOS_pcsx4all), over [gameblabla/pcsx4all](https://github.com/gameblabla/pcsx4all) | GPL v2 | PCSX / PCSX-Reloaded / PCSX ReARMed authors, gameblabla, TreeFrogUI SF3000 port, ShallotsOS changes |
 | HCSNES (`hcsnes_fast`, `hcsnes_plus`, experimental SNES) | [MarsInsanity/HCSNES](https://github.com/MarsInsanity/HCSNES) | Snes9x license (non-commercial) for the emulator; MIT for HCSNES's own new files | Snes9x team; HCSNES contributors |
 | Emulator cores | `cores/` | Each core's own license (GPL, LGPL, BSD, MIT, MAME, non-commercial, ...) | Upstream libretro authors; see [cores.md](cores.md) |
 

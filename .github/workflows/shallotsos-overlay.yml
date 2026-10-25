@@ -23,6 +23,9 @@ on:
       hcsnes_ref:
         description: HCSNES branch, tag or commit to build
         default: main
+      pcsx4all_ref:
+        description: ShallotsOS_pcsx4all branch, tag or commit to build
+        default: claude/shallotsos-menu-integration
 
 permissions:
   contents: read
@@ -31,6 +34,7 @@ env:
   # The picoarch branch pushes build from, unless a manual run names another.
   PICOARCH_REF: ${{ inputs.picoarch_ref || 'claude/gameswitcher-fn-hold' }}
   HCSNES_REF: ${{ inputs.hcsnes_ref || 'main' }}
+  PCSX4ALL_REF: ${{ inputs.pcsx4all_ref || 'claude/shallotsos-menu-integration' }}
   TOOLCHAIN_URL: https://github.com/game-de-it/sf3000/releases/download/sf3000_toolchain_v0.1/mipsel-buildroot-linux-gnu_sdk-buildroot.tar.gz
 
 jobs:
@@ -58,6 +62,14 @@ jobs:
           repository: MarsInsanity/HCSNES
           ref: ${{ env.HCSNES_REF }}
           path: hcsnes-src
+
+      # PCSX4ALL: the PS1 emulator (standalone), with picoarch's menu and keys.
+      - name: Check out ShallotsOS_pcsx4all
+        uses: actions/checkout@v4
+        with:
+          repository: MarsInsanity/ShallotsOS_pcsx4all
+          ref: ${{ env.PCSX4ALL_REF }}
+          path: pcsx4all-src
 
       - name: Install the SF3000 toolchain
         run: |
@@ -104,6 +116,13 @@ jobs:
           file hcsnes-src/build/sf3000/hcsnes_*_libretro.so
           echo "HCSNES_SHA=$(git -C hcsnes-src rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
+      - name: Build PCSX4ALL
+        run: |
+          set -euo pipefail
+          sh pcsx4all-src/build_sf3000.sh
+          file pcsx4all-src/build/pcsx4all
+          echo "PCSX4ALL_SHA=$(git -C pcsx4all-src rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
       # The music and video player (cubegm/video_player).
       - name: Build the media player
         run: |
@@ -124,6 +143,7 @@ jobs:
              hcsnes-src/build/sf3000/hcsnes_plus_libretro.so "$out/cubegm/cores/"
           cp "$HOME/sf3000-work/picoarch/picoarch" "$HOME/sf3000-work/picoarch/picoarch_hi" "$out/cubegm/"
           cp "$RUNNER_TEMP/video_player" "$out/cubegm/"
+          cp pcsx4all-src/build/pcsx4all "$out/cubegm/"
           # Boot logo for 640x480 panels (R36SX, R36HD, GB350).
           cp sdcard/cubegm/xgame-logo.bmp "$out/cubegm/"
           cp -a assets/onion/Themes/. "$out/Themes/"
@@ -135,7 +155,7 @@ jobs:
           cp -a assets/system-icons/. "$out/frogui/system-icons/"
           cp -a frogui/lang/builtin "$out/frogui/lang/"
           cat > "$out/SHALLOTSOS-README.txt" <<EOF
-          ShallotsOS overlay (ShallotsOS ${GITHUB_SHA::7}, picoarch ${PICOARCH_SHA}, HCSNES ${HCSNES_SHA})
+          ShallotsOS overlay (ShallotsOS ${GITHUB_SHA::7}, picoarch ${PICOARCH_SHA}, HCSNES ${HCSNES_SHA}, PCSX4ALL ${PCSX4ALL_SHA})
 
           Copy everything in this folder to the root of an SD card that
           already runs TreeFrogUI, replacing existing files when asked:
@@ -145,6 +165,7 @@ jobs:
                                              SNES emulators (Y on a game > Emulator)
             cubegm/picoarch, picoarch_hi     emulator frontend and in-game menu
             cubegm/video_player              music and video player
+            cubegm/pcsx4all                  PS1 emulator (picoarch's menu and keys)
             cubegm/xgame-logo.bmp            ShallotsOS boot logo (640x480 panels:
                                              R36SX, R36HD, GB350; skip it on an
                                              854x480 SF3000-family console)

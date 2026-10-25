@@ -3409,9 +3409,8 @@ static void launch_by_path(const char *path) {
     else if (ov)
         request_game_launch(ov, path);         /* explicit override → libretro */
     else if (core) {
-        /* PS1 defaults to PCSX ReARMed, inside picoarch (menu, save states,
-         * GameSwitcher, resume); PCSX4ALL is picked in the Y menu. Standalones
-         * (pico286/lgpt/rockbox) are caught generically by is_standalone_bin. */
+        /* Standalones (PCSX4ALL, the PS1 default, pico286/lgpt/rockbox) are
+         * caught generically by is_standalone_bin on the resolved core path. */
         if (is_psp_folder(folder) && access(PPSSPP_BIN, X_OK) == 0)
             request_standalone_launch(PPSSPP_BIN, path);
         else if (is_standalone_bin(core) && access(core, F_OK) == 0)

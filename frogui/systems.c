@@ -34,7 +34,7 @@ static const ShSystem systems[] = {
     {"sg1000", "Sega SG1000", "ms", {C("genesis_plus_gx"), C("gearsystem")}},
     {"segacd", "Sega CD", "segacd", {C("genesis_plus_gx"), C("picodrive")}},
     {"sega32x", "Sega 32X", "32X", {C("picodrive")}},
-    {"psx", "Sony Playstation 1", "ps", {C("pcsx_rearmed"), PCSX4ALL, C("qpsx")}},
+    {"psx", "Sony Playstation 1", "ps", {PCSX4ALL, C("pcsx_rearmed"), C("qpsx")}},
     {"psp", "Sony Playstation Portable", "psp", {PPSSPP, C("ppsspp")}},
     {"pcengine", "PC Engine", "pce", {C("mednafen_pce_fast"), C("mednafen_supergrafx")}},
     {"supergrafx", "Supergrafx", "sgfx", {C("mednafen_supergrafx")}},

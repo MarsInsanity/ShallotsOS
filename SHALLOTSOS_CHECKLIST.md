@@ -42,9 +42,13 @@ Confirmed earlier: folder move prompt and move, NES save states, Resume,
 GameSwitcher, Recents, Favourites, Y-menu search/emulator/favourite, box art.
 
 A. New in this build
-0a. PS1 now opens in PCSX ReARMed: in-game menu (FN), save states,
-    GameSwitcher, resume. PCSX4ALL is still in Y > Emulator. Memory cards
-    are per emulator (PCSX4ALL saves do not carry over).
+0a. PS1 is PCSX4ALL again, now with picoarch's menu (identical look),
+    keys (FN tap/hold, SELECT+START, hold), save slots 1-30 + Auto +
+    Switcher with screenshots, SELECT+R2/L2, GameSwitcher (hold FN),
+    resume after power-off, Auto-Save/Load, ShallotsOS sleep, Reset,
+    Disc control, PCSX pages in the list style (B = back). SELECT+START
+    no longer quits: Exit Game in the menu. Check FPS: Options > Audio
+    and video > GPU settings > Show FPS.
 0b. SNES: the ~0.5 s pauses every 10 s should be gone (Yoshi's Island
     save RAM was written with sync on the game thread).
 0c. FN as menu key: SELECT+START now goes to the game, no menu.
@@ -396,6 +400,18 @@ User's to-do list (October 2026):
       the lag lines). DSperate: launcher sets HOME=cubegm/dsperate/data and
       runs --no-audio; FrogUI appends [emu] frameskip = 2 / adaptive to its
       dsperate.ini unless frameskip is already set
+- [x] PCSX4ALL (MarsInsanity/ShallotsOS_pcsx4all, branch
+      claude/shallotsos-menu-integration): the repo (like TreeFrog's) holds
+      only TreeFrog's 27 changed files; base is gameblabla/pcsx4all
+      21084ac (UPSTREAM), build_sf3000.sh fetches and overlays it. Menu
+      rewritten to match picoarch exactly (verified in a host render),
+      multi-size glyph cache, theme font / Exo 2 / GamePocket caps as
+      picoarch, frontend.c pages drawn through sf3000_list_draw. Keys,
+      switcher (.switcher.sav + .resume, scr.bmp, /tmp/shallotsos_from_game),
+      power-off (pin 14 on R36SX, SIGTERM) + resume_on_boot.txt, sleep.
+      picoarch's boot resume execs a standalone directly. Overlay builds
+      and ships cubegm/pcsx4all (pcsx4all_ref input). PS1 default back to
+      PCSX4ALL
 - [x] Search matches and shows gamelist.xml names (when that setting is on),
       each result labelled from its own folder's gamelist; scraper art
       folders (media, Imgs...) are skipped while searching
