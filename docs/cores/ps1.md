@@ -2,7 +2,7 @@
 
 ← [back to README](../../README.md)
 
-PS1 has **two cores**. `PS`/`ps1`/`psx` folders prefer the standalone **PCSX4ALL** if its binary is present, falling back to the libretro **pcsx_rearmed** core otherwise; the `ps1r` folder always uses pcsx_rearmed directly (lightrec JIT).
+PS1 games (`roms/psx`) run on the libretro **pcsx_rearmed** core (lightrec JIT) by default, inside picoarch: the in-game menu, save states, the GameSwitcher and resume after power-off all work. The standalone **PCSX4ALL** (its own menu on `SELECT + L`, none of those) and **QPSX** can be picked per game or per system with Y > Emulator. The two keep separate memory cards: switching emulator does not carry saves over.
 
 **Use a real BIOS.** Without one, both cores fall back to HLE, which causes **graphical glitches, worse performance, and broken/hanging memory-card saves** (e.g. Harvest Moon). Drop **any** PS1 BIOS in **`cubegm/bios/`** and both cores find it:
 

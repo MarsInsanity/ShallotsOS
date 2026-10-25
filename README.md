@@ -127,7 +127,7 @@ powers the console off and asks again next time.
 | **sg1000** | Sega SG1000 | `genesis_plus_gx`, `gearsystem` |  |
 | **segacd** | Sega CD | `genesis_plus_gx`, `picodrive` |  |
 | **sega32x** | Sega 32X | `picodrive` | `32x` |
-| **psx** | Sony Playstation 1 | `pcsx4all` (standalone), `pcsx_rearmed`, `qpsx` | `ps1`, `PS`, `ps1r`, `qpsx` |
+| **psx** | Sony Playstation 1 | `pcsx_rearmed`, `pcsx4all` (standalone), `qpsx` | `ps1`, `PS`, `ps1r`, `qpsx` |
 | **psp** | Sony Playstation Portable | `ppsspp` (standalone), `ppsspp` |  |
 | **pcengine** | PC Engine | `mednafen_pce_fast`, `mednafen_supergrafx` | `pce` |
 | **supergrafx** | Supergrafx | `mednafen_supergrafx` | `pcesgx` |

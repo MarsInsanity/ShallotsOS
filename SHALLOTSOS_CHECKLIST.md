@@ -42,6 +42,14 @@ Confirmed earlier: folder move prompt and move, NES save states, Resume,
 GameSwitcher, Recents, Favourites, Y-menu search/emulator/favourite, box art.
 
 A. New in this build
+0a. PS1 now opens in PCSX ReARMed: in-game menu (FN), save states,
+    GameSwitcher, resume. PCSX4ALL is still in Y > Emulator. Memory cards
+    are per emulator (PCSX4ALL saves do not carry over).
+0b. SNES: the ~0.5 s pauses every 10 s should be gone (Yoshi's Island
+    save RAM was written with sync on the game thread).
+0c. FN as menu key: SELECT+START now goes to the game, no menu.
+0d. DS: DSperate gets adaptive frameskip (up to 2) unless dsperate.ini
+    sets frameskip; GBA on mGBA should be faster with logging on.
 1. GBC icon: shows with Pixel by Jeltron (the pack's Game Boy art) and
    with Default (Cosy) (Settings > Appearance > Icon Pack).
 2. Search (X) with Names from gamelist.xml on: part of a scraped name finds
@@ -376,6 +384,18 @@ User's to-do list (October 2026):
       system-icons; OnionOS themes without GBC art use their GB icon. New
       cards start on Default (Cosy); existing cards change it in Settings >
       Appearance > Icon Pack
+- [x] User test: PCSX4ALL has no picoarch menu / GameSwitcher → PS1
+      default is now pcsx_rearmed (log: ~10 ms emu/frame, audio healthy);
+      PCSX4ALL stays selectable. SNES: Yoshi's Island ~16-18 ms emu per
+      frame (budget 16.7) on Snes9x 2005 Plus and HCSNES alike → Auto skips
+      ~1/3 of frames and audio runs dry (crackle); 0.5 s stalls were the
+      SRAM autosave (fsync + sync on the game thread) → now a background
+      thread. Logs no longer fsync; cores' DEBUG lines dropped (mGBA logged
+      every DMA, ~40 ms/frame). FN mode no longer opens the menu on
+      SELECT+START. cpufreq is not readable on this kernel (cpu= empty in
+      the lag lines). DSperate: launcher sets HOME=cubegm/dsperate/data and
+      runs --no-audio; FrogUI appends [emu] frameskip = 2 / adaptive to its
+      dsperate.ini unless frameskip is already set
 - [x] Search matches and shows gamelist.xml names (when that setting is on),
       each result labelled from its own folder's gamelist; scraper art
       folders (media, Imgs...) are skipped while searching

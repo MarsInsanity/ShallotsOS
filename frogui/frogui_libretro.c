@@ -3170,8 +3170,38 @@ static void request_game_launch(const char *core_path, const char *rom_path) {
     if (environ_cb) environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
 }
 
+/* DSperate (its launcher sets HOME to cubegm/dsperate/data) draws every
+ * frame by default. Give it adaptive frameskip - drawing is skipped only
+ * while the game falls behind, up to 2 frames in a row - unless the user's
+ * dsperate.ini already sets frameskip. Its loader takes repeated sections. */
+#define DSPERATE_INI SDCARD_BASE "/cubegm/dsperate/data/.config/dsperate/dsperate.ini"
+static void dsperate_defaults(void) {
+    FILE *f = fopen(DSPERATE_INI, "r");
+    if (f) {
+        char line[256];
+        int set = 0;
+        while (!set && fgets(line, sizeof line, f)) {
+            const char *p = line;
+            while (*p == ' ' || *p == '\t') p++;
+            if (!strncmp(p, "frameskip", 9) && (p[9] == ' ' || p[9] == '=' || p[9] == '\t'))
+                set = 1;
+        }
+        fclose(f);
+        if (set) return;
+    } else {
+        mkdir(SDCARD_BASE "/cubegm/dsperate/data", 0755);
+        mkdir(SDCARD_BASE "/cubegm/dsperate/data/.config", 0755);
+        mkdir(SDCARD_BASE "/cubegm/dsperate/data/.config/dsperate", 0755);
+    }
+    if (!(f = fopen(DSPERATE_INI, "a"))) return;
+    fputs("\n# ShallotsOS default: skip drawing only while the game falls behind.\n"
+          "[emu]\nframeskip = 2\nframeskip_mode = adaptive\n", f);
+    fclose(f);
+}
+
 static void request_standalone_launch(const char *bin_path, const char *rom_path) {
     dbg("standalone_launch: start");
+    if (strcmp(bin_path, DSPERATE_BIN) == 0) dsperate_defaults();
     if (!frogui_stock_battery_indicator()) fb1_clear_all();
     cube_set_i2so_output_muted(0);  /* standalone app owns the audio path */
     write_picoarch_skin();
@@ -3213,13 +3243,6 @@ static void request_builtin_launch(const char *bin_path) {
     fclose(f);
     sync();
     if (environ_cb) environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
-}
-
-static bool is_ps1_folder(const char *folder) {
-    if (!folder) return false;
-    return strcasecmp(folder, "ps1") == 0 ||
-           strcasecmp(folder, "psx") == 0 ||
-           strcasecmp(folder, "PS")  == 0;
 }
 
 static bool is_pico286_folder(const char *folder) {
@@ -3386,12 +3409,10 @@ static void launch_by_path(const char *path) {
     else if (ov)
         request_game_launch(ov, path);         /* explicit override → libretro */
     else if (core) {
-        /* ps1 folder maps to pcsx_rearmed by default but we prefer the standalone
-         * pcsx4all when present; every other standalone (pico286/lgpt/rockbox) is
-         * caught generically by is_standalone_bin on the resolved core path. */
-        if (is_ps1_folder(folder) && access(PCSX4ALL_BIN, F_OK) == 0)
-            request_standalone_launch(PCSX4ALL_BIN, path);
-        else if (is_psp_folder(folder) && access(PPSSPP_BIN, X_OK) == 0)
+        /* PS1 defaults to PCSX ReARMed, inside picoarch (menu, save states,
+         * GameSwitcher, resume); PCSX4ALL is picked in the Y menu. Standalones
+         * (pico286/lgpt/rockbox) are caught generically by is_standalone_bin. */
+        if (is_psp_folder(folder) && access(PPSSPP_BIN, X_OK) == 0)
             request_standalone_launch(PPSSPP_BIN, path);
         else if (is_standalone_bin(core) && access(core, F_OK) == 0)
             request_standalone_launch(core, path);
