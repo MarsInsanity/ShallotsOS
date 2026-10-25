@@ -182,7 +182,19 @@ Latest test build:
 
 ## In progress
 
-- (nothing right now; waiting on device test results)
+User's to-do list (October 2026):
+
+- [x] Emulator menu laid out like Miyoo's: game behind, dark left panel,
+      full-width highlight bar in the theme colour, A/B hint bar; theme font
+      (Exo 2) in mixed case with an OnionOS theme
+- [x] Save/Load slots switched with Left/Right in the menu row (SpruceOS
+      style), background shows the slot's screenshot or "Empty"; A saves or
+      loads and returns to the game with a toast
+- [ ] Fix how the volume/brightness slider renders in the music app
+- [ ] Refine the folder structure: Music, Videos (and others) on the card
+      root should work, not only inside `roms/`
+- [ ] Add a Books app (TreeFrogUI has an e-reader core)
+
 
 ## Next
 

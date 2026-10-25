@@ -944,6 +944,14 @@ static void resolve_fonts(void) {
                         !strncasecmp(battery, "Exo2", 4);
 }
 
+/* The theme's title font file, for picoarch's in-game menu (skin.txt). */
+const char *onion_theme_menu_font(void) {
+  const char *p = font_paths[FONT_TITLE];
+  if (!p[0] || !file_exists(p))
+    p = ONION_FALLBACK_FONT;
+  return file_exists(p) ? p : NULL;
+}
+
 /* ------------------------------------------------------------------------ */
 /* Text                                                                      */
 /* ------------------------------------------------------------------------ */

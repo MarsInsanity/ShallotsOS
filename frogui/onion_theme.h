@@ -93,6 +93,8 @@ int onion_render_preview(uint16_t *fb, const Thumbnail *art);
 /* GameSwitcher overlay for a full-screen capture already in fb. `header` is
  * the header title (Onion shows play time there); `game` the selected game.
  * The legend (extra/gs-legend) is drawn when show_legend is set. */
+/* The theme's title font file (NULL if none), for picoarch's in-game menu. */
+const char *onion_theme_menu_font(void);
 /* A short message above the hint bar. */
 void onion_render_toast(uint16_t *fb, const char *text);
 /* Yes/no prompt (lines split on '\n') over a dimmed screen. */

@@ -2935,6 +2935,9 @@ static void write_picoarch_skin(void) {
     fprintf(s, "selection_color=0x%06X\n", rgb565_to_888(theme_select_bg()));
     fprintf(s, "sel_text_color=0x%06X\n",  rgb565_to_888(theme_select_text()));
     fprintf(s, "background_color=0x%06X\n", rgb565_to_888(theme_bg()));
+    /* OnionOS themes: picoarch's menu uses the theme's font (mixed case). */
+    const char *font = onion_theme_active() ? onion_theme_menu_font() : NULL;
+    if (font) fprintf(s, "font=%s\n", font);
     fclose(s);
 }
 
