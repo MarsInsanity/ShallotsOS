@@ -699,6 +699,79 @@ static bool random_media_neighbor(const char *path, char *out, size_t out_size) 
     return true;
 }
 
+/* ---- Volume / brightness slider ------------------------------------------
+ * cubevol draws its own slider on fb1 when the volume or brightness changes,
+ * but this player owns fb1 for its HUD and repaints the whole plane, so the
+ * stock slider was cut off or erased mid-draw. Instead, watch the values
+ * cubevol stores (persistentmem: volume avparam buf[0], backlight slot 30)
+ * and draw a slider in the HUD's style while one changes. */
+struct pmem_req { unsigned short flag, id, len, pad; void *buf; };
+#define PMEM_GET 0x400c2602u
+enum { LEVEL_NONE, LEVEL_VOLUME, LEVEL_BRIGHTNESS };
+static int level_kind, level_value;
+static int64_t level_until;
+
+static int pmem_read(unsigned short flag, unsigned short id, unsigned short len, void *buf) {
+    int fd = open("/dev/persistentmem", O_RDONLY);
+    if (fd < 0) return -1;
+    struct pmem_req req = { flag, id, len, 0, buf };
+    int rc = ioctl(fd, PMEM_GET, &req);
+    close(fd);
+    return rc;
+}
+
+/* Backlight raw byte (23..255) back to FrogUI's 0..100 brightness level. */
+static int backlight_level(int raw) {
+    int v = raw - 23;
+    if (v < 0) v = 0;
+    int level = v < 43 ? v : 0;
+    if (v >= 43)
+        while (level < 100 && (level + 1) * (level + 1) / 43 <= v) level++;
+    return level > 100 ? 100 : level;
+}
+
+/* Polled every ~100 ms; returns true when a slider should be (re)drawn now. */
+static bool level_poll(int64_t now) {
+    static int64_t last_poll;
+    static int last_vol = -1, last_light = -1;
+    if (now - last_poll < 100) return false;
+    last_poll = now;
+    unsigned char vbuf[260] = {0};
+    int light = 0;
+    int vol = pmem_read(3, 0, 260, vbuf) == 0 && vbuf[0] <= 100 ? vbuf[0] : -1;
+    int lit = pmem_read(1, 30, 1, &light) == 0 ? (light & 0xFF) : -1;
+    bool changed = false;
+    if (vol >= 0 && last_vol >= 0 && vol != last_vol) {
+        level_kind = LEVEL_VOLUME;
+        level_value = vol;
+        changed = true;
+    }
+    if (lit >= 0 && last_light >= 0 && lit != last_light) {
+        level_kind = LEVEL_BRIGHTNESS;
+        level_value = backlight_level(lit);
+        changed = true;
+    }
+    if (vol >= 0) last_vol = vol;
+    if (lit >= 0) last_light = lit;
+    if (changed) level_until = now + 1500;
+    return changed;
+}
+
+static void draw_level(Overlay *o, Theme t, int scale, int margin) {
+    if (level_kind == LEVEL_NONE || now_ms() >= level_until) return;
+    int w = o->logical_w / 2, h = scale == 2 ? 72 : 58;
+    int x = (o->logical_w - w) / 2, y = margin;
+    round_rect(o, x, y, w, h, 16, argb(232, 0x101010));
+    char label[32];
+    snprintf(label, sizeof(label), "%s %d%%",
+             level_kind == LEVEL_VOLUME ? "VOLUME" : "BRIGHTNESS", level_value);
+    text_draw(o, x + 18, y + 10, label, scale, argb(255, t.text), w - 36);
+    int bar_x = x + 18, bar_w = w - 36, bar_y = y + h - 22;
+    round_rect(o, bar_x, bar_y, bar_w, 10, 5, argb(255, 0x3A3A3A));
+    int fill = bar_w * level_value / 100;
+    if (fill > 0) round_rect(o, bar_x, bar_y, fill, 10, 5, argb(255, t.accent));
+}
+
 static void draw_hud(Overlay *o, Theme t, const TrackInfo *info, int64_t pos, int64_t duration,
                      bool paused, PlaybackMode playback, const char *status,
                      const CoverState *cover, bool opaque_background) {
@@ -758,6 +831,7 @@ static void draw_hud(Overlay *o, Theme t, const TrackInfo *info, int64_t pos, in
         text_draw(o, (o->logical_w - text_width(label, scale)) / 2, panel_y - 38,
                   label, scale, argb(255, t.selected_text), sw);
     }
+    draw_level(o, t, scale, margin);
     overlay_present(o);
 }
 
@@ -951,6 +1025,14 @@ int main(int argc, char **argv) {
 
         int64_t draw_interval = audio_only ? 1000 : 200;
         if (audio_only) hud_until = now + 1500;
+        /* A volume/brightness change shows the HUD with its slider, redrawn
+         * often so cubevol's own slider can't stay on top of it. */
+        bool level_now = have_overlay && level_poll(now);
+        if (now < level_until) {
+            draw_interval = 100;
+            if (hud_until < level_until) hud_until = level_until;
+        }
+        if (level_now) last_draw = 0;
         if (have_overlay && now < hud_until && now - last_draw >= draw_interval) {
             draw_hud(&overlay, theme, &track_info, pos, duration, paused, playback, status,
                      &cover, audio_only && theme.background_enabled);

@@ -190,10 +190,16 @@ User's to-do list (October 2026):
 - [x] Save/Load slots switched with Left/Right in the menu row (SpruceOS
       style), background shows the slot's screenshot or "Empty"; A saves or
       loads and returns to the game with a toast
-- [ ] Fix how the volume/brightness slider renders in the music app
-- [ ] Refine the folder structure: Music, Videos (and others) on the card
-      root should work, not only inside `roms/`
-- [ ] Add a Books app (TreeFrogUI has an e-reader core)
+- [x] Music/video player draws its own volume/brightness slider (it owns the
+      OSD plane and repainted over cubevol's, cutting it off); the overlay
+      now builds and ships `cubegm/video_player`
+- [x] Media folders at the card root: `Music/`, `Videos/`, `Books/`,
+      `Images/` (also `Media/...`, `Audio`, `Movies`, `Ebooks`, `Photos`,
+      `Pictures`), then the old `roms/...` ones. Created at boot when missing
+      and the player is installed; included in the new-files check
+- [x] Books app (the MuPDF reader, `cubegm/ebook`, from TreeFrogUI) listed
+      as "Books" in Apps
+- [ ] Device test: all of the above; Books needs `cubegm/ebook` on the card
 
 
 ## Next

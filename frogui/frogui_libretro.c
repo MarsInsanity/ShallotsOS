@@ -1568,7 +1568,32 @@ static const char* get_basename(const char *path) {
     return b ? b+1 : path;
 }
 
+/* Media folders may live at the card root (or in OnionOS's Media/) as well
+ * as in roms/. Each maps to the roms/ folder name that picks its player. */
+static const struct { const char *dir; const char *folder; } media_roots[] = {
+    {"Music", "music"},   {"Media/Music", "music"},   {"Audio", "music"},
+    {"Videos", "videos"}, {"Media/Videos", "videos"}, {"Movies", "videos"},
+    {"Books", "ebook"},   {"Media/Books", "ebook"},   {"Ebooks", "ebook"},
+    {"Images", "images"}, {"Media/Images", "images"}, {"Photos", "images"},
+    {"Pictures", "images"},
+};
+#define MEDIA_ROOT_N ((int)(sizeof media_roots / sizeof media_roots[0]))
+
+static const char *media_root_folder(const char *path) {
+    size_t base = strlen(SDCARD_BASE);
+    if (strncmp(path, SDCARD_BASE "/", base + 1) != 0) return NULL;
+    const char *rel = path + base + 1;
+    for (int i = 0; i < MEDIA_ROOT_N; i++) {
+        size_t n = strlen(media_roots[i].dir);
+        if (strncasecmp(rel, media_roots[i].dir, n) == 0 && (rel[n] == '/' || rel[n] == '\0'))
+            return media_roots[i].folder;
+    }
+    return NULL;
+}
+
 static const char* get_console_folder(const char *path) {
+    const char *media = media_root_folder(path);
+    if (media) return media;
     size_t roms_len = strlen(ROMS_PATH);
     if (strncmp(path, ROMS_PATH, roms_len) == 0) {
         const char *sub = path + roms_len;
@@ -1943,7 +1968,8 @@ static void cache_store(const char *path, uint64_t mtime, int at_root) {
  * drop the listing cache if anything changed. Folder dates can't be trusted
  * for this: Windows leaves a FAT folder's date alone when files are added,
  * so a cached listing (or a system hidden as empty) would never refresh.
- * Hashes the names in roms/ and in each folder one level below it. */
+ * Hashes the names in roms/ and in each folder one level below it, and in
+ * the media folders at the card root. */
 #define ROMS_SIG_FILE    CACHE_DIR "/roms.sig"
 #define ROMS_SIG_CHECKED "/tmp/shallotsos_roms_checked"
 
@@ -1971,6 +1997,18 @@ static uint32_t roms_signature(void) {
         closedir(d);
     }
     closedir(root);
+    /* The media folders at the card root (Music, Videos, Books...) too. */
+    for (int i = 0; i < MEDIA_ROOT_N; i++) {
+        char dir[MAX_PATH_LEN];
+        snprintf(dir, sizeof dir, "%s/%s", SDCARD_BASE, media_roots[i].dir);
+        DIR *d = opendir(dir);
+        if (!d) continue;
+        h = roms_sig_add(h, media_roots[i].dir);
+        struct dirent *f;
+        while ((f = readdir(d)) != NULL)
+            if (f->d_name[0] != '.') h = roms_sig_add(h, f->d_name);
+        closedir(d);
+    }
     return h;
 }
 
@@ -2721,7 +2759,7 @@ static const AppEntry app_defs[] = {
     {"activity", "app.activity", "Activity Tracker", NULL, NULL, NULL},
     {"frogshell", "app.frogshell", "FrogShell", NULL, NULL, FROGSHELL_CORE},
     {"usbmode", "app.usb_mode", "USB mode", NULL, NULL, USB_MODE_BIN},
-    {"ebook", "app.ebook_reader", "Ebook Reader", "Ebook", "ebooks", NULL},
+    {"ebook", "app.ebook_reader", "Books", "Ebook", "ebooks", NULL},
     {"images", "app.image_viewer", "Image Viewer", "images", "photos", NULL},
     {"videos", "app.videos", "Videos", "videos", "video", NULL},
     {"music", "app.music_mp3", "Music / MP3", "music", "audio", NULL},
@@ -2729,17 +2767,50 @@ static const AppEntry app_defs[] = {
     {"shutdown", "app.shutdown", "Shutdown", NULL, NULL, SHUTDOWN_BIN},
 };
 
+/* The player each media app needs on the card. */
+static const char *app_player(const AppEntry *a) {
+    if (!strcmp(a->key, "ebook")) return EBOOK_BIN;
+    if (!strcmp(a->key, "images")) return IMAGE_BIN;
+    if (!strcmp(a->key, "videos") || !strcmp(a->key, "music")) return VIDEO_BIN;
+    return NULL;
+}
+
+/* The app's folder: at the card root (Music, Videos, Books, Images...),
+ * then OnionOS's Media/, then the TreeFrogUI location in roms/. */
 static const char *app_folder_path(int index, char *out, size_t out_size) {
     if (index < 0 || index >= (int)(sizeof(app_defs) / sizeof(app_defs[0]))) return NULL;
     const AppEntry *a = &app_defs[index];
     if (!a->folder_a) return NULL;
+    struct stat st;
+    for (int i = 0; i < MEDIA_ROOT_N; i++) {
+        if (strcmp(media_roots[i].folder, a->key)) continue;
+        snprintf(out, out_size, "%s/%s", SDCARD_BASE, media_roots[i].dir);
+        if (stat(out, &st) == 0 && S_ISDIR(st.st_mode)) return out;
+    }
     const char *candidates[3] = { a->folder_a, a->folder_b, NULL };
     for (int i = 0; candidates[i]; i++) {
         snprintf(out, out_size, "%s/%s", ROMS_PATH, candidates[i]);
-        struct stat st;
         if (stat(out, &st) == 0 && S_ISDIR(st.st_mode)) return out;
     }
     return NULL;
+}
+
+/* Create the root media folders (Music, Videos, Books, Images) for apps
+ * whose player is installed and that have no folder anywhere yet, so the
+ * apps show up and it's clear where files go. */
+static void create_media_folders(void) {
+    for (int i = 0; i < (int)(sizeof(app_defs) / sizeof(app_defs[0])); i++) {
+        const char *player = app_player(&app_defs[i]);
+        char path[MAX_PATH_LEN];
+        if (!player || access(player, X_OK) != 0 || app_folder_path(i, path, sizeof path))
+            continue;
+        for (int r = 0; r < MEDIA_ROOT_N; r++)
+            if (!strcmp(media_roots[r].folder, app_defs[i].key)) {
+                snprintf(path, sizeof path, "%s/%s", SDCARD_BASE, media_roots[r].dir);
+                mkdir(path, 0755);
+                break;
+            }
+    }
 }
 
 static int is_app_folder_name(const char *name) {
@@ -2767,6 +2838,7 @@ static void scan_apps_tab(void) {
         } else if (app_defs[i].bin) {
             if (access(app_defs[i].bin, X_OK) != 0) continue;
         } else if (!app_folder_path(i, path, sizeof path)) continue;
+        else if (app_player(&app_defs[i]) && access(app_player(&app_defs[i]), X_OK) != 0) continue;
         if (entry_count >= entry_capacity) {
             entry_capacity = entry_capacity ? entry_capacity * 2 : INITIAL_ENTRIES_CAPACITY;
             entries = realloc(entries, (size_t)entry_capacity * sizeof(*entries));
@@ -4864,6 +4936,7 @@ void retro_init(void) {
     }
     strncpy(current_path, g_roms_path, MAX_PATH_LEN - 1);
     current_path[MAX_PATH_LEN - 1] = '\0';
+    create_media_folders();
     refresh_cache_if_roms_changed();
     /* picoarch leaves a note when it powered the console off (asleep too
      * long, low battery); a resumed game shows it, otherwise the menu does. */

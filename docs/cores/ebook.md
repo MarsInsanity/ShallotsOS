@@ -10,7 +10,9 @@ Source: [tzubertowski/TreeFrogUI_ebook_reader](https://github.com/tzubertowski/T
 
 ## Adding books
 
-Put files in **`roms/Ebook/`** (an `Ebook` entry then appears in the menu). Open
+Put files in **`Books/`** at the card root (ShallotsOS creates it when the
+reader is installed; `roms/Ebook/` also works). They show up under **Apps →
+Books**. Open
 one and it renders full-screen; the driver scales the page to fill whatever panel
 your device has, so it works the same on R36SX / SF3000 / SF3500 / GB350.
 
