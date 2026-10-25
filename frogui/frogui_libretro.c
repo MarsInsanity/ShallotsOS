@@ -914,6 +914,11 @@ static int settings_onion_theme_idx = -1;   /* -1 = off */
 /* OnionOS MainUI-style home screen (Recents/Favorites/Games/Apps/Settings). */
 static bool viewing_home = false;
 static int home_selected = 2;
+/* OnionOS GameSwitcher: its own view over the recent games, opened with FN or
+ * when returning from a game. The Recents tile keeps the plain list. */
+static bool viewing_switcher = false;
+/* picoarch leaves this when it returns to FrogUI from a game. */
+#define SWITCHER_FROM_GAME_FLAG "/tmp/shallotsos_from_game"
 static int settings_language;
 
 static void theme_sync_artwork_pack(void) {
@@ -960,6 +965,11 @@ static int onion_apply(void) {
 int frogui_battery_color_mode(void) { return settings_battery_color; }
 static int frogui_stock_battery_indicator(void) { return settings_stock_battery; }
 static int settings_game_switcher = 1;  /* recents as box-art carousel: 0=off, 1=on */
+/* Whether the GameSwitcher is on screen. OnionOS layouts show it only when
+ * opened as the GameSwitcher; the classic layouts replace the Recents list. */
+static bool switcher_active(void) {
+    return viewing_recents && (onion_theme_active() ? viewing_switcher : settings_game_switcher);
+}
 static int settings_load_recents = 0;   /* start FrogUI in the recents view: 0=off, 1=on */
 enum { ROM_SOURCE_SD, ROM_SOURCE_OTG, ROM_SOURCE_COUNT };
 static int settings_rom_source = ROM_SOURCE_SD;
@@ -3970,8 +3980,66 @@ static void onion_reset_to_games_root(void) {
     }
 }
 
+/* Show the GameSwitcher, starting on the most recent game. */
+static void onion_open_switcher(void) {
+    viewing_home = false;
+    ui_transition_start(1);
+    if (main_tab_active() != MAIN_TAB_RECENTS)
+        switch_main_tab(MAIN_TAB_RECENTS);
+    else
+        enter_recents_view();
+    viewing_switcher = true;
+    selected_index = 0;
+    scroll_offset = 0;
+}
+
+/* Snapshot of cubevol's volume and backlight. The volume buttons never reach
+ * joy_key, so a changed value is the only sign of an FN+volume shortcut. */
+static int fn_combo_probe(void) {
+    return (cube_pmem_volume_read() << 8) ^ cube_pmem_backlight_read();
+}
+
+/* An FN tap, read from its raw bit as picoarch does so it also works on
+ * devices where FrogUI's FN mapping is off. It counts on release, and only
+ * when FN was used alone: FN is the modifier for system shortcuts such as
+ * FN+volume = brightness, so a press that saw another button, or changed the
+ * volume or backlight, is ignored. */
+static bool fn_pressed(void) {
+    /* The two-writer input race can drop a held bit for a poll or two, so a
+     * release only counts after FN has read released for a while. */
+    static bool fn_was_down = true;   /* FN may still be held from the game */
+    static bool fn_tracking = false;  /* press began in FrogUI */
+    static bool fn_combo = false;
+    static int fn_sig = 0;
+    static long long fn_up_since = 0;
+    uint32_t raw = input_get_raw_state();
+    if (raw & (1u << 16)) {
+        if (!fn_was_down) {
+            fn_tracking = true;
+            fn_combo = false;
+            fn_sig = fn_combo_probe();
+        }
+        if (raw & 0xFFFFu)
+            fn_combo = true;
+        fn_was_down = true;
+        fn_up_since = 0;
+        return false;
+    }
+    long long now = monotonic_ms();
+    if (fn_up_since == 0)
+        fn_up_since = now;
+    if (!fn_was_down || now - fn_up_since < 120)
+        return false;
+    fn_was_down = false;
+    if (!fn_tracking)
+        return false;
+    fn_tracking = false;
+    return !fn_combo && fn_combo_probe() == fn_sig;
+}
+
 static void onion_open_home_item(int kind) {
     viewing_home = false;
+    viewing_switcher = false;
     ui_transition_start(1);
     switch (kind) {
     case ONION_HOME_RECENT:   switch_main_tab(MAIN_TAB_RECENTS); break;
@@ -4075,6 +4143,19 @@ static void handle_input(void) {
     /* Remap wizard: detect raw rising edge on any bit; B = skip this step */
     if (remap_wizard_active) {
         handle_remap_wizard();
+        return;
+    }
+
+    /* OnionOS: FN opens the GameSwitcher, and closes it again. */
+    if (fn_pressed() && onion_theme_active() && settings_game_switcher && !settings_menu_active) {
+        if (switcher_active()) {
+            ui_transition_start(-1);
+            switch_main_tab(MAIN_TAB_GAMES);
+            viewing_switcher = false;
+            viewing_home = true;
+        } else {
+            onion_open_switcher();
+        }
         return;
     }
 
@@ -4186,7 +4267,7 @@ static void handle_input(void) {
 
     /* Y: Onion-style detailed/fullscreen toggle in GameSwitcher. Elsewhere it
      * keeps the existing favourite action. */
-    if (input_was_pressed(FROG_BTN_Y) && viewing_recents && settings_game_switcher) {
+    if (input_was_pressed(FROG_BTN_Y) && switcher_active()) {
         game_switcher_fullscreen = !game_switcher_fullscreen;
         goto input_done;
     }
@@ -4411,7 +4492,7 @@ static void handle_input(void) {
         }
         /* In the game switcher (one game on screen at a time), Left/Right step
          * one game like Up/Down — no page jumping. */
-        bool switcher = viewing_recents && settings_game_switcher;
+        bool switcher = switcher_active();
         if (input_repeat(FROG_BTN_LEFT)) {
             if (switcher) {
                 if (selected_index > 0) selected_index--;
@@ -4566,7 +4647,15 @@ void retro_init(void) {
     /* Recents reuses entries[] for its own rows. Keep the freshly-built Games
      * root in RAM so switching tabs never re-walks the FAT filesystem. */
     save_games_tab_entries();
-    if (settings_load_recents && recent_games_get_count() > 0)
+    /* Returning from a game lands in the GameSwitcher when it is on. */
+    bool from_game = access(SWITCHER_FROM_GAME_FLAG, F_OK) == 0;
+    if (from_game)
+        unlink(SWITCHER_FROM_GAME_FLAG);
+    if (from_game && settings_game_switcher && !settings_menu_active &&
+        recent_games_get_count() > 0) {
+        enter_recents_view();
+        viewing_switcher = onion_theme_active();
+    } else if (settings_load_recents && recent_games_get_count() > 0)
         enter_recents_view();   /* "Start in Recents" setting */
     else if (onion_theme_active() && !settings_menu_active)
         viewing_home = true;    /* OnionOS starts on its home screen */
@@ -5071,7 +5160,7 @@ static bool render_onion_frame(void) {
         onion_render_home(framebuffer, items, ONION_HOME_N, home_selected);
     } else if (settings_menu_active) {
         render_onion_settings();
-    } else if (viewing_recents && settings_game_switcher) {
+    } else if (switcher_active()) {
         render_clear_screen(framebuffer);
         render_game_switcher(framebuffer);
     } else if (icon_system_view()) {
@@ -5125,6 +5214,8 @@ void retro_run(void) {
         if (!viewing_home) ui_transition_start(-1);
         viewing_home = true;
     }
+    if (!viewing_recents)
+        viewing_switcher = false;
     onion_sync_list_rows();
     if (old_selected != selected_index || old_settings_row != settings_menu_idx ||
         old_settings_active != settings_menu_active || old_recents != viewing_recents ||
@@ -5260,7 +5351,7 @@ void retro_run(void) {
              * the banner is rebuilt if Onion mode is switched off later. */
             banner_last_bg = -1;
             banner_last_path[0] = '\0';
-        } else if (need_reload && !(viewing_recents && settings_game_switcher)) {
+        } else if (need_reload && !switcher_active()) {
             /* GameSwitcher paints its own full panel. Leave the Games banner
              * and its cache keys untouched while Recents is open, so returning
              * to Games does not decode the same background from SD again. */
@@ -5362,7 +5453,7 @@ void retro_run(void) {
         /* drawn by the OnionOS theme */
     } else if (settings_menu_active) {
         render_settings_menu();
-    } else if (viewing_recents && settings_game_switcher) {
+    } else if (switcher_active()) {
         /* Do not paint or discard the cached Games banner behind GameSwitcher. */
         render_clear_screen(framebuffer);
         render_game_switcher(framebuffer);
