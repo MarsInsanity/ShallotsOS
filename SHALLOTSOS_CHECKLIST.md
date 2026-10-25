@@ -21,7 +21,9 @@ page.
 - One download: "Build ShallotsOS overlay" in ShallotsOS, artifact
   `ShallotsOS-overlay` → copy its contents to the SD card root. It holds the
   FrogUI menu, themes, and `picoarch` / `picoarch_hi` built from the latest
-  ShallotsOS_picoarch (branch `claude/gameswitcher-fn-hold`).
+  ShallotsOS_picoarch (branch `claude/gameswitcher-fn-hold`) and the
+  HCSNES cores from MarsInsanity/HCSNES (`main`; after an HCSNES-only
+  change, start it with "Run workflow", which has an `hcsnes_ref` input).
 - It runs on every ShallotsOS push to `claude/**` that touches FrogUI, the
   theme assets or the workflow. After a picoarch-only change, start it with
   "Run workflow" (it has a `picoarch_ref` input for another branch).
@@ -29,8 +31,8 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40237701300
-  (ShallotsOS `29d566e`, picoarch `7624661`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40240396673
+  (ShallotsOS `4a2bc4b`, picoarch `7624661`, HCSNES `c3c190d`)
 
 ## User to-do (device tests)
 
@@ -70,6 +72,10 @@ D. Still open from before
     for a core, that core keeps its old settings until you change them.
 15. Books (needs `cubegm/ebook`), Videos, Images apps.
 16. When convenient: low-battery save at 5%.
+17. HCSNES: Y on Yoshi's Island > Emulator > HCSNES Fast (then Plus);
+    play the same scene as on Snes9x 2005 Plus; note smoothness, sound,
+    glitches; send `logs/picoarch.log` (DBG lag lines per core). Don't
+    load a save state made by another core.
 
 ## Done
 
@@ -355,6 +361,13 @@ User's to-do list (October 2026):
         `frameskip_mode = adaptive` in its INI (`~/.config/dsperate/`, per
         game in `games/`). Need the card's `cubegm/dsperate/run_sf3000.sh`
         to know where its config lives before shipping a default
+      - [x] HCSNES (MarsInsanity/HCSNES, another agent's modified
+        Snes9x 2005: direct-threaded Super FX, bounded frameskip) added as
+        SNES emulators "HCSNES Fast" (old APU) and "HCSNES Plus" (Blargg
+        APU), last in the Y menu list; the overlay workflow builds them
+        with the SF3000 GCC via its tools/build.py. Its own frameskip
+        default is Auto, max 1 in a row. Systems can now list 8 emulators
+      - [ ] HCSNES PS1 core: add the same way when it exists
       - PS2: not possible on this hardware (told the user)
 
 ## Ideas offered, not started
