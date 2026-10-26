@@ -31,12 +31,12 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40279042012
-  (ShallotsOS `49abfb0`, picoarch `7ae6e2f`, PCSX4ALL `3f97ecb`, HCSNES `c3c190d`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40281299835
+  (ShallotsOS `273b7de`, picoarch `84ef191`, PCSX4ALL `3f97ecb`, HCSNES main)
 
 ## User to-do (device tests)
 
-Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40279042012
+Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40281299835
 Before: back up the SD card; keep an empty `log.txt` at the card root.
 Confirmed earlier: folder move prompt and move, NES save states, Resume,
 GameSwitcher, Recents, Favourites, Y-menu search/emulator/favourite, box art.
@@ -45,11 +45,13 @@ A. New in this build
 00. Options > About (picoarch and PCSX4ALL): the running emulator's full
     name, version and core file, the game, video and audio (PS1: CPU
     mode, disc ID, BIOS). Long values end in "...".
-0. Stock SNES emulators: Y on Yoshi's Island > Emulator > "Stock Snes9x
-   2005", then "Stock Snes9x", then "Stock Snes9x 2010". Does one run like
-   on the stock firmware? (They are the stock firmware's own
-   cubegm/cores/libemu_*.so files.) If one shows a black screen, crashes or
-   runs wrong, note which.
+0. Why the stock firmware is smoother: play the Yoshi's Island intro and
+   the first level for ~1 minute on "Stock Snes9x 2005", then the same on
+   HCSNES Fast (Options > Emulator options: Frameskip Fixed, max 1). Send
+   `logs/picoarch.log`. Each "DBG lag" line now shows `cpu self/other`
+   (picoarch's CPU use against everything else running) and `loop=` (a
+   fixed loop's time, which only changes with the CPU clock). (Stock
+   Snes9x and Snes9x 2010 are no longer listed: ~40 ms per frame.)
 1. Games tab: in a system's game list, FN (GameSwitcher), B, then Games:
    the systems list again, on that system.
 2. SELECT in the Games list does nothing now (emulators: Y menu).
