@@ -240,27 +240,34 @@ while true; do
             # Keep diagnostics available while a core is still in startup.
             # A hung/OOM-prone core otherwise leaves only the launcher PID
             # snapshot and its useful libretro log is lost in /tmp.
-            mkdir -p /mnt/sdcard/cubegm/logs
-            : > /mnt/sdcard/cubegm/logs/last_game_status.log
-            : > /mnt/sdcard/cubegm/logs/last_game_live.log
-            (
-                while kill -0 "$GAME_PID" 2>/dev/null; do
-                    echo "--- game monitor $(date +%s 2>/dev/null) pid=$GAME_PID ---" >> /mnt/sdcard/cubegm/logs/last_game_status.log
-                    tr '\n' ' ' < "/proc/$GAME_PID/status" >> /mnt/sdcard/cubegm/logs/last_game_status.log 2>/dev/null
-                    echo >> /mnt/sdcard/cubegm/logs/last_game_status.log
-                    cp /tmp/treefrog_ui.log /mnt/sdcard/cubegm/logs/last_game_live.log 2>/dev/null
-                    sleep 2
-                done
-            ) &
-            GAME_MONITOR_PID=$!
+            # Only with diagnostics on (log.txt): every pass starts processes
+            # and writes the SD card, which costs the game CPU on one core.
+            GAME_MONITOR_PID=
+            if [ "$LOG" != /dev/null ]; then
+                mkdir -p /mnt/sdcard/cubegm/logs
+                : > /mnt/sdcard/cubegm/logs/last_game_status.log
+                : > /mnt/sdcard/cubegm/logs/last_game_live.log
+                (
+                    while kill -0 "$GAME_PID" 2>/dev/null; do
+                        echo "--- game monitor pid=$GAME_PID ---" >> /mnt/sdcard/cubegm/logs/last_game_status.log
+                        tr '\n' ' ' < "/proc/$GAME_PID/status" >> /mnt/sdcard/cubegm/logs/last_game_status.log 2>/dev/null
+                        echo >> /mnt/sdcard/cubegm/logs/last_game_status.log
+                        cp /tmp/treefrog_ui.log /mnt/sdcard/cubegm/logs/last_game_live.log 2>/dev/null
+                        sleep 10
+                    done
+                ) &
+                GAME_MONITOR_PID=$!
+            fi
             GAME_EXE=$(readlink "/proc/$GAME_PID/exe" 2>/dev/null)
             echo "game pid=$GAME_PID exe=$GAME_EXE" >> "$LOG"
             echo "game cmdline: $(tr '\0' ' ' < /proc/$GAME_PID/cmdline 2>/dev/null)" >> "$LOG"
             echo "game status: $(tr '\n' ' ' < /proc/$GAME_PID/status 2>/dev/null)" >> "$LOG"
             wait "$GAME_PID"
             GRC=$?
-            kill "$GAME_MONITOR_PID" 2>/dev/null
-            wait "$GAME_MONITOR_PID" 2>/dev/null
+            if [ -n "$GAME_MONITOR_PID" ]; then
+                kill "$GAME_MONITOR_PID" 2>/dev/null
+                wait "$GAME_MONITOR_PID" 2>/dev/null
+            fi
             echo "game exited rc=$GRC" >> "$LOG"
             cp /tmp/treefrog_ui.log /mnt/sdcard/cubegm/logs/last_game.log 2>/dev/null
             sync

@@ -419,6 +419,80 @@ static void cpu_totals(long long *total, long long *busy, long long *self) {
 	*self = proc_ticks("/proc/self/stat", NULL, 0);
 }
 
+/* System-wide counters: where CPU time no process owns goes (interrupts,
+ * softirqs), how many processes are started, and context switches. */
+#define MAX_IRQ 64
+static struct { char name[40]; unsigned long long n; } irq_prev[MAX_IRQ];
+static int n_irq_prev;
+static unsigned long long sys_prev[7], forks_prev, ctxt_prev, intr_prev;
+static int sys_have;
+
+static void log_system(double secs, int show) {
+	unsigned long long f[7] = {0}, forks = 0, ctxt = 0, intr = 0;
+	char line[512];
+	FILE *fp = fopen("/proc/stat", "r");
+	if (fp) {
+		while (fgets(line, sizeof line, fp)) {
+			if (!strncmp(line, "cpu ", 4))
+				sscanf(line + 4, "%llu %llu %llu %llu %llu %llu %llu", &f[0], &f[1], &f[2], &f[3], &f[4], &f[5], &f[6]);
+			else if (!strncmp(line, "intr ", 5)) sscanf(line + 5, "%llu", &intr);
+			else if (!strncmp(line, "ctxt ", 5)) sscanf(line + 5, "%llu", &ctxt);
+			else if (!strncmp(line, "processes ", 10)) sscanf(line + 10, "%llu", &forks);
+		}
+		fclose(fp);
+	}
+	if (show && sys_have) {
+		unsigned long long d[7], tot = 0;
+		for (int i = 0; i < 7; i++) { d[i] = f[i] - sys_prev[i]; tot += d[i]; }
+		if (!tot) tot = 1;
+		plog("  system     user=%.0f%% nice=%.0f%% sys=%.0f%% idle=%.0f%% iowait=%.0f%% irq=%.0f%% softirq=%.0f%% | "
+		     "new processes/s=%.1f switches/s=%.0f interrupts/s=%.0f\n",
+		     d[0] * 100.0 / tot, d[1] * 100.0 / tot, d[2] * 100.0 / tot, d[3] * 100.0 / tot, d[4] * 100.0 / tot,
+		     d[5] * 100.0 / tot, d[6] * 100.0 / tot, (forks - forks_prev) / secs, (ctxt - ctxt_prev) / secs,
+		     (intr - intr_prev) / secs);
+	}
+	memcpy(sys_prev, f, sizeof f);
+	forks_prev = forks; ctxt_prev = ctxt; intr_prev = intr; sys_have = 1;
+
+	/* Busiest interrupt lines. */
+	struct { char name[40]; unsigned long long n, d; } cur[MAX_IRQ];
+	int ncur = 0;
+	if ((fp = fopen("/proc/interrupts", "r"))) {
+		while (ncur < MAX_IRQ && fgets(line, sizeof line, fp)) {
+			char *colon = strchr(line, ':');
+			unsigned long long n;
+			if (!colon || sscanf(colon + 1, "%llu", &n) != 1) continue;
+			char *id = line;
+			while (*id == ' ') id++;
+			char *desc = colon + 1;
+			while (*desc == ' ' || (*desc >= '0' && *desc <= '9')) desc++;
+			desc[strcspn(desc, "\n")] = '\0';
+			snprintf(cur[ncur].name, sizeof cur[ncur].name, "%.*s:%s", (int)(colon - id), id, desc);
+			cur[ncur].n = n;
+			cur[ncur].d = 0;
+			for (int i = 0; i < n_irq_prev; i++)
+				if (!strcmp(irq_prev[i].name, cur[ncur].name) && n >= irq_prev[i].n) cur[ncur].d = n - irq_prev[i].n;
+			ncur++;
+		}
+		fclose(fp);
+	}
+	if (show && n_irq_prev) {
+		plog("  irqs/s    ");
+		for (int k = 0; k < 5; k++) {
+			int best = -1;
+			for (int i = 0; i < ncur; i++) if (cur[i].d && (best < 0 || cur[i].d > cur[best].d)) best = i;
+			if (best < 0) break;
+			char *nm = cur[best].name;
+			while (*nm == ' ') nm++;
+			plog(" [%s]=%.0f", nm, cur[best].d / secs);
+			cur[best].d = 0;
+		}
+		plog("\n");
+	}
+	for (int i = 0; i < ncur; i++) { snprintf(irq_prev[i].name, sizeof irq_prev[i].name, "%s", cur[i].name); irq_prev[i].n = cur[i].n; }
+	n_irq_prev = ncur;
+}
+
 static void window_report(long long now) {
 	double secs = (now - st.start) / 1e6;
 	long long total, busy, self;
@@ -442,6 +516,7 @@ static void window_report(long long now) {
 	if (st.trace_len) plog("  frames     %s\n", st.trace);
 	log_busiest("threads   ", "/proc/self/task", prev_threads, &n_prev_threads, secs, 0, 1);
 	log_busiest("others    ", "/proc", prev_procs, &n_prev_procs, secs, 1, 1);
+	log_system(secs, 1);
 	plog_flush();
 	memset(&st.run_sum, 0, sizeof st - offsetof(typeof(st), run_sum));
 	st.start = now;
@@ -515,6 +590,7 @@ EXPORT void retro_run(void) {
 		cpu_totals(&st.cpu_total, &st.cpu_busy, &st.cpu_self);
 		log_busiest("", "/proc/self/task", prev_threads, &n_prev_threads, 1, 0, 0);
 		log_busiest("", "/proc", prev_procs, &n_prev_procs, 1, 1, 0);
+		log_system(1, 0);
 	} else if (st.last_run) {
 		long long gap = t - st.last_run;
 		if (gap > 1000000) {          /* the frontend's menu: start a new window */
