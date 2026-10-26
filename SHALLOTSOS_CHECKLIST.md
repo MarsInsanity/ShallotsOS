@@ -31,12 +31,12 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40354493777
-  (ShallotsOS `148e7a6`, picoarch `420dd1a`, PCSX4ALL `3f97ecb`, HCSNES 0.2 `44ef26a`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40360891465
+  (ShallotsOS `85b732f`, picoarch `2485cde`, PCSX4ALL `3f97ecb`, HCSNES 0.3 `6a71a77`)
 
 ## User to-do (device tests)
 
-Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40354493777
+Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40360891465
 Before: back up the SD card; keep an empty `log.txt` at the card root.
 Confirmed earlier: folder move prompt and move, NES save states, Resume,
 GameSwitcher, Recents, Favourites, Y-menu search/emulator/favourite, box art.
@@ -45,12 +45,12 @@ A. New in this build
 00. Options > About (picoarch and PCSX4ALL): the running emulator's full
     name, version and core file, the game, video and audio (PS1: CPU
     mode, disc ID, BIOS). Long values end in "...".
-0a. stockprobe v2 (new zip in chat; replace stockprobe.so and run
-    install_stockprobe.bat again): stock menu autorun into Yoshi's Island,
-    play the intro + ~1 minute, send `logs/stockprobe.log`. Then, with the
-    probe still installed, the same in ShallotsOS on "Stock Snes9x 2005":
-    it now draws like the stock frontend (every frame unless behind).
-    Findings so far: tools/stockprobe/README.md.
+0a. Yoshi's Island in ShallotsOS (probe still installed), same scene as the
+    stock run: (1) "Stock Snes9x 2005" (now skips like the stock frontend:
+    a full frame late, max 3); (2) HCSNES Fast, now defaulting to Timed /
+    max 2 (a saved per-game/core config keeps its old Frameskip: set it by
+    hand). Send logs/stockprobe.log, picoarch.log and cores.log (HCSNES
+    Profiling On for one run). Stock results: tools/stockprobe/README.md.
 0. Why the stock firmware is smoother: play the Yoshi's Island intro and
    the first level for ~1 minute on "Stock Snes9x 2005", then the same on
    HCSNES Fast (Options > Emulator options: Frameskip Fixed, max 1). Send
