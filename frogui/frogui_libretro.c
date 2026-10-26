@@ -399,13 +399,6 @@ static void build_core_choices(void) {
         qsort(&core_choices[1], core_choice_count - 1, sizeof(CoreChoice), core_choice_cmp);
 }
 
-static int core_choice_index_for_path(const char *path) {
-    if (!path) return 0;
-    for (int i = 1; i < core_choice_count; i++)
-        if (strcmp(core_choices[i].path, path) == 0) return i;
-    return 0;
-}
-
 /* Libretro callbacks */
 static retro_video_refresh_t     video_cb     = NULL;
 static retro_environment_t       environ_cb   = NULL;
@@ -2839,6 +2832,7 @@ static int games_tab_entry_count = 0;
 typedef struct { const char *key; const char *label_key; const char *label_en; const char *folder_a; const char *folder_b; const char *bin; } AppEntry;
 static const AppEntry app_defs[] = {
     {"activity", "app.activity", "Activity Tracker", NULL, NULL, NULL},
+    {"themes", "app.themes", "Themes", NULL, NULL, NULL},
     {"frogshell", "app.frogshell", "FrogShell", NULL, NULL, FROGSHELL_CORE},
     {"usbmode", "app.usb_mode", "USB mode", NULL, NULL, USB_MODE_BIN},
     {"ebook", "app.ebook_reader", "Books", "Ebook", "ebooks", NULL},
@@ -2970,6 +2964,8 @@ static void scan_apps_tab(void) {
             !strcasecmp(tf_device, "SF3000")) continue;
         if (!app_defs[i].bin && !strcmp(app_defs[i].key, "activity")) {
             if (access("/mnt/sdcard/frogui/playtime.txt", R_OK) != 0) continue;
+        } else if (!strcmp(app_defs[i].key, "themes")) {
+            if (onion_theme_count() <= 0) continue;
         } else if (app_defs[i].bin) {
             if (access(app_defs[i].bin, X_OK) != 0) continue;
         } else if (!app_folder_path(i, path, sizeof path)) continue;
@@ -3004,6 +3000,12 @@ static const char *app_label(const char *key) {
 }
 
 static void save_games_tab_entries(void) {
+    /* Only the systems list itself is cached: leaving Games from inside a
+     * system (FN for the GameSwitcher) used to store that system's games as
+     * the root, which then came back looking like the systems list. */
+    if (strcmp(current_path, ROMS_PATH) != 0 || viewing_favourites || viewing_search ||
+        viewing_recents)
+        return;
     if (!entries || entry_count <= 0) {
         games_tab_entry_count = 0;
         return;
@@ -3050,6 +3052,19 @@ static void switch_main_tab(int target) {
     if (old == MAIN_TAB_GAMES) {
         games_tab_selected = selected_index;
         games_tab_scroll = scroll_offset;
+        if (strcmp(current_path, ROMS_PATH) != 0 && games_tab_entries) {
+            /* Inside a system: come back to the systems list on that system. */
+            const char *rel = current_path + strlen(ROMS_PATH);
+            while (*rel == '/') rel++;
+            char sys[256];
+            snprintf(sys, sizeof sys, "%s", rel);
+            char *sl = strchr(sys, '/');
+            if (sl) *sl = '\0';
+            games_tab_selected = 0;
+            for (int i = 0; i < games_tab_entry_count; i++)
+                if (!strcmp(games_tab_entries[i].name, sys)) { games_tab_selected = i; break; }
+            games_tab_scroll = 0;
+        }
         save_games_tab_entries();
     } else if (old == MAIN_TAB_RECENTS) {
         recents_tab_selected = selected_index;
@@ -4288,11 +4303,7 @@ static void render_system_carousel(uint16_t *fb) {
     font_draw_text(fb, SCREEN_WIDTH, SCREEN_HEIGHT, count_x,
                    text_y + ITEM_HEIGHT, count, COLOR_HEADER);
 
-    int show_select =
-        strcmp(entries[selected_index].name, SETTINGS_ENTRY_NAME) != 0 &&
-        strcmp(entries[selected_index].name, RECENTS_ENTRY_NAME) != 0 &&
-        strcmp(entries[selected_index].name, FAVOURITES_ENTRY_NAME) != 0;
-    render_legend(fb, LEGEND_X_NONE, show_select, 1);
+    render_legend(fb, LEGEND_X_NONE, 0, 1);
 
     if (system_carousel_frame <= SYSTEM_CAROUSEL_FRAMES)
         system_carousel_frame++;
@@ -4551,11 +4562,7 @@ static void render_system_grid(uint16_t *fb) {
     font_draw_text(fb, SCREEN_WIDTH, SCREEN_HEIGHT,
                    (SCREEN_WIDTH - font_measure_text(count)) / 2,
                    bottom + UI_S(4), count, COLOR_HEADER);
-    int show_select =
-        strcmp(entries[selected_index].name, SETTINGS_ENTRY_NAME) != 0 &&
-        strcmp(entries[selected_index].name, RECENTS_ENTRY_NAME) != 0 &&
-        strcmp(entries[selected_index].name, FAVOURITES_ENTRY_NAME) != 0;
-    render_legend(fb, LEGEND_X_NONE, show_select, 1);
+    render_legend(fb, LEGEND_X_NONE, 0, 1);
 }
 
 /* Show the favourites list in place of the Games root. */
@@ -4782,6 +4789,118 @@ static bool onion_top_level_view(void) {
            strcmp(current_path, ROMS_PATH) == 0;
 }
 
+/* ---- Themes app ------------------------------------------------------------
+ * OnionOS's Theme Switcher: each theme's preview.png fills the screen, with
+ * its name on top and the keys below. Left/Right browse, A applies, B goes
+ * back. A theme still in its .zip has no preview until it is installed
+ * (applying it installs it). */
+static bool ts_active = false;
+static int ts_idx = 0;
+static uint16_t *ts_preview = NULL;
+static int ts_preview_w, ts_preview_h, ts_preview_for = -2;
+
+static void theme_switcher_open(void) {
+    onion_theme_scan();
+    if (onion_theme_count() <= 0) {
+        ui_toast_show(tr_or("themes.none", "No themes in the Themes folder"));
+        return;
+    }
+    ts_idx = onion_theme_current() >= 0 ? onion_theme_current() : 0;
+    ts_preview_for = -2;
+    ts_active = true;
+}
+
+static void theme_switcher_close(void) {
+    ts_active = false;
+    free(ts_preview);
+    ts_preview = NULL;
+    ts_preview_for = -2;
+}
+
+/* The selected theme's preview, decoded once per theme. */
+static int theme_switcher_load_preview(void) {
+    if (ts_preview_for == ts_idx) return ts_preview != NULL;
+    ts_preview_for = ts_idx;
+    free(ts_preview);
+    ts_preview = NULL;
+    char path[MAX_PATH_LEN];
+    snprintf(path, sizeof path, "%s/%s/preview.png", ONION_THEMES_DIR, onion_theme_folder(ts_idx));
+    int w, h, ch;
+    unsigned char *rgb = stbi_load(path, &w, &h, &ch, 3);
+    if (!rgb || w <= 0 || h <= 0) { if (rgb) stbi_image_free(rgb); return 0; }
+    ts_preview = malloc((size_t)w * h * sizeof *ts_preview);
+    if (ts_preview) {
+        for (size_t i = 0; i < (size_t)w * h; i++) {
+            const unsigned char *px = rgb + i * 3;
+            ts_preview[i] = (uint16_t)(((px[0] >> 3) << 11) | ((px[1] >> 2) << 5) | (px[2] >> 3));
+        }
+        ts_preview_w = w; ts_preview_h = h;
+    }
+    stbi_image_free(rgb);
+    return ts_preview != NULL;
+}
+
+static void handle_theme_switcher(void) {
+    int n = onion_theme_count();
+    if (n <= 0 || input_was_pressed(FROG_BTN_B)) { theme_switcher_close(); return; }
+    if (input_was_pressed(FROG_BTN_LEFT) || input_was_pressed(FROG_BTN_UP) || input_was_pressed(FROG_BTN_L1))
+        ts_idx = (ts_idx + n - 1) % n;
+    if (input_was_pressed(FROG_BTN_RIGHT) || input_was_pressed(FROG_BTN_DOWN) || input_was_pressed(FROG_BTN_R1))
+        ts_idx = (ts_idx + 1) % n;
+    if (input_was_pressed(FROG_BTN_A)) {
+        settings_onion_theme_idx = ts_idx;
+        int ok = onion_apply();
+        settings_save_file();
+        theme_switcher_close();
+        ui_toast_show(ok ? tr_or("themes.applied", "Theme applied")
+                         : tr_or("onion.theme_failed", "Theme could not be loaded"));
+    }
+}
+
+static void render_theme_switcher(void) {
+    const int W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+    render_fill_rect(framebuffer, 0, 0, W, H, 0x0000);
+    if (theme_switcher_load_preview()) {
+        /* Fit the preview to the screen, keeping its shape. */
+        int dw = W, dh = ts_preview_h * W / ts_preview_w;
+        if (dh > H) { dh = H; dw = ts_preview_w * H / ts_preview_h; }
+        int ox = (W - dw) / 2, oy = (H - dh) / 2;
+        for (int y = 0; y < dh; y++) {
+            const uint16_t *src = ts_preview + (size_t)(y * ts_preview_h / dh) * ts_preview_w;
+            uint16_t *dst = framebuffer + (size_t)(oy + y) * W + ox;
+            for (int x = 0; x < dw; x++) dst[x] = src[x * ts_preview_w / dw];
+        }
+    } else {
+        const char *none = tr_or("themes.no_preview", "No preview");
+        font_draw_text(framebuffer, W, H, (W - font_measure_text(none)) / 2, H / 2, none, 0x8C51);
+    }
+    /* Name bar on top, keys at the bottom, both darkened over the preview. */
+    int bar = UI_S(40);
+    for (int pass = 0; pass < 2; pass++) {
+        int y0 = pass ? H - bar : 0;
+        for (int y = y0; y < y0 + bar && y < H; y++)
+            for (int x = 0; x < W; x++) {
+                uint16_t c = framebuffer[(size_t)y * W + x];
+                framebuffer[(size_t)y * W + x] = (uint16_t)((((c >> 11) & 31) / 8) << 11 |
+                                                            (((c >> 5) & 63) / 8) << 5 | ((c & 31) / 8));
+            }
+    }
+    int ascent = 0, descent = 0;
+    font_line_metrics(&ascent, &descent);
+    int ty = (bar - (ascent + descent)) / 2;
+    char title[200];
+    snprintf(title, sizeof title, "%s%s", onion_theme_label(ts_idx),
+             ts_idx == onion_theme_current() ? tr_or("themes.current", "  (current)") : "");
+    font_draw_text(framebuffer, W, H, UI_S(16), ty, title, 0xFFFF);
+    char count[24];
+    snprintf(count, sizeof count, "%d / %d", ts_idx + 1, onion_theme_count());
+    font_draw_text(framebuffer, W, H, W - UI_S(16) - font_measure_text(count), ty, count, 0xC618);
+    char keys[160];
+    snprintf(keys, sizeof keys, "%s   %s   %s", tr_or("themes.browse", "< > BROWSE"),
+             tr_or("themes.apply", "A APPLY"), tr_or("themes.back", "B BACK"));
+    font_draw_text(framebuffer, W, H, (W - font_measure_text(keys)) / 2, H - bar + ty, keys, 0xFFFF);
+}
+
 static void handle_input(void) {
     input_update();
 
@@ -4809,6 +4928,10 @@ static void handle_input(void) {
     }
     if (mig_state == 2)
         return;   /* the "moving" screen is being drawn */
+    if (ts_active) {
+        handle_theme_switcher();
+        return;
+    }
     if (mig_state == 3) {
         MigrateReport rep;
         migrate_run(g_roms_path, &rep);
@@ -4955,70 +5078,8 @@ static void handle_input(void) {
         goto input_done;
     }
 
-    /* SELECT: open core picker. On a ROM file → per-game override; on a system
-     * folder → per-folder override. Not available in recents/favourites views. */
-    if (input_was_pressed(FROG_BTN_SELECT) && !viewing_recents && !viewing_favourites && !viewing_search &&
-        selected_index < entry_count &&
-        strcmp(entries[selected_index].name, SETTINGS_ENTRY_NAME) != 0 &&
-        strcmp(entries[selected_index].name, RECENTS_ENTRY_NAME) != 0 &&
-        strcmp(entries[selected_index].name, FAVOURITES_ENTRY_NAME) != 0) {
-        const char *cur;
-        if (entries[selected_index].is_dir) {
-            snprintf(core_picker_key, sizeof(core_picker_key), "%s/%s",
-                     current_path, entries[selected_index].name);
-            snprintf(core_picker_title, sizeof(core_picker_title), "Folder: %s",
-                     entries[selected_index].name);
-            cur = core_override_lookup(NULL, core_picker_key);
-        } else {
-            snprintf(core_picker_key, sizeof(core_picker_key), "%s/%s",
-                     current_path, entries[selected_index].name);
-            snprintf(core_picker_title, sizeof(core_picker_title), "Game: %s",
-                     entries[selected_index].name);
-            cur = core_override_lookup(core_picker_key, NULL);
-        }
-        /* Cursor lands on the active core's row (or the first core row when
-         * the section is collapsed). */
-        core_picker_idx = core_choice_index_for_path(cur);
-        core_picker_current = core_picker_idx;   /* the active core, marked "* " */
-        /* Keep the SELECT menu compact on entry.  Cores are the common
-         * action; extension filtering remains available under its collapsible
-         * section when needed. */
-        extf_cores_open = true;
-        extf_exts_open = false;
-        core_picker_idx += 1;                    /* +1: ">> Cores" header row */
-        core_picker_scroll = 0;
-        if (core_picker_idx >= PICKER_ROWS)
-            core_picker_scroll = core_picker_idx - PICKER_ROWS + 1;
-        /* Extension whitelist block (PS1 family) sits ABOVE the core list.
-         * Show it when SELECTing a filtered system folder itself, or when the
-         * picker is opened on a ROM file inside one. */
-        extf_in_picker = false;
-        extf_inside = false;
-        if (entries[selected_index].is_dir) {
-            /* Every browsable folder gets the same extension-filter editor;
-             * an empty list simply starts disabled and does not hide files. */
-            {
-                extf_in_picker = true;
-                strncpy(extf_folder, entries[selected_index].name, sizeof(extf_folder) - 1);
-                extf_folder[sizeof(extf_folder) - 1] = '\0';
-                snprintf(extf_path, sizeof(extf_path), "%s/%s",
-                         current_path, entries[selected_index].name);
-            }
-        } else {
-            const char *cf = get_filter_folder(current_path);
-            if (cf) {
-                extf_in_picker = true;
-                extf_inside = true;
-                strncpy(extf_folder, cf, sizeof(extf_folder) - 1);
-                extf_folder[sizeof(extf_folder) - 1] = '\0';
-                strncpy(extf_path, current_path, sizeof(extf_path) - 1);
-                extf_path[sizeof(extf_path) - 1] = '\0';
-            }
-        }
-        extf_dirty = false;
-        core_picker_active = true;
-        return;
-    }
+    /* SELECT does nothing here: emulators are picked in the Y menu (TreeFrogUI's
+     * SELECT core picker is gone). */
 
     /* Y: Onion-style detailed/fullscreen toggle in GameSwitcher. Elsewhere it
      * keeps the existing favourite action. */
@@ -5090,6 +5151,8 @@ static void handle_input(void) {
             if (app_index >= 0 && !strcmp(app_defs[app_index].key, "activity")) {
                 ui_transition_start(1);
                 enter_activity_view();
+            } else if (app_index >= 0 && !strcmp(app_defs[app_index].key, "themes")) {
+                theme_switcher_open();
             } else if (app_index >= 0 && !strcmp(app_defs[app_index].key, "shutdown")) {
                 request_builtin_launch(SHUTDOWN_BIN);
             } else if (app_index >= 0 && !strcmp(app_defs[app_index].key, "usbmode")) {
@@ -6238,6 +6301,7 @@ void retro_run(void) {
          * an unrelated navigation key happened to invalidate it. */
         sig = sig*33u + (unsigned)usb_mode_confirm_active;
         sig = sig*33u + (unsigned)mig_state;
+        sig = sig*33u + (unsigned)(ts_active ? 1000 + ts_idx : 0);
         sig = sig*33u + (unsigned)(gm_active ? 1 + gm_row * 64 + gm_core * 4 + gm_scope * 2 : 0);
         sig = sig*33u + (unsigned)usb_mode_initiated_active;
         sig = sig*33u + (unsigned)settings_menu_active;
@@ -6296,6 +6360,8 @@ void retro_run(void) {
         if (mig_state == 2) mig_state = 3;   /* move on the next pass */
     } else if (usb_mode_confirm_active || usb_mode_initiated_active) {
         render_usb_confirm();
+    } else if (ts_active) {
+        render_theme_switcher();
     } else if (search_kbd_active) {
         render_search_kbd();
     } else if (extf_kbd_active) {
@@ -6414,13 +6480,7 @@ void retro_run(void) {
                               ? LEGEND_X_REMOVE : LEGEND_X_FAVOURITE;
             }
         }
-        /* SELECT opens the core picker on folders + real ROMs (matches the SELECT
-         * handler guard): show the "SEL-OPTIONS" hint there. */
-        int show_select = (!viewing_recents && !viewing_favourites && !viewing_search &&
-                           selected_index < entry_count &&
-                           strcmp(entries[selected_index].name, SETTINGS_ENTRY_NAME) != 0 &&
-                           strcmp(entries[selected_index].name, RECENTS_ENTRY_NAME) != 0 &&
-                           strcmp(entries[selected_index].name, FAVOURITES_ENTRY_NAME) != 0);
+        int show_select = 0;   /* no SELECT action in the browser any more */
         /* X opens search in the normal browser (systems root + any game folder). */
         int show_search = (!viewing_recents && !viewing_favourites && !viewing_search);
 

@@ -42,25 +42,18 @@ Confirmed earlier: folder move prompt and move, NES save states, Resume,
 GameSwitcher, Recents, Favourites, Y-menu search/emulator/favourite, box art.
 
 A. New in this build
-0a. PS1 is PCSX4ALL again, now with picoarch's menu (identical look),
-    keys (FN tap/hold, SELECT+START, hold), save slots 1-30 + Auto +
-    Switcher with screenshots, SELECT+R2/L2, GameSwitcher (hold FN),
-    resume after power-off, Auto-Save/Load, ShallotsOS sleep, Reset,
-    Disc control, PCSX pages in the list style (B = back). SELECT+START
-    no longer quits: Exit Game in the menu. Check FPS: Options > Audio
-    and video > GPU settings > Show FPS.
-0b. SNES: the ~0.5 s pauses every 10 s should be gone (Yoshi's Island
-    save RAM was written with sync on the game thread).
-0c. FN as menu key: SELECT+START now goes to the game, no menu.
-0d. DS: DSperate gets adaptive frameskip (up to 2) unless dsperate.ini
-    sets frameskip; GBA on mGBA should be faster with logging on.
-1. GBC icon: shows with Pixel by Jeltron (the pack's Game Boy art) and
-   with Default (Cosy) (Settings > Appearance > Icon Pack).
-2. Search (X) with Names from gamelist.xml on: part of a scraped name finds
-   the game when the file name differs; results show scraped names.
-3. Y menu fix: per-game emulator on a system that has its own (e.g. GBA
-   on mGBA, one game on VBA Next): the system stays on mGBA; per-game
-   "Default (mGBA)" sends that game back to mGBA.
+1. Games tab: in a system's game list, FN (GameSwitcher), B, then Games:
+   the systems list again, on that system.
+2. SELECT in the Games list does nothing now (emulators: Y menu).
+3. Apps > Themes: previews full screen, Left/Right (or L1/R1) browse,
+   A applies, B back.
+4. PS1 (PCSX4ALL): Cross is the bottom button (B), Circle the right one
+   (A), as on a PS1 pad; Square Y, Triangle X. A saved config with the old
+   pair is converted; your own remaps are kept.
+5. SNES: no more half-second freezes (frameskip now draws at least every
+   third frame on every emulator). Crackle in Yoshi's Island remains: it
+   needs ~17 ms per frame against 16.7 ms.
+6. PCSX4ALL toast and FPS counter look like picoarch's.
 B. Performance
 4. Yoshi's Island on Snes9x 2005 Plus, then HCSNES Fast, then HCSNES Plus
    (Y > Emulator > This game): same scene; smoothness, sound, glitches.
@@ -417,6 +410,23 @@ User's to-do list (October 2026):
       until the menu closes); FPS = picoarch's HUD card "FPS: x (y)" top
       left of the game frame (was the bitmap stats line); Show FPS added
       to Audio and video
+- [x] User test (October 2026): FN mode passes SELECT+START to the game
+      (confirmed); Load > Auto preview fixed (confirmed). SNES log:
+      Snes9x 2005 Plus froze ~520 ms every few seconds while HCSNES Fast
+      did not: upstream snes9x2005 Auto frameskip may skip 30 frames in a
+      row (HCSNES caps at 1) -> picoarch now clears "behind" after 2
+      skipped frames for every core. Heavy scenes still ~16-18 ms emu per
+      frame (budget 16.7): crackle needs a faster core (HCSNES work).
+      Games tab after GameSwitcher showed a system's games as the root:
+      save_games_tab_entries cached the folder list; now only the root is
+      cached and the tab returns on that system. TreeFrogUI SELECT core
+      picker (and its extension-filter editor) removed; Y menu instead.
+      Themes app (Apps > Themes, preview.png full screen). PCSX4ALL face
+      buttons swapped vs a PS1 pad (TreeFrog assumed A = south; A is east
+      per picoarch's calibrated keymap): Cross->B, Circle->A, config v2
+      migration. Music volume bar: fb1 is one page (virtual 480/480,
+      resize refused), so page flipping is impossible; next idea is the
+      player HUD on fb0 with fb1 blanked during audio-only playback
 - [x] Search matches and shows gamelist.xml names (when that setting is on),
       each result labelled from its own folder's gamelist; scraper art
       folders (media, Imgs...) are skipped while searching

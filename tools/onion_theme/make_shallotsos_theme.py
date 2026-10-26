@@ -163,6 +163,18 @@ def glyph_image(d, cx, cy, s, c, w):
                (cx + s * 0.4 + r) * SS, (cy - s * 0.4 + r) * SS), fill=c)
 
 
+def glyph_palette(d, cx, cy, s, c, w):
+    d.ellipse(((cx - s) * SS, (cy - s * 0.8) * SS, (cx + s) * SS, (cy + s * 0.8) * SS),
+              outline=c, width=int(w * SS))
+    for x, y in ((cx - s * 0.45, cy - s * 0.3), (cx, cy - s * 0.45), (cx + s * 0.45, cy - s * 0.3),
+                 (cx + s * 0.5, cy + s * 0.2)):
+        r = s * 0.15
+        d.ellipse(((x - r) * SS, (y - r) * SS, (x + r) * SS, (y + r) * SS), fill=c)
+    r = s * 0.2
+    x, y = cx - s * 0.3, cy + s * 0.35
+    d.ellipse(((x - r) * SS, (y - r) * SS, (x + r) * SS, (y + r) * SS), outline=c, width=int(w * SS))
+
+
 def glyph_video(d, cx, cy, s, c, w):
     d.rounded_rectangle(((cx - s) * SS, (cy - s * 0.7) * SS, (cx + s) * SS, (cy + s * 0.7) * SS),
                         radius=s * 0.2 * SS, outline=c, width=int(w * SS))
@@ -523,7 +535,8 @@ def main():
     save(finish(folder), skin / "icon-folder.png")
     apps = {"activity": glyph_chart, "commander": glyph_folder, "ftp": glyph_usb,
             "ereader": glyph_book, "gallery": glyph_image, "ffplay": glyph_video,
-            "music": glyph_music, "tweaks_system": glyph_power, "search": glyph_star}
+            "music": glyph_music, "tweaks_system": glyph_power, "search": glyph_star,
+            "themes": glyph_palette}
     for name, glyph in apps.items():
         save(app_icon(glyph), out / "icons/app" / f"{name}.png")
     change_sound(out / "sound/change.wav")

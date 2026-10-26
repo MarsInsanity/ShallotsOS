@@ -1623,6 +1623,7 @@ const char *onion_theme_app_icon(const char *app_key) {
       {"usbmode", "ftp"},       {"ebook", "ereader"},
       {"images", "gallery"},    {"videos", "ffplay"},
       {"music", "music"},       {"rockbox", "music"},
+      {"themes", "themes"},
       {"shutdown", "tweaks_system"},
   };
   static char path[ONION_PATH_MAX];

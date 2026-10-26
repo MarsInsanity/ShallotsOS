@@ -100,6 +100,7 @@
   "usb.ready": "USB MTP READY",
   "usb.transfer_warning": "Do not disconnect while files are transferring",
   "app.activity": "Activity Tracker",
+  "app.themes": "Themes",
   "app.frogshell": "FrogShell",
   "app.usb_mode": "USB mode",
   "app.ebook_reader": "Books",
