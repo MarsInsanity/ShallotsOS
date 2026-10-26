@@ -256,7 +256,10 @@ static struct {
 	long long start, last_run, cpu_total, cpu_busy, cpu_self;
 	long long run_sum, run_max, gap_max, video_sum, video_max, audio_sum, audio_max;
 	unsigned runs, drawn, dupes, gaps_over_20ms, polls, env_calls;
+	unsigned skip_on, skip_off, dupe_run, dupe_run_max;
 	unsigned long audio_frames, single_samples;
+	char trace[400];   /* the window's first frames: run ms/gap ms, "s" = not drawn */
+	int trace_len, trace_n;
 	unsigned w, h;
 	size_t pitch;
 	int in_run;
@@ -299,8 +302,11 @@ static bool env_hook(unsigned cmd, void *data) {
 
 static void video_hook(const void *data, unsigned w, unsigned h, size_t pitch) {
 	long long t = now_us();
-	if (data) { st.drawn++; st.w = w; st.h = h; st.pitch = pitch; }
-	else st.dupes++;
+	if (data) { st.drawn++; st.w = w; st.h = h; st.pitch = pitch; st.dupe_run = 0; }
+	else {
+		st.dupes++;
+		if (++st.dupe_run > st.dupe_run_max) st.dupe_run_max = st.dupe_run;
+	}
 	if (f_video) f_video(data, w, h, pitch);
 	t = now_us() - t;
 	st.video_sum += t;
@@ -425,13 +431,15 @@ static void window_report(long long now) {
 	}
 	plog("[%.0fs] runs/s=%.1f drawn=%u dupes=%u | run avg/max=%.1f/%.1fms gap max=%.1fms >20ms=%u | "
 	     "video cb avg/max=%.2f/%.1fms | audio %lu frames/s cb avg/max=%.2f/%.1fms single=%lu | "
-	     "polls=%u env=%u | %ux%u pitch %zu | cpu self/other=%.0f%%/%.0f%% loop=%ldus\n",
+	     "polls=%u env=%u | %ux%u pitch %zu | cpu self/other=%.0f%%/%.0f%% loop=%ldus | "
+	     "SetFrameSkip 1/0=%u/%u skips in a row max=%u\n",
 	     now / 1e6, st.runs / secs, st.drawn, st.dupes, st.run_sum / 1000.0 / (st.runs ? st.runs : 1),
 	     st.run_max / 1000.0, st.gap_max / 1000.0, st.gaps_over_20ms,
 	     st.video_sum / 1000.0 / ((st.drawn + st.dupes) ? st.drawn + st.dupes : 1), st.video_max / 1000.0,
 	     (unsigned long)(st.audio_frames / secs), st.audio_sum / 1000.0 / (st.runs ? st.runs : 1),
 	     st.audio_max / 1000.0, st.single_samples, st.polls, st.env_calls, st.w, st.h, st.pitch, self_pct,
-	     other_pct, cpu_loop_us());
+	     other_pct, cpu_loop_us(), st.skip_on, st.skip_off, st.dupe_run_max);
+	if (st.trace_len) plog("  frames     %s\n", st.trace);
 	log_busiest("threads   ", "/proc/self/task", prev_threads, &n_prev_threads, secs, 0, 1);
 	log_busiest("others    ", "/proc", prev_procs, &n_prev_procs, secs, 1, 1);
 	plog_flush();
@@ -517,11 +525,18 @@ EXPORT void retro_run(void) {
 			if (gap > 20000) st.gaps_over_20ms++;
 		}
 	}
+	long long gap = st.last_run ? t - st.last_run : 0;
+	unsigned drawn_before = st.drawn;
 	st.last_run = t;
 	st.in_run = 1;
 	if (r_retro_run) r_retro_run();
 	st.in_run = 0;
 	long long d = now_us() - t;
+	if (st.trace_n < 40 && st.trace_len < (int)sizeof st.trace - 16) {
+		st.trace_len += snprintf(st.trace + st.trace_len, sizeof st.trace - st.trace_len, "%s%lld/%lld%s",
+		                         st.trace_n ? " " : "", d / 1000, gap / 1000, st.drawn == drawn_before ? "s" : "");
+		st.trace_n++;
+	}
 	st.run_sum += d;
 	if (d > st.run_max) st.run_max = d;
 	st.runs++;
@@ -568,8 +583,14 @@ EXPORT size_t retro_get_memory_size(unsigned id) {
 
 /* The stock Snes9x 2005's own settings calls; logged, then passed on. */
 EXPORT void SetFrameSkip(int on) {
-	plog("  call       SetFrameSkip(%d)%s\n", on, r_SetFrameSkip ? "" : " (not in this core)");
-	plog_flush();
+	/* Called before every frame: count, and log only the first calls (writing
+	 * each one to the card would slow the frontend down). */
+	static int logged;
+	if (on) st.skip_on++; else st.skip_off++;
+	if (logged < 3) {
+		logged++;
+		plog("  call       SetFrameSkip(%d)%s\n", on, r_SetFrameSkip ? "" : " (not in this core)");
+	}
 	if (r_SetFrameSkip) r_SetFrameSkip(on);
 }
 EXPORT void init_sfc_setting(void) {

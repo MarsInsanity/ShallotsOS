@@ -54,4 +54,19 @@ Public R36HD backup, for comparison (CRC32):
 | `libemu_snes9x.so` | 2718028 | `A9E8F70B` |
 | `libemu_snes9x2010.so` | 2111400 | `788281C2` |
 
+Note: the TreeFrog/ShallotsOS card's `rkgame` is a different build:
+1178732 bytes, CRC32 `9A1BD663` (first stockprobe log, R36SX).
+
+## First results (stock frontend, ShallotsOS card, Yoshi's Island)
+
+- One CPU core online (`cpus=1`, 74Kc, BogoMIPS 589.82).
+- rkgame calls `SetFrameSkip` before every frame: `1` skips drawing the next
+  frame, `0` draws it. The core's default, without these calls, is every
+  other frame. In heavy scenes it drew 150-200 of ~295 frames per 5 s, but
+  kept ~59.5 runs/s and steady audio (~43,700 frames/s).
+- retro_run averaged ~11 ms (light scenes ~5 ms); the video and audio
+  callbacks don't block (~0.6 ms and ~0.05 ms).
+- Other CPU use: cubevol 3-4%. (`mmcqd/0` at 12-15% came from the first
+  probe logging every SetFrameSkip call; fixed.)
+
 `STOCKPROBE_LOG=<path>` sends the log elsewhere, for tests off the device.
