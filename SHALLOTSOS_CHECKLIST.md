@@ -454,6 +454,14 @@ User's to-do list (October 2026):
       game, av_info video/audio, frontend); PCSX4ALL sh_menu_about (CPU
       recompiler/interpreter, disc ID, BIOS/HLE). picoarch option lists now
       cut long values with "..."
+- [x] Stock SNES test (user + log): stock Snes9x 2005 draws exactly
+      every other frame (fps 30.0, skipped 150 per 5 s, even in light
+      scenes: fixed frameskip 1 via its SetFrameSkip) with the old APU;
+      emu ~13-15 ms, audio queue 2000-3600 (healthy) vs 0-600 on ours. That
+      even 30 fps is most likely the stock firmware's "smooth" Yoshi's
+      Island. Stock Snes9x / Snes9x 2010: ~40 ms per frame, removed from
+      the Y menu. Recommendation: HCSNES Fast, Frameskip = Fixed, Maximum
+      Consecutive Skips = 1 (same behaviour, old APU, no 30-frame runs)
 - [x] Search matches and shows gamelist.xml names (when that setting is on),
       each result labelled from its own folder's gamelist; scraper art
       folders (media, Imgs...) are skipped while searching
