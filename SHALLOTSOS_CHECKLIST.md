@@ -84,8 +84,7 @@ E. Still open from before
 12. Books (needs `cubegm/ebook`), Videos, Images apps.
 13. When convenient: low-battery save at 5%.
 F. Wanted from you
-14. Text of `cubegm/dsperate/run_sf3000.sh` (to set DS defaults).
-15. Activity Tracker mockup.
+14. Activity Tracker mockup.
 
 ## Done
 
@@ -424,6 +423,19 @@ User's to-do list (October 2026):
       - PS2: not possible on this hardware (told the user)
 
 ## Ideas offered, not started
+
+- [ ] Later (user, October 2026): replace the stock firmware's parts and
+      start from a mostly blank slate. Agreed order: (1) read-only
+      hardware/boot-chain inventory app; (2) own input/system daemon
+      replacing cubevol (shift-register keys key-clk/key-do, GPIO volume/
+      FN/power, persistentmem volume/backlight, ADC battery, OSD, sleep);
+      (3) zhijack.sh stops rkgame/cubevol and runs only ShallotsOS (still
+      SD-only, reversible); (4) drop driver.so (rkgame decrypts it) and
+      the stock audio path for our own /dev/dis and AUDDEC/I2SO ioctls;
+      (5) optional custom rootfs in flash, only with UART recovery and a
+      full flash backup. Kernel, HCRTOS firmware and bootloader stay stock
+      (request the GPL kernel source). Not now: polish and performance
+      first
 
 
 - [ ] GameSwitcher hints and theme picker previews
