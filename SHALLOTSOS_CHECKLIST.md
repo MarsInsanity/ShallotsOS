@@ -42,6 +42,11 @@ Confirmed earlier: folder move prompt and move, NES save states, Resume,
 GameSwitcher, Recents, Favourites, Y-menu search/emulator/favourite, box art.
 
 A. New in this build
+0. Stock SNES emulators: Y on Yoshi's Island > Emulator > "Stock Snes9x
+   2005", then "Stock Snes9x", then "Stock Snes9x 2010". Does one run like
+   on the stock firmware? (They are the stock firmware's own
+   cubegm/cores/libemu_*.so files.) If one shows a black screen, crashes or
+   runs wrong, note which.
 1. Games tab: in a system's game list, FN (GameSwitcher), B, then Games:
    the systems list again, on that system.
 2. SELECT in the Games list does nothing now (emulators: Y menu).
@@ -427,6 +432,20 @@ User's to-do list (October 2026):
       migration. Music volume bar: fb1 is one page (virtual 480/480,
       resize refused), so page flipping is impossible; next idea is the
       player HUD on fb0 with fb1 blanked during audio-only playback
+- [x] Stock SNES cores: TreeFrog's R36HD stock backup
+      (tzubertowski/H.OS_stock_backup, stock-backups-v1; the R36SX Google
+      Drive backups are blocked here) has the stock rkgame cores in
+      cubegm/cores: libemu_sfc.so (Snes9x 2005 v1.36 b94a804, MIPS32, Codescape
+      GCC 6.3), libemu_snes9x.so (Snes9x), libemu_snes9x2010.so. Plain
+      libretro cores (25-27 retro_* exports, only libc/libm/libstdc++),
+      not encrypted, but each runs check_encrypty: mmaps /dev/mem at the
+      eFuse block (0x1882E000) and SPI flash (0x1F000000), a genuine-hardware
+      check (passes on the real console). libemu_sfc also exports
+      SetFrameSkip/Speed (rkgame-only API, unknown semantics) and has no
+      snes9x_2005_* options. config.xml lists Snes9x first for .sfc/.smc,
+      filelist.xml puts some games on Snes9x 2010. Added all three to the
+      SNES Y menu (STOCK() paths, labels "Stock ..."); never libemu_md.so
+      (the boot hijack). SH_MAX_CORES 10
 - [x] Search matches and shows gamelist.xml names (when that setting is on),
       each result labelled from its own folder's gamelist; scraper art
       folders (media, Imgs...) are skipped while searching

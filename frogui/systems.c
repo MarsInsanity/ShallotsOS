@@ -6,6 +6,10 @@
 #include <unistd.h>
 
 #define C(name) "/mnt/sdcard/cubegm/cores/" name "_libretro.so"
+/* The stock firmware's own libretro cores (cubegm/cores/libemu_*.so), still
+ * on cards set up from the stock backup. Never libemu_md.so: TreeFrogUI's
+ * boot hijack replaces that one. */
+#define STOCK(name) "/mnt/sdcard/cubegm/cores/libemu_" name ".so"
 #define PCSX4ALL "/mnt/sdcard/cubegm/pcsx4all"
 #define PPSSPP "/mnt/sdcard/cubegm/ppsspp"
 #define PICO286 "/mnt/sdcard/cubegm/pico286"
@@ -18,7 +22,7 @@ static const ShSystem systems[] = {
     {"fds", "Family Computer Disk System", "fds", {C("fceumm")}},
     {"snes", "Super Nintendo Entertainment System", "sfc",
      {C("snes9x2005_plus"), C("snes9x2002"), C("snes9x2005"), C("snes9x2010"),
-      C("hcsnes_fast"), C("hcsnes_plus")}},
+      C("hcsnes_fast"), C("hcsnes_plus"), STOCK("sfc"), STOCK("snes9x"), STOCK("snes9x2010")}},
     {"gb", "Game Boy", "gb", {C("gambatte"), C("gearboy"), C("tgbdual")}},
     {"gbc", "Game Boy Color", "gbc", {C("gambatte"), C("gearboy"), C("tgbdual")}},
     {"gba", "Game Boy Advance", "gba",
@@ -215,6 +219,8 @@ const char *systems_core_label(const char *core, char *buf, size_t size) {
       {"snes9x2005_plus", "Snes9x 2005 Plus"}, {"snes9x2005", "Snes9x 2005"},
       {"snes9x2002", "Snes9x 2002"}, {"snes9x2010", "Snes9x 2010"},
       {"hcsnes_fast", "HCSNES Fast"}, {"hcsnes_plus", "HCSNES Plus"},
+      {"libemu_sfc.so", "Stock Snes9x 2005"}, {"libemu_snes9x.so", "Stock Snes9x"},
+      {"libemu_snes9x2010.so", "Stock Snes9x 2010"},
       {"gambatte", "Gambatte"}, {"gearboy", "Gearboy"}, {"tgbdual", "TGB Dual"},
       {"gpsp", "gpSP"}, {"gpsp_multicore", "gpSP multicore"}, {"vba_next", "VBA Next"},
       {"mgba", "mGBA"}, {"picodrive", "PicoDrive"}, {"genesis_plus_gx", "Genesis Plus GX"},

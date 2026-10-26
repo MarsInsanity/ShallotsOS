@@ -3694,7 +3694,7 @@ static void handle_core_picker(void) {
 enum { GM_SEARCH, GM_EMU, GM_SCOPE, GM_FAV, GM_ROWS };
 static bool gm_active = false;
 static int gm_row, gm_core, gm_ncores, gm_scope;   /* gm_core 0 = Default; scope 0 game, 1 system */
-static const char *gm_cores[8];
+static const char *gm_cores[SH_MAX_CORES];
 static const ShSystem *gm_sys;
 static bool gm_is_game;
 static char gm_dir[MAX_PATH_LEN], gm_name[256], gm_rom[MAX_PATH_LEN], gm_sys_key[MAX_PATH_LEN];
@@ -3720,7 +3720,7 @@ static void game_menu_open(const char *dir, const char *name, bool is_game) {
     gm_is_game = is_game;
     const char *folder = get_console_folder(gm_rom);
     gm_sys = systems_find(folder);
-    gm_ncores = systems_cores(gm_sys, gm_cores, 8);
+    gm_ncores = systems_cores(gm_sys, gm_cores, SH_MAX_CORES);
     snprintf(gm_sys_key, sizeof gm_sys_key, "%s/%s", ROMS_PATH, folder ? folder : "");
     const char *game_ov = is_game ? core_override_lookup(gm_rom, NULL) : NULL;
     const char *sys_ov = core_override_lookup(NULL, gm_sys_key);

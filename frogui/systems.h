@@ -9,7 +9,7 @@
  * picked per game or per system (X on a game). TreeFrogUI's folders, which
  * chose the emulator by folder (nesq, gbav, snes02...), map onto them. */
 
-#define SH_MAX_CORES 8
+#define SH_MAX_CORES 10
 
 typedef struct {
   const char *folder;    /* Recalbox folder name */
