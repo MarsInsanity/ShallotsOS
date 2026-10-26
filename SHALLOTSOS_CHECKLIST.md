@@ -31,12 +31,12 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40254803409
-  (ShallotsOS `5c77f9f`, picoarch `1e47f49`, PCSX4ALL `21e7e73`, HCSNES `c3c190d`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40274410110
+  (ShallotsOS `417e714`, picoarch `8cdfb7a`, PCSX4ALL `e72d428`, HCSNES `c3c190d`)
 
 ## User to-do (device tests)
 
-Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40254803409
+Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40274410110
 Before: back up the SD card; keep an empty `log.txt` at the card root.
 Confirmed earlier: folder move prompt and move, NES save states, Resume,
 GameSwitcher, Recents, Favourites, Y-menu search/emulator/favourite, box art.
