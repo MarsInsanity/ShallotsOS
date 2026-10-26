@@ -31,12 +31,12 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40245047874
-  (ShallotsOS `5c77f9f`, picoarch `1e47f49`, PCSX4ALL `512e95d`, HCSNES `c3c190d`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40254803409
+  (ShallotsOS `5c77f9f`, picoarch `1e47f49`, PCSX4ALL `21e7e73`, HCSNES `c3c190d`)
 
 ## User to-do (device tests)
 
-Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40245047874
+Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40254803409
 Before: back up the SD card; keep an empty `log.txt` at the card root.
 Confirmed earlier: folder move prompt and move, NES save states, Resume,
 GameSwitcher, Recents, Favourites, Y-menu search/emulator/favourite, box art.
@@ -412,6 +412,12 @@ User's to-do list (October 2026):
       picoarch's boot resume execs a standalone directly. Overlay builds
       and ships cubegm/pcsx4all (pcsx4all_ref input). PS1 default back to
       PCSX4ALL
+- [x] User test: PCSX4ALL's save toast and FPS counter looked nothing like
+      picoarch's → toasts now on fb1 exactly as picoarch's fb1_toast (dark
+      card centred above the bottom edge, 22 px menu font, 2 s, deferred
+      until the menu closes); FPS = picoarch's HUD card "FPS: x (y)" top
+      left of the game frame (was the bitmap stats line); Show FPS added
+      to Audio and video
 - [x] Search matches and shows gamelist.xml names (when that setting is on),
       each result labelled from its own folder's gamelist; scraper art
       folders (media, Imgs...) are skipped while searching
