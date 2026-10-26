@@ -31,17 +31,20 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40277897902
-  (ShallotsOS `49abfb0`, picoarch `8cdfb7a`, PCSX4ALL `e72d428`, HCSNES `c3c190d`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40279042012
+  (ShallotsOS `49abfb0`, picoarch `7ae6e2f`, PCSX4ALL `3f97ecb`, HCSNES `c3c190d`)
 
 ## User to-do (device tests)
 
-Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40277897902
+Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40279042012
 Before: back up the SD card; keep an empty `log.txt` at the card root.
 Confirmed earlier: folder move prompt and move, NES save states, Resume,
 GameSwitcher, Recents, Favourites, Y-menu search/emulator/favourite, box art.
 
 A. New in this build
+00. Options > About (picoarch and PCSX4ALL): the running emulator's full
+    name, version and core file, the game, video and audio (PS1: CPU
+    mode, disc ID, BIOS). Long values end in "...".
 0. Stock SNES emulators: Y on Yoshi's Island > Emulator > "Stock Snes9x
    2005", then "Stock Snes9x", then "Stock Snes9x 2010". Does one run like
    on the stock firmware? (They are the stock firmware's own
@@ -446,6 +449,11 @@ User's to-do list (October 2026):
       filelist.xml puts some games on Snes9x 2010. Added all three to the
       SNES Y menu (STOCK() paths, labels "Stock ..."); never libemu_md.so
       (the boot hijack). SH_MAX_CORES 10
+- [x] User request: Options > About page (the Y menu cuts long emulator
+      names): picoarch e_menu_about (core_lib_name/version, core file,
+      game, av_info video/audio, frontend); PCSX4ALL sh_menu_about (CPU
+      recompiler/interpreter, disc ID, BIOS/HLE). picoarch option lists now
+      cut long values with "..."
 - [x] Search matches and shows gamelist.xml names (when that setting is on),
       each result labelled from its own folder's gamelist; scraper art
       folders (media, Imgs...) are skipped while searching
