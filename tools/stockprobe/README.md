@@ -69,4 +69,16 @@ Note: the TreeFrog/ShallotsOS card's `rkgame` is a different build:
 - Other CPU use: cubevol 3-4%. (`mmcqd/0` at 12-15% came from the first
   probe logging every SetFrameSkip call; fixed.)
 
+## Second run (probe v2, no per-call logging)
+
+- Light scenes: 300 of 300 frames drawn per 5 s at ~12-13 ms per frame; the
+  frontend sleeps to 16.7 ms between frames.
+- Heavy Yoshi's Island scenes: 165-200 frames drawn per 5 s, still ~59.6
+  emulated per second. Frames run back to back.
+- **A drawn frame costs 17-22 ms there; a skipped one 7-9 ms.** Drawing (the
+  PPU renderer) is over half of a heavy frame.
+- The skip rule, read from the frame traces: draw until about one whole frame
+  (~16 ms) behind the schedule, then skip; at most 3 skips in a row.
+- Other processes: ~5-6% (cubevol 3-4%).
+
 `STOCKPROBE_LOG=<path>` sends the log elsewhere, for tests off the device.
