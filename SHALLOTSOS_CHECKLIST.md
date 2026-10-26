@@ -45,6 +45,12 @@ A. New in this build
 00. Options > About (picoarch and PCSX4ALL): the running emulator's full
     name, version and core file, the game, video and audio (PS1: CPU
     mode, disc ID, BIOS). Long values end in "...".
+0a. stockprobe (tools/stockprobe, zip sent in chat): install on the card
+    that boots the stock OS, play the Yoshi's Island intro plus ~1 minute
+    of play, send `logs/stockprobe.log`. Then do the same in ShallotsOS on
+    "Stock Snes9x 2005" (the probe logs there too). The log also shows
+    whether your rkgame and cores match the public backup (CRC32s in
+    tools/stockprobe/README.md).
 0. Why the stock firmware is smoother: play the Yoshi's Island intro and
    the first level for ~1 minute on "Stock Snes9x 2005", then the same on
    HCSNES Fast (Options > Emulator options: Frameskip Fixed, max 1). Send

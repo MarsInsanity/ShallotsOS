@@ -1,0 +1,57 @@
+# stockprobe
+
+A pass-through libretro core that measures the frontend it runs in. It
+compares the stock firmware's frontend (rkgame) with ShallotsOS's picoarch
+running the same stock core.
+
+## How it works
+
+stockprobe takes the place of a stock core file, for example
+`cubegm/cores/libemu_sfc.so`. It loads the real core from `cubegm/cores/real/`
+under the same name and forwards every libretro call to it. The stock Snes9x
+2005's `SetFrameSkip` and `init_sfc_setting` are forwarded too. Nothing of the
+real core is copied or changed.
+
+It appends to `/mnt/sdcard/logs/stockprobe.log`:
+
+- **Once, at load:**
+  - the frontend's path and CRC32, plus `cubegm/rkgame`, the real core and
+    `config.xml` (to compare with the public firmware backups);
+  - the kernel and OS version, scheduling policy, nice and CPU affinity;
+  - a CPU speed loop;
+  - the libraries the frontend has loaded and the `/dev` nodes;
+  - every core option with the value the frontend gives, the environment
+    calls, and the stock settings calls.
+- **Every 5 s of play:**
+  - retro_run calls per second, and their average and maximum time;
+  - frames drawn vs duplicated (skipped), and the largest gap between runs;
+  - time spent in the frontend's video and audio callbacks, and audio frames
+    per second;
+  - CPU use of this process vs everything else, and the busiest threads and
+    other processes;
+  - the speed loop again.
+
+The same file works in both frontends, so the logs compare directly.
+
+## Use
+
+1. Run `./build.sh` (needs the SF3000 toolchain in `~/sf3000-work`), which
+   writes `build/stockprobe.so`.
+2. Copy `stockprobe.so` and the two `.bat` files to the SD card root.
+3. Run `install_stockprobe.bat`. It moves `libemu_sfc.so`, `libemu_snes9x.so`
+   and `libemu_snes9x2010.so` into `cubegm/cores/real/` and puts stockprobe in
+   their place.
+4. Play, then read `logs/stockprobe.log`.
+5. `uninstall_stockprobe.bat` puts the cores back.
+
+Public R36HD backup, for comparison (CRC32):
+
+| File | Bytes | CRC32 |
+|---|---|---|
+| `cubegm/rkgame` | 6208380 | `AC82CCED` |
+| `cubegm/cores/config.xml` | 3530 | `AFFB29A7` |
+| `libemu_sfc.so` | 804508 | `B601A0BF` |
+| `libemu_snes9x.so` | 2718028 | `A9E8F70B` |
+| `libemu_snes9x2010.so` | 2111400 | `788281C2` |
+
+`STOCKPROBE_LOG=<path>` sends the log elsewhere, for tests off the device.
