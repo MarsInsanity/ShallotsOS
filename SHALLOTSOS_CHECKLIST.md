@@ -45,12 +45,12 @@ A. New in this build
 00. Options > About (picoarch and PCSX4ALL): the running emulator's full
     name, version and core file, the game, video and audio (PS1: CPU
     mode, disc ID, BIOS). Long values end in "...".
-0a. Yoshi's Island in ShallotsOS (probe still installed), same scene as the
-    stock run: (1) "Stock Snes9x 2005" (now skips like the stock frontend:
-    a full frame late, max 3); (2) HCSNES Fast, now defaulting to Timed /
-    max 2 (a saved per-game/core config keeps its old Frameskip: set it by
-    hand). Send logs/stockprobe.log, picoarch.log and cores.log (HCSNES
-    Profiling On for one run). Stock results: tools/stockprobe/README.md.
+0a. Boot-script poll fix (build below): boot ShallotsOS once, power off,
+    boot again (the fix applies from the second boot). Then Yoshi's Island
+    on "Stock Snes9x 2005" and on HCSNES Fast (Timed, max 2): crackle and
+    smoothness vs before and vs the stock OS. Send logs/stockprobe.log
+    (probe v3 still installed) and picoarch.log. Expected in the probe's
+    "system" line: new processes/s ~1 (was ~24), sys ~6-8% (was ~19%).
 0. Why the stock firmware is smoother: play the Yoshi's Island intro and
    the first level for ~1 minute on "Stock Snes9x 2005", then the same on
    HCSNES Fast (Options > Emulator options: Frameskip Fixed, max 1). Send

@@ -81,4 +81,24 @@ Note: the TreeFrog/ShallotsOS card's `rkgame` is a different build:
   (~16 ms) behind the schedule, then skip; at most 3 skips in a row.
 - Other processes: ~5-6% (cubevol 3-4%).
 
+## Third run (probe v3): what ShallotsOS costs on top
+
+Same game, same scene, stock Snes9x 2005 core:
+
+| | stock frontend | ShallotsOS picoarch |
+|---|---|---|
+| kernel (sys) | 6% | 18-20% |
+| new processes / s | 0.8 | ~24 |
+| CPU used by other processes | 5-6% | 24-25% |
+| SD card interrupts / s | ~30 | 2,500-17,000 in the first 2 minutes, then low |
+
+The ~24 processes a second came from the boot script (`cubegm/zhijack.sh`).
+It polled for FrogUI's launch file with `sleep 0.05` while the picoarch it
+started was alive. picoarch execs between FrogUI and games in the same
+process, so the poll ran during every game.
+
+- Fixed: the template now polls once a second, and FrogUI patches installed
+  scripts in place at startup, taking effect from the next boot.
+- The game monitor now runs only with `log.txt`, every 10 s.
+
 `STOCKPROBE_LOG=<path>` sends the log elsewhere, for tests off the device.
