@@ -148,7 +148,7 @@ def main():
     ap.add_argument("--all-tiers", action="store_true")
     ap.add_argument("--now")
     a = ap.parse_args()
-    now = dt.datetime.strptime(a.now, "%Y-%m-%d") if a.now else dt.datetime.utcnow()
+    now = dt.datetime.strptime(a.now, "%Y-%m-%d") if a.now else dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
     include_quarterly = a.all_tiers or now.month in QUARTER_MONTHS
     gh = GitHub(os.environ.get("GITHUB_TOKEN"))
     reports, errors = [], []

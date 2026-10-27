@@ -408,6 +408,7 @@ GBA: gpSP (latest):
 - [x] The overlay builds current upstream gpSP (`gpsp_ref` input, default
       master) as `gpsp_latest_libretro.so`, "gpSP (latest)" in Y > Emulator
       for GBA, next to the pinned gpSP; saves are shared (same ROM folder)
+- [x] Build: run 40590128968 (ShallotsOS bb9a7a7, gpSP upstream 5819380)
 - [ ] Device test: speed vs gpSP; Hamtaro: Ham-Ham Heartbreak and GTA
       Advance (symptoms on the old gpSP still to be described)
 
@@ -419,6 +420,7 @@ Upstream watch:
       snes9x-Z, PICO-8 cores, Ardens, DSperate; quarterly tier in Jan/Apr/Jul/
       Oct), flagging MIPS-code changes and fix/speed titles; run summary,
       artifact, and a comment on an "Upstream watch" issue if Issues are on
+- [x] First run: 40590707277 (all 27 projects read, no errors)
 - [ ] The monthly schedule starts once the workflow is on `main` (GitHub runs
       schedules from the default branch); until then it runs on pushes to it
 
