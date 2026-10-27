@@ -384,6 +384,7 @@ Full ShallotsOS install (no TreeFrogUI install first):
 - [x] ShallotsOS defaults: Animations off, ShallotsOS volume indicator on,
       stock battery indicator off, names from gamelist.xml on (only when
       `frogui/settings.txt` has no saved value)
+      Build: run 40545889351 (ShallotsOS 534ac46)
 
 
 ## Next
