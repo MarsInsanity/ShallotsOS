@@ -599,6 +599,15 @@ status_mode() {
     if [ -n "$active" ]; then printf 'active (%s, UDC %s)\n' "$state" "$active"; else printf 'inactive (%s)\n' "$state"; fi
 }
 
+# ShallotsOS's USB debug shell holds the port; hand it over for this session
+# (it starts again with the next boot).
+case "${1:-run}" in
+    run|start|mtp)
+        DEBUG_SHELL=$(dirname "$0")/usb_debug.sh
+        [ -f "$DEBUG_SHELL" ] && sh "$DEBUG_SHELL" stop >/dev/null 2>&1
+        ;;
+esac
+
 case "${1:-run}" in
     run|start) run_mode ;;
     mtp) run_mtp_mode ;;

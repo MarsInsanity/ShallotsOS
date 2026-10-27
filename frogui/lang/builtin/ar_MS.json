@@ -67,6 +67,7 @@
   "settings.file_cache": "ذاكرة التخزين المؤقت للملفات",
   "settings.rebuild_file_cache": "إعادة بناء ذاكرة التخزين المؤقت للملفات",
   "settings.disable_sleep": "ShallotsOS Sleep (restart)",
+  "settings.usb_debug": "USB Debug Shell",
   "settings.sleep_poweroff": "Sleep Power-Off",
   "settings.version": "إصدار TreeFrogUI",
   "settings.button_mapping": "تخطيط الأزرار",

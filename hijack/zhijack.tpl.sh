@@ -164,6 +164,13 @@ if [ -n "$TF_NOSLEEP_ADDRS" ] && grep -q '^disable_sleep=on' /mnt/sdcard/frogui/
     [ -f /mnt/sdcard/cubegm/nosleep ] && /mnt/sdcard/cubegm/nosleep -w $TF_NOSLEEP_ADDRS >/dev/null 2>&1 &
 fi
 
+# ShallotsOS USB debug shell (Settings > USB debug shell, off by default): a
+# root shell on a USB serial port while the console runs.
+if grep -q '^usb_debug=on' /mnt/sdcard/frogui/settings.txt 2>/dev/null && \
+   [ -f /mnt/sdcard/cubegm/usb_debug.sh ]; then
+    sh /mnt/sdcard/cubegm/usb_debug.sh start >/dev/null 2>&1 &
+fi
+
 PICOARCH=/mnt/sdcard/cubegm/picoarch
 PICOARCH_HI=/mnt/sdcard/cubegm/picoarch_hi
 FROGUI_CORE=/mnt/sdcard/cubegm/cores/frogui_libretro.so

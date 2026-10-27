@@ -67,6 +67,7 @@
   "settings.file_cache": "Cache dei file",
   "settings.rebuild_file_cache": "Ricostruisci cache dei file",
   "settings.disable_sleep": "ShallotsOS Sleep (restart)",
+  "settings.usb_debug": "USB Debug Shell",
   "settings.sleep_poweroff": "Sleep Power-Off",
   "settings.version": "Versione TreeFrogUI",
   "settings.button_mapping": "Mappatura pulsanti",

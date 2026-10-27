@@ -386,6 +386,18 @@ Full ShallotsOS install (no TreeFrogUI install first):
       `frogui/settings.txt` has no saved value)
       Build: run 40545889351 (ShallotsOS 534ac46)
 
+USB debug shell (live debugging over USB-C):
+
+- [x] `u_serial.ko` / `usb_f_acm.ko` built in CI for the stock
+      4.4.186-release kernel (TreeFrogUI's mass-storage recipe; vermagic
+      checked against its module)
+- [x] `cubegm/usb_debug.sh`: CDC ACM gadget (a COM port on Windows) with a
+      root shell; `logs` helper; log `cubegm/logs/usb_debug.log`
+- [x] Settings > System > USB Debug Shell (off by default), starts at once and
+      at boot; USB mode stops it first
+- [ ] Device test: modules load, COM port appears, PuTTY shell works while a
+      game runs; MTP still works after it
+
 
 ## Next
 

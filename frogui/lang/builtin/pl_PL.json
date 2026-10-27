@@ -67,6 +67,7 @@
   "settings.file_cache": "Pamięć podręczna plików",
   "settings.rebuild_file_cache": "Odbuduj pamięć podręczną",
   "settings.disable_sleep": "ShallotsOS Sleep (restart)",
+  "settings.usb_debug": "USB Debug Shell",
   "settings.sleep_poweroff": "Sleep Power-Off",
   "settings.version": "Wersja TreeFrogUI",
   "settings.button_mapping": "Mapowanie przycisków",

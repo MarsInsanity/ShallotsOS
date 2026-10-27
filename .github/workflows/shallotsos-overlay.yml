@@ -16,6 +16,9 @@ on:
       - 'apps/video_player/**'
       - 'apps/osd/**'
       - 'apps/setup/**'
+      - 'apps/usb_debug/**'
+      - 'apps/usb_mode/**'
+      - 'scripts/build_usb_serial_modules.sh'
       - 'hijack/**'
       - 'scripts/shallots_package.sh'
       - 'docs/INSTALL-ShallotsOS.md'
@@ -236,6 +239,18 @@ jobs:
             -o "$RUNNER_TEMP/shallots_setup" apps/setup/shallots_setup.c
           file "$RUNNER_TEMP/shallots_setup"
 
+      # USB debug shell: the CDC ACM serial gadget modules for the stock
+      # 4.4.186-release kernel. Experimental: a failure leaves them out.
+      - name: Build the USB serial modules
+        id: usbserial
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y -qq bc flex bison >/dev/null
+          sdk="$HOME/sf3000-work/sf3000toolchain/mipsel-buildroot-linux-gnu_sdk-buildroot"
+          WORK_DIR="$RUNNER_TEMP/kernel" && mkdir -p "$WORK_DIR" && export WORK_DIR
+          bash scripts/build_usb_serial_modules.sh "$sdk/opt/ext-toolchain/bin" "$RUNNER_TEMP/usbserial"
+
       - name: Assemble the SD-card overlay
         run: |
           set -euo pipefail
@@ -250,6 +265,13 @@ jobs:
           cp "$HOME/sf3000-work/picoarch/picoarch" "$HOME/sf3000-work/picoarch/picoarch_hi" "$out/cubegm/"
           cp "$RUNNER_TEMP/video_player" "$out/cubegm/"
           cp "$RUNNER_TEMP/shallots_osd" "$out/cubegm/"
+          # USB debug shell, and USB mode that hands the port over from it.
+          install -m 0755 apps/usb_debug/usb_debug.sh apps/usb_mode/usb_mode.sh "$out/cubegm/"
+          if [ -f "$RUNNER_TEMP/usbserial/usb_f_acm.ko" ]; then
+            mkdir -p "$out/cubegm/modules/4.4.186-release"
+            cp "$RUNNER_TEMP/usbserial/u_serial.ko" "$RUNNER_TEMP/usbserial/usb_f_acm.ko" \
+               "$out/cubegm/modules/4.4.186-release/"
+          fi
           cp pcsx4all-src/build/pcsx4all "$out/cubegm/"
           if [ -n "${EBOOK_SHA:-}" ] && [ -f ebook-src/ebook ]; then
             cp ebook-src/ebook "$out/cubegm/"
@@ -277,6 +299,9 @@ jobs:
             cubegm/picoarch, picoarch_hi     emulator frontend and in-game menu
             cubegm/video_player              music and video player
             cubegm/shallots_osd              ShallotsOS volume/brightness popups
+            cubegm/usb_debug.sh, modules/    USB debug shell (Settings > System >
+                                             USB Debug Shell; experimental)
+            cubegm/usb_mode.sh               USB mode, handing the port over from it
             cubegm/pcsx4all                  PS1 emulator (picoarch's menu and keys)
             cubegm/ebook                     Books reader (contents, bookmarks)
             cubegm/xgame-logo.bmp            ShallotsOS boot logo (640x480 panels:
