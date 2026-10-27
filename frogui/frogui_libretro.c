@@ -5786,7 +5786,25 @@ static void render_core_picker(void) {
     render_legend(framebuffer, LEGEND_X_NONE, 0, 0);
 }
 
+/* Both keyboards in the OnionOS theme. */
+static void render_onion_kbd(const char *title, const char *text, const char *placeholder,
+                             const char *go_label, const char *hint) {
+    const char *special[3] = {
+        tr_or("keyboard.space", "Space"), tr_or("keyboard.delete", "Delete"), go_label,
+    };
+    onion_render_keyboard(framebuffer, title, text, placeholder, KBD_ROWS, KBD_SPECIAL_ROW,
+                          special, 3, search_kbd_r, search_kbd_c, hint,
+                          tr_or("onion.select", "SELECT"), tr_or("onion.back", "BACK"));
+}
+
 static void render_search_kbd(void) {
+    if (onion_theme_active()) {
+        render_onion_kbd(tr("header.search"), search_query,
+                         tr_or("keyboard.search_placeholder", "Type part of a game's name"),
+                         tr_or("keyboard.search", "Search"),
+                         tr_or("keyboard.search_hint", "Y: delete    START: search"));
+        return;
+    }
     render_clear_screen(framebuffer);
     render_header(framebuffer, tr("header.search"));
 
@@ -5817,6 +5835,14 @@ static void render_search_kbd(void) {
 /* Extension-entry keyboard: the search keyboard with an extension header and
  * the typed text shown as ".<text>" (the dot is implied and stripped). */
 static void render_extf_kbd(void) {
+    if (onion_theme_active()) {
+        char shown[EXT_FILTER_EXT_LEN + 4] = "";
+        if (extf_kbd_text[0]) snprintf(shown, sizeof shown, ".%s", extf_kbd_text);
+        render_onion_kbd(tr("header.add_extension"), shown,
+                         tr_or("keyboard.ext_placeholder", "Type an extension, e.g. zip"),
+                         tr_or("keyboard.ok", "OK"), NULL);
+        return;
+    }
     render_clear_screen(framebuffer);
     render_header(framebuffer, tr("header.add_extension"));
 

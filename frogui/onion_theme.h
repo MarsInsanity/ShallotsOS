@@ -90,6 +90,13 @@ int onion_list_rows(int large);
 /* Box art beside a game list (Onion draws preview-bg behind it). Returns the
  * left edge it occupies so list labels can stop short of it. */
 int onion_render_preview(uint16_t *fb, const Thumbnail *art);
+/* On-screen keyboard: `rows` are character rows, then one row of `special`
+ * keys (the first drawn wide). sel_r == nrows selects in the special row. */
+void onion_render_keyboard(uint16_t *fb, const char *title, const char *text,
+                           const char *placeholder, const char *const *rows,
+                           int nrows, const char *const *special, int nspecial,
+                           int sel_r, int sel_c, const char *extra_hint,
+                           const char *a_label, const char *b_label);
 /* GameSwitcher overlay for a full-screen capture already in fb. `header` is
  * the header title (Onion shows play time there); `game` the selected game.
  * The legend (extra/gs-legend) is drawn when show_legend is set. */

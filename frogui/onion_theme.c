@@ -1803,9 +1803,10 @@ void onion_render_footer(uint16_t *fb, const char *a_label,
 
 /* Procedural stand-in used only if neither the theme nor the fallback skin
  * provides a tile. */
-static void draw_card(uint16_t *fb, int x, int y, int w, int h,
-                      uint16_t color, unsigned alpha) {
-  int r = 14;
+static void draw_card_r(uint16_t *fb, int x, int y, int w, int h,
+                        uint16_t color, unsigned alpha, int r) {
+  if (r > h / 2)
+    r = h / 2;
   for (int py = 0; py < h; py++) {
     for (int px = 0; px < w; px++) {
       int dx = px < r ? r - px : (px >= w - r ? px - (w - r - 1) : 0);
@@ -1819,6 +1820,11 @@ static void draw_card(uint16_t *fb, int x, int y, int w, int h,
       *d = blend565(*d, color, alpha);
     }
   }
+}
+
+static void draw_card(uint16_t *fb, int x, int y, int w, int h,
+                      uint16_t color, unsigned alpha) {
+  draw_card_r(fb, x, y, w, h, color, alpha, 14);
 }
 
 /* A short message above the hint bar: dark rounded card, theme hint font. */
@@ -2128,6 +2134,92 @@ void onion_render_prompt(uint16_t *fb, const char *message, const char *a_label,
     p += len;
     if (*p == '\n')
       p++;
+  }
+  font_face_use(-1, 0);
+  onion_render_footer(fb, a_label, b_label, 0, 0);
+}
+
+/* On-screen keyboard in the theme: query field, rounded keycaps (the
+ * selected one in the theme's highlight), extra hints above the hint bar. */
+void onion_render_keyboard(uint16_t *fb, const char *title, const char *text,
+                           const char *placeholder, const char *const *rows,
+                           int nrows, const char *const *special, int nspecial,
+                           int sel_r, int sel_c, const char *extra_hint,
+                           const char *a_label, const char *b_label) {
+  if (!fb)
+    return;
+  int W = SCREEN_WIDTH, H = SCREEN_HEIGHT;
+  onion_render_background(fb);
+  onion_render_header(fb, title, 0);
+
+  /* Query field */
+  int fx = 20, fy = 76, fw = W - 40, fh = 50;
+  draw_card_r(fb, fx, fy, fw, fh, 0x0000, 150, 12);
+  use_font(FONT_LIST, cfg.list.size);
+  char shown[160];
+  int empty = !text || !*text;
+  if (empty)
+    snprintf(shown, sizeof shown, "%s", placeholder ? placeholder : "");
+  else
+    snprintf(shown, sizeof shown, "%s_", text);
+  char fitted[160];
+  /* Keep the end of a long query (where typing happens) in view. */
+  const char *start = shown;
+  while (*start && font_measure_text_bold(start, 0) > fw - 32)
+    start++;
+  snprintf(fitted, sizeof fitted, "%s", start);
+  uint16_t tc = empty ? blend565(0x0000, cfg.list.color, 130) : cfg.list.color;
+  text_centered_y(fb, fx + 16, fy + fh / 2, fitted, tc, 0);
+
+  /* Keys */
+  int maxlen = 1;
+  for (int r = 0; r < nrows; r++) {
+    int l = (int)strlen(rows[r]);
+    if (l > maxlen)
+      maxlen = l;
+  }
+  int gap = 6, kh = 44;
+  int kw = (W - 40 - (maxlen - 1) * gap) / maxlen;
+  int ky = fy + fh + 18;
+  for (int r = 0; r <= nrows; r++) {
+    int n = r < nrows ? (int)strlen(rows[r]) : nspecial;
+    if (n <= 0)
+      continue;
+    int widths[16];
+    int total = 0;
+    for (int c = 0; c < n && c < 16; c++) {
+      /* The special row: a wide first key (space), the rest equal. */
+      if (r == nrows)
+        widths[c] = c == 0 ? (W - 40) / 2 : ((W - 40) / 2 - (n - 1) * gap) / (n - 1 > 0 ? n - 1 : 1);
+      else
+        widths[c] = kw;
+      total += widths[c] + (c ? gap : 0);
+    }
+    int x = (W - total) / 2;
+    for (int c = 0; c < n && c < 16; c++) {
+      int active = r == sel_r && c == sel_c;
+      draw_card_r(fb, x, ky, widths[c], kh, active ? palette.select_bg : 0x0000,
+                  active ? 255 : 110, 10);
+      char lbl[32];
+      if (r < nrows) {
+        lbl[0] = rows[r][c];
+        lbl[1] = '\0';
+      } else {
+        snprintf(lbl, sizeof lbl, "%s", special[c]);
+      }
+      int lw = font_measure_text_bold(lbl, active);
+      text_centered_y(fb, x + (widths[c] - lw) / 2, ky + kh / 2, lbl,
+                      active ? palette.select_text : cfg.list.color, active);
+      x += widths[c] + gap;
+    }
+    ky += kh + gap;
+  }
+
+  if (extra_hint && *extra_hint) {
+    use_font(FONT_HINT, cfg.hint.size * 4 / 5 > 16 ? cfg.hint.size * 4 / 5 : 16);
+    int hw = font_measure_text_bold(extra_hint, 0);
+    text_centered_y(fb, (W - hw) / 2, H - 60 - 16, extra_hint,
+                    blend565(0x0000, cfg.hint.color, 200), 0);
   }
   font_face_use(-1, 0);
   onion_render_footer(fb, a_label, b_label, 0, 0);
