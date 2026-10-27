@@ -31,12 +31,12 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40459427428
-  (ShallotsOS `cf72033`, picoarch `e6aeda0`, PCSX4ALL `3f97ecb`, HCSNES 0.3 `6a71a77`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40461407198
+  (ShallotsOS `bcf2c7f`, picoarch `f7f55d3`, PCSX4ALL `3f97ecb`, HCSNES 0.3 `6a71a77`)
 
 ## User to-do (device tests)
 
-Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40459427428
+Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40461407198
 Before: back up the SD card. For feel tests remove `log.txt` and the
 stockprobe (uninstall_stockprobe.bat); put `log.txt` back only when a test
 asks for logs.
@@ -58,30 +58,39 @@ A. New in this build
      width). Y > Aspect Ratio > 8:7 gives the narrower picture.
    - Try 8:7 and 16:9 once each: the shape changes.
    - HCPS1 crackle in heavy Crash Bandicoot scenes: still open.
-4. Launch and back-to-menu speed (boot-script polls now 0.25 s;
+4. Frameskip by timing (all picoarch cores with Frameskip = Auto: Snes9x
+   2005/2002, gpSP, PicoDrive, PCE, PCSX ReARMed, HCPS1). They now skip like
+   the stock OS: only when about a full frame late, at most 3 in a row.
+   - Yoshi's Island (Snes9x 2005, not the stock core), Crash Bandicoot
+     (HCPS1 and ReARMed), a GBA game: smoother? less crackle?
+   - PS1 now defaults to reverb off and simple interpolation. A game that
+     has its own saved options keeps them: check Y > Options > Sound Reverb.
+   - To compare with the old rule, add `frameskip=audio` to
+     frogui/settings.txt; delete the line to go back.
+5. Launch and back-to-menu speed (boot-script polls now 0.25 s;
    cubegm/zhijack.sh lines 188 and 297 read `sleep 0.25` after two boots).
 B. SNES feel (no log.txt, no probe)
-5. Stock Snes9x 2005 is now better than the old ShallotsOS SNES (minimal
+6. Stock Snes9x 2005 is now better than the old ShallotsOS SNES (minimal
    crackle, visible frameskip). Found: Filter = Nearest is slower than
    Bilinear (also Kirby's Adventure on NES): Nearest scales on the CPU,
    Bilinear on the display hardware. Use Bilinear until that is fixed.
 C. Not yet confirmed
-6. Options > About (picoarch and PCSX4ALL): full emulator name, version,
+7. Options > About (picoarch and PCSX4ALL): full emulator name, version,
    core file, game, video, audio; long values end in "...".
-7. Games tab: FN (GameSwitcher) in a game list, B, then Games: the systems
+8. Games tab: FN (GameSwitcher) in a game list, B, then Games: the systems
    list again, on that system. SELECT in the Games list does nothing.
-8. Apps > Themes: previews, Left/Right or L1/R1, A applies, B back.
-9. PCSX4ALL: Cross = bottom (B), Circle = right (A); toast and FPS counter
+9. Apps > Themes: previews, Left/Right or L1/R1, A applies, B back.
+10. PCSX4ALL: Cross = bottom (B), Circle = right (A); toast and FPS counter
    look like picoarch's.
-10. GB/GBC and PS1 saves and states after the folder move; Activity Tracker
+11. GB/GBC and PS1 saves and states after the folder move; Activity Tracker
     play time.
-11. Music: hold volume (with the new indicator the stock bar should be gone).
-12. Books, Videos, Images apps; low-battery save at 5% when convenient.
+12. Music: hold volume (with the new indicator the stock bar should be gone).
+13. Books, Videos, Images apps; low-battery save at 5% when convenient.
 D. Later
-13. Scraping: names and art on all systems; first open of a big folder.
-14. Kirby lag: if it happens, 15 s play, menu and back, 15 s more; send
+14. Scraping: names and art on all systems; first open of a big folder.
+15. Kirby lag: if it happens, 15 s play, menu and back, 15 s more; send
     logs/picoarch.log (with log.txt).
-15. Activity Tracker mockup (from you).
+16. Activity Tracker mockup (from you).
 
 ## Done
 
