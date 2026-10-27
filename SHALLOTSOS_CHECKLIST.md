@@ -536,6 +536,18 @@ USB debug shell (live debugging over USB-C):
 
 ## Ideas offered, not started
 
+- **ShallotsOS Hub** (later; a PC companion app for consoles without WiFi):
+  Windows `.exe` built by Actions, talking to the console over USB (MTP) or a
+  card reader. Tabs: Ports (TreeFrogUI_PortsCollection releases, already
+  MIPS; setup guides for ports needing game data), Free Games (Spruce Game
+  Nursery titles that run on our emulators: C64, ZX, Arduboy, GB/GBC/GBA,
+  NES, SNES, Freedoom/Doom shareware, Cave Story; only with a license that
+  allows it, downloaded from the author or Spruce, never re-hosted), PICO-8
+  cart browser (Lexaloffle BBS, into `roms/pico8/` with gamelist.xml),
+  public-domain eBooks; later themes, save backup, one-click updates (needs
+  published releases). Spruce's own ports are ARM builds and EasyRPG has no
+  core yet. Needs a repo such as `MarsInsanity/ShallotsOS_Hub`.
+
 - [ ] Later (user, October 2026): replace the stock firmware's parts and
       start from a mostly blank slate. Agreed order: (1) read-only
       hardware/boot-chain inventory app; (2) own input/system daemon
