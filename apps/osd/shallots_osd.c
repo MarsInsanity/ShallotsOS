@@ -482,6 +482,30 @@ static int read_volume(void) {
 	return ok && buf[0] <= 100 ? buf[0] : -1;
 }
 
+/* The live output volume: it follows a held volume key step by step, while
+ * cubevol may store the value only once the key is let go. Opened per read,
+ * like cubevol: a held audio fd could get in the way of the frontends'
+ * own audio setup. */
+#define I2SO_GET_VOLUME 0x4001080Cu   /* cubevol's api_get_snd_volume: 1 byte, 0..100 */
+static int read_live_volume(void) {
+	int fd = open("/dev/sndC0i2so", O_WRONLY);
+	if (fd < 0)
+		return -1;
+	unsigned char v = 0;
+	int ok = ioctl(fd, I2SO_GET_VOLUME, &v) == 0;
+	close(fd);
+	return ok && v <= 100 ? v : -1;
+}
+
+/* Live volume, except a live 0 while a volume is stored: that is FrogUI
+ * muting its menu, not the user (who reaches 0 once the key is let go). */
+static int read_shown_volume(void) {
+	int stored = read_volume(), live = read_live_volume();
+	if (live < 0 || (live == 0 && stored > 0))
+		return stored;
+	return live;
+}
+
 /* Raw backlight (23..255) back to cubevol's 0..100 level. */
 static int read_brightness(void) {
 	int fd = open("/dev/persistentmem", O_RDWR);
@@ -559,7 +583,7 @@ static pid_t find_cubevol(void) {
 }
 
 /* cubevol's /dev/fb1 mappings, from /proc/<pid>/maps. */
-static int fb1_maps(pid_t pid, unsigned long *start, unsigned long *end, int max) {
+static int fb1_maps(pid_t pid, unsigned long *start, unsigned long *end, unsigned long *off, int max) {
 	char path[64], line[256];
 	snprintf(path, sizeof path, "/proc/%d/maps", (int)pid);
 	FILE *f = fopen(path, "r");
@@ -571,7 +595,7 @@ static int fb1_maps(pid_t pid, unsigned long *start, unsigned long *end, int max
 		size_t l = strlen(line);
 		if (l < 8 || strcmp(line + l - 8, "/dev/fb1") != 0)
 			continue;
-		if (sscanf(line, "%lx-%lx", &start[n], &end[n]) == 2)
+		if (sscanf(line, "%lx-%lx %*s %lx", &start[n], &end[n], &off[n]) == 3)
 			n++;
 	}
 	fclose(f);
@@ -682,9 +706,15 @@ restore:
 
 /* 1: cubevol's fb1 is now private memory. 0: not ready yet (retry).
  * -1: give up for this cubevol. */
+/* Where cubevol's (now hidden) fb1 drawing lives in its memory. */
+static struct {
+	pid_t pid;
+	unsigned long addr, off, len;
+} shadow;
+
 static int redirect_cubevol(pid_t pid) {
-	unsigned long start[4], end[4];
-	int n = fb1_maps(pid, start, end, 4);
+	unsigned long start[4], end[4], off[4];
+	int n = fb1_maps(pid, start, end, off, 4);
 	if (n <= 0)
 		return n < 0 ? -1 : 0;   /* not mapped yet: cubevol still starting */
 	unsigned long entry = exe_entry(pid);
@@ -707,6 +737,12 @@ static int redirect_cubevol(pid_t pid) {
 		logf_("cubevol %d: fb1 %08lx-%08lx %s", (int)pid, start[i], end[i], ok ? "redirected" : "FAILED");
 	}
 	ptrace(PTRACE_DETACH, pid, 0, 0);
+	if (ok) {
+		shadow.pid = pid;
+		shadow.addr = start[0];
+		shadow.off = off[0];
+		shadow.len = end[0] - start[0];
+	}
 	return ok ? 1 : -1;
 }
 
@@ -735,6 +771,87 @@ static void mark_failed(const char *why) {
 		fclose(f);
 	}
 	logf_("disabled: %s", why);
+}
+
+/* ---- cubevol's full-screen pictures --------------------------------------- */
+
+/* cubevol still draws its power-off (and USB) screens, into memory nobody
+ * sees. Watch that memory: when the centre and three points along the bottom
+ * all turn opaque, a popup can't explain it, so it is a full-screen picture;
+ * copy it to the real fb1 for as long as it stays. Only a change to full
+ * counts, so a buffer that starts out opaque never triggers it. */
+static int mirror_fd = -1;
+static pid_t mirror_pid;
+
+static int shadow_open(void) {
+	if (mirror_fd >= 0 && mirror_pid == shadow.pid)
+		return 1;
+	if (mirror_fd >= 0)
+		close(mirror_fd);
+	char path[64];
+	snprintf(path, sizeof path, "/proc/%d/mem", (int)shadow.pid);
+	mirror_fd = open(path, O_RDONLY);
+	mirror_pid = shadow.pid;
+	return mirror_fd >= 0;
+}
+
+/* -1: can't tell. */
+static int shadow_full(void) {
+	if (!shadow.pid || !fb1_open() || !shadow_open())
+		return -1;
+	const int pts[4][2] = {
+		{fb1.w / 2, fb1.h / 2}, {16, fb1.h - 16}, {fb1.w / 2, fb1.h - 16}, {fb1.w - 16, fb1.h - 16}};
+	for (int i = 0; i < 4; i++) {
+		unsigned long o = (unsigned long)pts[i][1] * fb1.line + (unsigned long)pts[i][0] * 4;
+		if (o < shadow.off || o - shadow.off + 4 > shadow.len)
+			return -1;
+		uint32_t px;
+		if (pread(mirror_fd, &px, 4, (off_t)(shadow.addr + (o - shadow.off))) != 4)
+			return -1;
+		if (!(px >> 24))
+			return 0;
+	}
+	return 1;
+}
+
+static void shadow_copy(void) {
+	if (shadow.off >= fb1.len)
+		return;
+	size_t n = shadow.len;
+	if (n > fb1.len - shadow.off)
+		n = fb1.len - shadow.off;
+	if (pread(mirror_fd, fb1.mem + shadow.off, n, (off_t)shadow.addr) > 0)
+		ioctl(fb1.fd, FBIOBLANK, FB_BLANK_UNBLANK);
+}
+
+/* Returns 1 while cubevol's picture is on screen. */
+static int mirror_tick(void) {
+	static int prev = -1, active;
+	static pid_t for_pid;
+	if (for_pid != shadow.pid) {   /* new cubevol: new baseline */
+		for_pid = shadow.pid;
+		prev = -1;
+		active = 0;
+	}
+	int full = shadow_full();
+	if (full < 0)
+		return active;
+	if (prev < 0) {
+		prev = full;
+		return 0;
+	}
+	if (full && (active || !prev)) {
+		if (!active)
+			logf_("cubevol full-screen picture: shown");
+		active = 1;
+		fb1.shown = 0;   /* our popup is under it */
+		shadow_copy();
+	} else if (!full && active) {
+		memset(fb1.mem, 0, fb1.len);
+		active = 0;
+	}
+	prev = full;
+	return active;
 }
 
 /* ---- Main loop ------------------------------------------------------------ */
@@ -771,7 +888,7 @@ int main(void) {
 	pid_t cv = 0;              /* the cubevol we look after */
 	int cv_state = 0;          /* 0 waiting, 1 redirected, -1 gave up */
 	long long cv_seen = 0, cv_check = 0, skin_check = 0, batt_check = 0, batt_warned = 0;
-	int vol = read_volume(), bri = read_brightness();
+	int vol = read_shown_volume(), bri = read_brightness();
 	time_t skin_mtime = 0;
 
 	for (;;) {
@@ -783,7 +900,10 @@ int main(void) {
 			if (cv_state != 1)
 				return 0;
 			for (int i = 0; i < 100; i++) {
-				show_poweroff();
+				if (shadow_full() == 1)
+					shadow_copy();
+				else
+					show_poweroff();
 				usleep(200000);
 			}
 			return 0;
@@ -829,8 +949,10 @@ int main(void) {
 			}
 		}
 		/* Only draw while cubevol's own popup is out of sight. */
-		if (cv_state == 1) {
-			int v = read_volume(), b = read_brightness();
+		if (cv_state == 1 && mirror_tick()) {
+			/* cubevol's power-off/USB screen is up: keep copying it. */
+		} else if (cv_state == 1) {
+			int v = read_shown_volume(), b = read_brightness();
 			if (v >= 0 && vol >= 0 && v != vol)
 				popup_show(KIND_VOLUME, v, 1500);
 			else if (b >= 0 && bri >= 0 && b != bri)

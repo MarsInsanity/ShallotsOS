@@ -770,6 +770,16 @@ static int pmem_read(unsigned short flag, unsigned short id, unsigned short len,
     return rc;
 }
 
+#define I2SO_GET_VOLUME 0x4001080Cu   /* cubevol's api_get_snd_volume: 1 byte, 0..100 */
+static int live_volume(void) {
+    int fd = open("/dev/sndC0i2so", O_WRONLY);
+    if (fd < 0) return -1;
+    unsigned char v = 0;
+    int ok = ioctl(fd, I2SO_GET_VOLUME, &v) == 0;
+    close(fd);
+    return ok && v <= 100 ? v : -1;
+}
+
 /* Backlight raw byte (23..255) back to FrogUI's 0..100 brightness level. */
 static int backlight_level(int raw) {
     int v = raw - 23;
@@ -790,7 +800,10 @@ static bool level_poll(int64_t now) {
     last_poll = now;
     unsigned char vbuf[260] = {0};
     int light = 0;
-    int vol = pmem_read(3, 0, 260, vbuf) == 0 && vbuf[0] <= 100 ? vbuf[0] : -1;
+    /* The live output level follows a held volume key step by step; the
+     * stored value may change only once it is let go. */
+    int vol = live_volume();
+    if (vol < 0) vol = pmem_read(3, 0, 260, vbuf) == 0 && vbuf[0] <= 100 ? vbuf[0] : -1;
     int lit = pmem_read(1, 30, 1, &light) == 0 ? (light & 0xFF) : -1;
     bool changed = false;
     if (vol >= 0 && last_vol >= 0 && vol != last_vol) {
