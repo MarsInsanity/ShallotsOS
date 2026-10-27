@@ -31,12 +31,12 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40465977881
-  (ShallotsOS `e16e794`, picoarch `7a907a9`, PCSX4ALL `3f97ecb`, HCSNES 0.3 `6a71a77`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40467252299
+  (ShallotsOS `0441bd5`, picoarch `7a907a9`, Books reader `53ece93`, PCSX4ALL `3f97ecb`, HCSNES 0.4 `84ce531`)
 
 ## User to-do (device tests)
 
-Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40465977881
+Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40467252299
 Before: back up the SD card. For feel tests remove `log.txt` and the
 stockprobe (uninstall_stockprobe.bat); put `log.txt` back only when a test
 asks for logs.
@@ -63,27 +63,32 @@ A. New in this build
    Snes9x 2005. Optional: a 60 s Profiling On run (HCSNES PROFILING.md).
 4. Aspect: SNES/NES/Genesis on Native fill the screen (4:3); 8:7 and 16:9
    change the shape.
+5. Books (new reader, cubegm/ebook, from MarsInsanity/ShallotsOS_ebook_reader):
+   - pages no longer stretched vertically; text sharp;
+   - footer: chapter, page, percent; SELECT menu in the theme's colours;
+   - DOWN/UP next/previous chapter; X contents list;
+   - Y bookmark on/off (ribbon top right); menu > Bookmarks, X deletes;
+   - change Text size: the same text stays on screen; position kept after
+     quitting (SELECT+START) and reopening.
+   If the overlay has no cubegm/ebook, the reader build failed: tell me.
 B. SNES feel (no log.txt, no probe)
-5. Stock Snes9x 2005 is now better than the old ShallotsOS SNES (minimal
+6. Stock Snes9x 2005 is now better than the old ShallotsOS SNES (minimal
    crackle, visible frameskip). Found: Filter = Nearest is slower than
    Bilinear (also Kirby's Adventure on NES): Nearest scales on the CPU,
    Bilinear on the display hardware. Use Bilinear until that is fixed.
 C. Not yet confirmed
-6. Games tab: FN (GameSwitcher) in a game list, B, then Games: the systems
+7. Games tab: FN (GameSwitcher) in a game list, B, then Games: the systems
    list again, on that system. SELECT in the Games list does nothing.
-7. PCSX4ALL FPS counter does not look like picoarch's: photo of both
+8. PCSX4ALL FPS counter does not look like picoarch's: photo of both
     needed (the code already copies picoarch's card).
-8. GB/GBC and PS1 saves and states after the folder move; Activity Tracker
+9. GB/GBC and PS1 saves and states after the folder move; Activity Tracker
     play time.
-9. Books: EPUB pages stretched vertically; reader UI needs work; wanted:
-    chapter skip, bookmarks. The reader (cubegm/ebook) is TreeFrogUI's
-    binary, no source here: needs a new reader (planned, not started).
-    Videos, Images apps; low-battery save at 5% when convenient.
+10. Videos, Images apps; low-battery save at 5% when convenient.
 D. Later
-10. Scraping: names and art on all systems; first open of a big folder.
-11. Kirby lag: if it happens, 15 s play, menu and back, 15 s more; send
+11. Scraping: names and art on all systems; first open of a big folder.
+12. Kirby lag: if it happens, 15 s play, menu and back, 15 s more; send
     logs/picoarch.log (with log.txt).
-12. Activity Tracker mockup (from you).
+13. Activity Tracker mockup (from you).
 
 ## Done
 
@@ -329,7 +334,8 @@ User's to-do list (October 2026):
       and the player is installed; included in the new-files check
 - [x] Books app (the MuPDF reader, `cubegm/ebook`, from TreeFrogUI) listed
       as "Books" in Apps
-- [ ] Device test: all of the above; Books needs `cubegm/ebook` on the card
+- [ ] Device test: all of the above; Books uses ShallotsOS's own reader now
+      (MarsInsanity/ShallotsOS_ebook_reader, built into the overlay)
 
 
 ## Next
