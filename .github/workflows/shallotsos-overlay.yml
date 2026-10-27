@@ -15,6 +15,10 @@ on:
       - 'sdcard/cubegm/xgame-logo.bmp'
       - 'apps/video_player/**'
       - 'apps/osd/**'
+      - 'apps/setup/**'
+      - 'hijack/**'
+      - 'scripts/shallots_package.sh'
+      - 'docs/INSTALL-ShallotsOS.md'
       - '.github/workflows/shallotsos-overlay.yml'
   workflow_dispatch:
     inputs:
@@ -33,6 +37,9 @@ on:
       ebook_ref:
         description: ShallotsOS_ebook_reader branch, tag or commit to build
         default: claude/shallotsos-reader
+      version:
+        description: Version written to cubegm/version.txt (default dev-<commit>)
+        default: ''
 
 permissions:
   contents: read
@@ -45,6 +52,9 @@ env:
   PCSX4ALL_REF: ${{ inputs.pcsx4all_ref || 'claude/shallotsos-menu-integration' }}
   EBOOK_REF: ${{ inputs.ebook_ref || 'claude/shallotsos-reader' }}
   MUPDF_VERSION: 1.24.10
+  # The TreeFrogUI full release the ShallotsOS packages are built on.
+  TREEFROG_BASE_URL: https://github.com/tzubertowski/TreeFrogUI/releases/download/v1.8.0_q/TreeFrogUI_v1.8.0_q.zip
+  TREEFROG_BASE_SHA256: d89788b014c00fa4cc98d14748b3588a9f07d9bd9e0adbaac95d1b20a6809b5c
   TOOLCHAIN_URL: https://github.com/game-de-it/sf3000/releases/download/sf3000_toolchain_v0.1/mipsel-buildroot-linux-gnu_sdk-buildroot.tar.gz
 
 jobs:
@@ -216,6 +226,16 @@ jobs:
             -o "$RUNNER_TEMP/shallots_osd" apps/osd/shallots_osd.c
           file "$RUNNER_TEMP/shallots_osd"
 
+      # First-boot driver setup for the full package.
+      - name: Build shallots_setup
+        run: |
+          set -euo pipefail
+          sdk="$HOME/sf3000-work/sf3000toolchain/mipsel-buildroot-linux-gnu_sdk-buildroot"
+          "$sdk/opt/ext-toolchain/bin/mips-mti-linux-gnu-gcc" -EL -mips32r2 -mtune=74kc -mhard-float \
+            --sysroot="$sdk/mipsel-buildroot-linux-gnu/sysroot" -O2 -Wall -Wextra -s \
+            -o "$RUNNER_TEMP/shallots_setup" apps/setup/shallots_setup.c
+          file "$RUNNER_TEMP/shallots_setup"
+
       - name: Assemble the SD-card overlay
         run: |
           set -euo pipefail
@@ -280,4 +300,35 @@ jobs:
         with:
           name: ShallotsOS-overlay
           path: ${{ runner.temp }}/overlay
+          if-no-files-found: error
+
+      # The full install (TreeFrogUI's release plus ShallotsOS, without stock
+      # drivers) and its update.zip. Workflow artifacts only: no release.
+      - name: Build the full ShallotsOS package and update.zip
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y -qq p7zip-full >/dev/null
+          base="$RUNNER_TEMP/base/$(basename "$TREEFROG_BASE_URL")"
+          mkdir -p "$(dirname "$base")"
+          curl -fsSL --retry 3 -o "$base" "$TREEFROG_BASE_URL"
+          echo "$TREEFROG_BASE_SHA256  $base" | sha256sum -c -
+          version="${{ inputs.version }}"
+          version="${version:-dev-${GITHUB_SHA::7}}"
+          bash scripts/shallots_package.sh "$version" "$base" "$RUNNER_TEMP/overlay" \
+            "$RUNNER_TEMP/shallots_setup" "$RUNNER_TEMP/package"
+
+      - name: Upload the full package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShallotsOS-full
+          path: ${{ runner.temp }}/package/ShallotsOS_*.zip
+          compression-level: 0
+          if-no-files-found: error
+
+      - name: Upload update.zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: ShallotsOS-update
+          path: ${{ runner.temp }}/package/update.zip
+          compression-level: 0
           if-no-files-found: error

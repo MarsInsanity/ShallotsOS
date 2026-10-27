@@ -87,6 +87,21 @@ TF_DRIVER=/mnt/sdcard/cubegm/@DRIVER@
 EOF
 export TF_DEVICE=@DEV@ TF_PANEL_W=@PW@ TF_PANEL_H=@PH@ TF_UI_SCALE=150
 
+# ShallotsOS ships no stock drivers: on a fresh install, take this console's
+# own (the card's plain driver.so, or the copy the SF3500-class firmware
+# decrypts into /tmp/cubegm) and make the driver_<device>.so files below.
+# Existing files are never replaced; see cubegm/logs/shallots_setup.log.
+if [ -x /mnt/sdcard/cubegm/shallots_setup ]; then
+    # An SF3000 may turn out SF3500-class below: have its driver ready too.
+    SETUP_DRIVERS=/mnt/sdcard/cubegm/@DRIVER@
+    SETUP_DRIVERS=${SETUP_DRIVERS##*/}
+    [ "$TF_DEVICE" = SF3000 ] && \
+        [ "$(head -c4 /mnt/sdcard/cubegm/driver.so 2>/dev/null)" != "$(printf '\177ELF')" ] && \
+        SETUP_DRIVERS="$SETUP_DRIVERS driver_sf3500.so"
+    /mnt/sdcard/cubegm/shallots_setup $SETUP_DRIVERS >/dev/null 2>&1 \
+        || log_event "shallots_setup: a driver is missing for $TF_DEVICE (cubegm/logs/shallots_setup.log)"
+fi
+
 # Some "SF3000"-branded units are really SF3500-class hardware (the "v3" / HDMI
 # variant): same 854x480 panel geometry, but the SF3500 audio+display driver. The
 # reliable tell is the stock driver.so format: classic SF3000 ships a PLAIN ELF

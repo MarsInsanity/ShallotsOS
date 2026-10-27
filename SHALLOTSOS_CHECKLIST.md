@@ -358,6 +358,28 @@ User's to-do list (October 2026):
 - [ ] Device test: all of the above; Books uses ShallotsOS's own reader now
       (MarsInsanity/ShallotsOS_ebook_reader, built into the overlay)
 
+Full ShallotsOS install (no TreeFrogUI install first):
+
+- [x] `scripts/shallots_package.sh` builds `ShallotsOS_<version>.zip` on the
+      public TreeFrogUI v1.8.0_q full ZIP (sha256 checked): stock drivers and
+      `picoarch.cfg` removed, overlay on top, every
+      `install_first/<device>/cubegm/zhijack.sh` from ShallotsOS's template,
+      the ShallotsOS boot logo for 640x480 consoles, a minimal
+      `frogui/settings.txt` (disable_sleep=on, filter=bilinear),
+      `INSTALL-ShallotsOS.md`
+- [x] `update.zip` in TreeFrogUI's updater format: never carries
+      `setting.xml`, a stock driver, `frogui/settings.txt`, `keymap.txt`,
+      `picoarch.cfg` or PCSX4ALL's cfg, so an update keeps them (tested with
+      `tfupdate.sh` on a simulated card)
+- [x] `cubegm/shallots_setup` makes `driver_<device>.so` on the first boot
+      from the console's own driver (card `driver.so` or the SF3500-class
+      decrypted copy); R36SX also gets `driver_r36sx27.so`; existing files
+      are never replaced; log `cubegm/logs/shallots_setup.log`
+- [x] Overlay workflow uploads `ShallotsOS-full` and `ShallotsOS-update`
+      artifacts (no release is published)
+- [ ] Device test on the R36SX: fresh card from the R36SX v2.6 backup plus
+      the full package; then an update.zip over it
+
 
 ## Next
 
