@@ -31,34 +31,35 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40454874309
-  (ShallotsOS `d6f50ac`, picoarch `63edd03`, PCSX4ALL `3f97ecb`, HCSNES 0.3 `6a71a77`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40459029974
+  (ShallotsOS `9993ce9`, picoarch `63edd03`, PCSX4ALL `3f97ecb`, HCSNES 0.3 `6a71a77`)
 
 ## User to-do (device tests)
 
-Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40454874309
+Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40459029974
 Before: back up the SD card. For feel tests remove `log.txt` and the
 stockprobe (uninstall_stockprobe.bat); put `log.txt` back only when a test
 asks for logs.
 Confirmed earlier: folder move, NES save states, Resume, GameSwitcher,
 Recents, Favourites, Y menu, box art, FN mode passes SELECT+START, Load >
-Auto preview, boot-script poll fix (other processes 25% -> 8% of the CPU).
+Auto preview, boot-script poll fix (other processes 25% -> 8% of the CPU),
+OnionOS search keyboard, ShallotsOS volume indicator (first build).
 
 A. New in this build
-1. Search (X in a game list): the keyboard matches the OnionOS theme.
-2. ShallotsOS Volume Indicator (Settings > Appearance, on by default): after
-   ~5 s in the menu, volume up/down and FN+volume, in the menu and in a
-   game: themed popup at the top, no stock popup, no blink, buttons
-   (volume-down too) work normally; FrogUI shows its own battery. If
-   anything breaks: delete cubegm/shallots_osd, reboot, send
-   logs/shallots_osd.log (with log.txt) and frogui/.osd_failed.
-3. HCPS1 (Y > Emulator on a PS1 game): starts, sound, speed vs PCSX4ALL and
-   PCSX ReARMed (ReARMed's SPU thread is now off by default).
+1. Volume indicator: turn the volume down a few steps (not to 0), in the
+   menu and in a game, and switch screens/themes: no false "no sound"
+   popup. (It now reads the stored volume, not the live level FrogUI mutes.)
+2. Power off (hold power) from the menu and from a game: the stock
+   power-off screen (cubepoweroff.bmp) shows again.
+3. HCPS1: known so far: picture wide and short, crackle in heavy Crash
+   Bandicoot scenes (being looked at).
 4. Launch and back-to-menu speed (boot-script polls now 0.25 s;
    cubegm/zhijack.sh lines 188 and 297 read `sleep 0.25` after two boots).
 B. SNES feel (no log.txt, no probe)
-5. Yoshi's Island on Stock Snes9x 2005 and on HCSNES Fast (Timed, max 2):
-   crackle, smoothness, lows; once with Filter = Nearest, once Bilinear.
+5. Stock Snes9x 2005 is now better than the old ShallotsOS SNES (minimal
+   crackle, visible frameskip). Found: Filter = Nearest is slower than
+   Bilinear (also Kirby's Adventure on NES): Nearest scales on the CPU,
+   Bilinear on the display hardware. Use Bilinear until that is fixed.
 C. Not yet confirmed
 6. Options > About (picoarch and PCSX4ALL): full emulator name, version,
    core file, game, video, audio; long values end in "...".
