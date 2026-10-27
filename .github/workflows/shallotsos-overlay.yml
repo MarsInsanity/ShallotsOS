@@ -30,6 +30,9 @@ on:
       pcsx4all_ref:
         description: ShallotsOS_pcsx4all branch, tag or commit to build
         default: claude/shallotsos-menu-integration
+      ebook_ref:
+        description: ShallotsOS_ebook_reader branch, tag or commit to build
+        default: claude/shallotsos-reader
 
 permissions:
   contents: read
@@ -40,6 +43,8 @@ env:
   HCSNES_REF: ${{ inputs.hcsnes_ref || 'main' }}
   HCPS1_REF: ${{ inputs.hcps1_ref || 'main' }}
   PCSX4ALL_REF: ${{ inputs.pcsx4all_ref || 'claude/shallotsos-menu-integration' }}
+  EBOOK_REF: ${{ inputs.ebook_ref || 'claude/shallotsos-reader' }}
+  MUPDF_VERSION: 1.24.10
   TOOLCHAIN_URL: https://github.com/game-de-it/sf3000/releases/download/sf3000_toolchain_v0.1/mipsel-buildroot-linux-gnu_sdk-buildroot.tar.gz
 
 jobs:
@@ -85,6 +90,14 @@ jobs:
           repository: MarsInsanity/ShallotsOS_pcsx4all
           ref: ${{ env.PCSX4ALL_REF }}
           path: pcsx4all-src
+
+      # The Books reader (cubegm/ebook), MuPDF-based.
+      - name: Check out ShallotsOS_ebook_reader
+        uses: actions/checkout@v4
+        with:
+          repository: MarsInsanity/ShallotsOS_ebook_reader
+          ref: ${{ env.EBOOK_REF }}
+          path: ebook-src
 
       - name: Install the SF3000 toolchain
         run: |
@@ -151,6 +164,38 @@ jobs:
           file pcsx4all-src/build/pcsx4all
           echo "PCSX4ALL_SHA=$(git -C pcsx4all-src rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
+      # MuPDF for the Books reader: unmodified upstream, cross-built once and
+      # cached (headers and static libraries only).
+      - name: Cache MuPDF
+        id: mupdf-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/sf3000-work/mupdf-sf
+          key: mupdf-${{ env.MUPDF_VERSION }}-sf3000-v1
+
+      - name: Build MuPDF
+        if: steps.mupdf-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          src="$RUNNER_TEMP/mupdf"
+          git clone -q --depth 1 --branch "$MUPDF_VERSION" --recurse-submodules --shallow-submodules \
+            https://github.com/ArtifexSoftware/mupdf.git "$src"
+          MUPDF="$src" sh ebook-src/build_mupdf_sf.sh
+          out="$HOME/sf3000-work/mupdf-sf"
+          mkdir -p "$out/build/release"
+          cp -a "$src/include" "$out/"
+          cp "$src/build/release/libmupdf.a" "$src/build/release/libmupdf-third.a" "$out/build/release/"
+
+      # Experimental for now: a failure leaves the TreeFrogUI reader in place.
+      - name: Build the Books reader
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          MUPDF="$HOME/sf3000-work/mupdf-sf" sh ebook-src/build_reader_sf.sh
+          file ebook-src/ebook
+          echo "EBOOK_SHA=$(git -C ebook-src rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
       # The music and video player (cubegm/video_player).
       - name: Build the media player
         run: |
@@ -186,6 +231,9 @@ jobs:
           cp "$RUNNER_TEMP/video_player" "$out/cubegm/"
           cp "$RUNNER_TEMP/shallots_osd" "$out/cubegm/"
           cp pcsx4all-src/build/pcsx4all "$out/cubegm/"
+          if [ -n "${EBOOK_SHA:-}" ] && [ -f ebook-src/ebook ]; then
+            cp ebook-src/ebook "$out/cubegm/"
+          fi
           # Boot logo for 640x480 panels (R36SX, R36HD, GB350).
           cp sdcard/cubegm/xgame-logo.bmp "$out/cubegm/"
           cp -a assets/onion/Themes/. "$out/Themes/"
@@ -197,7 +245,7 @@ jobs:
           cp -a assets/system-icons/. "$out/frogui/system-icons/"
           cp -a frogui/lang/builtin "$out/frogui/lang/"
           cat > "$out/SHALLOTSOS-README.txt" <<EOF
-          ShallotsOS overlay (ShallotsOS ${GITHUB_SHA::7}, picoarch ${PICOARCH_SHA}, HCSNES ${HCSNES_SHA}, HCPS1 ${HCPS1_SHA:-not built}, PCSX4ALL ${PCSX4ALL_SHA})
+          ShallotsOS overlay (ShallotsOS ${GITHUB_SHA::7}, picoarch ${PICOARCH_SHA}, HCSNES ${HCSNES_SHA}, HCPS1 ${HCPS1_SHA:-not built}, PCSX4ALL ${PCSX4ALL_SHA}, Books ${EBOOK_SHA:-not built})
 
           Copy everything in this folder to the root of an SD card that
           already runs TreeFrogUI, replacing existing files when asked:
@@ -210,6 +258,7 @@ jobs:
             cubegm/video_player              music and video player
             cubegm/shallots_osd              ShallotsOS volume/brightness popups
             cubegm/pcsx4all                  PS1 emulator (picoarch's menu and keys)
+            cubegm/ebook                     Books reader (contents, bookmarks)
             cubegm/xgame-logo.bmp            ShallotsOS boot logo (640x480 panels:
                                              R36SX, R36HD, GB350; skip it on an
                                              854x480 SF3000-family console)
