@@ -37,72 +37,45 @@ Latest test build:
 ## User to-do (device tests)
 
 Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40454874309
-Before: back up the SD card; keep an empty `log.txt` at the card root.
-Confirmed earlier: folder move prompt and move, NES save states, Resume,
-GameSwitcher, Recents, Favourites, Y-menu search/emulator/favourite, box art.
+Before: back up the SD card. For feel tests remove `log.txt` and the
+stockprobe (uninstall_stockprobe.bat); put `log.txt` back only when a test
+asks for logs.
+Confirmed earlier: folder move, NES save states, Resume, GameSwitcher,
+Recents, Favourites, Y menu, box art, FN mode passes SELECT+START, Load >
+Auto preview, boot-script poll fix (other processes 25% -> 8% of the CPU).
 
 A. New in this build
-000. Search (X in a game list): the keyboard now matches the OnionOS theme
-     (theme background, header, hint bar, rounded keys, highlight colour).
-0000. ShallotsOS Volume Indicator (Settings > Appearance, on by default):
-     after the menu has been open ~5 s, press volume up/down and FN+volume
-     (brightness), in the menu and in a game: a themed popup at the top, no
-     stock popup and no blink. Buttons must keep working normally (volume
-     down too). FrogUI shows its own battery. If anything breaks, delete
-     cubegm/shallots_osd and reboot; send logs/shallots_osd.log (with
-     log.txt) and frogui/.osd_failed if it exists.
-00. Options > About (picoarch and PCSX4ALL): the running emulator's full
-    name, version and core file, the game, video and audio (PS1: CPU
-    mode, disc ID, BIOS). Long values end in "...".
-0a. Boot-script poll fix (build below): install, boot once, power off,
-    boot again (applies from the second boot). cubegm/zhijack.sh lines 188
-    and 297 should then read `sleep 0.25`. First play WITHOUT the probe
-    (uninstall_stockprobe.bat): crackle, smoothness, game/menu opening speed
-    vs before and vs the stock OS. Then optionally with the probe for one
-    minute: its "system" line should show ~4 new processes/s (was ~24).
-0. Why the stock firmware is smoother: play the Yoshi's Island intro and
-   the first level for ~1 minute on "Stock Snes9x 2005", then the same on
-   HCSNES Fast (Options > Emulator options: Frameskip Fixed, max 1). Send
-   `logs/picoarch.log`. Each "DBG lag" line now shows `cpu self/other`
-   (picoarch's CPU use against everything else running) and `loop=` (a
-   fixed loop's time, which only changes with the CPU clock). (Stock
-   Snes9x and Snes9x 2010 are no longer listed: ~40 ms per frame.)
-1. Games tab: in a system's game list, FN (GameSwitcher), B, then Games:
-   the systems list again, on that system.
-2. SELECT in the Games list does nothing now (emulators: Y menu).
-3. Apps > Themes: previews full screen, Left/Right (or L1/R1) browse,
-   A applies, B back.
-4. PS1 (PCSX4ALL): Cross is the bottom button (B), Circle the right one
-   (A), as on a PS1 pad; Square Y, Triangle X. A saved config with the old
-   pair is converted; your own remaps are kept.
-5. SNES: no more half-second freezes (frameskip now draws at least every
-   third frame on every emulator). Crackle in Yoshi's Island remains: it
-   needs ~17 ms per frame against 16.7 ms.
-6. PCSX4ALL toast and FPS counter look like picoarch's.
-B. Performance
-4. Yoshi's Island on Snes9x 2005 Plus, then HCSNES Fast, then HCSNES Plus
-   (Y > Emulator > This game): same scene; smoothness, sound, glitches.
-   Don't load a save state made by another emulator.
-5. A PS1 game on PCSX4ALL and on PCSX ReARMed; a GBA and a Genesis game:
-   smoother than before? new glitches or crackle?
-6. Send `logs/picoarch.log` (and `logs/cores.log`) after 4-5.
-   Options > Save config for a core keeps its old settings.
-C. After the folder move (not yet confirmed)
-7. GB/GBC and PS1 saves and save states load; former nesq / gbav-style
-   games still on their old emulator; Activity Tracker play time.
-D. Scraping
-8. Once scraping is done: names and art on all scraped systems; first
-   open time of a big folder (arcade).
-E. Still open from before
-9. Load > Auto preview shows the game after leaving it once.
-10. Music: hold volume; send the `VIDEO_PLAYER:` lines from `log.txt` if
-    the stock bar still shows.
-11. Kirby lag: when it happens, 15 s play, menu and back, 15 s more; send
-    `logs/picoarch.log`.
-12. Books (needs `cubegm/ebook`), Videos, Images apps.
-13. When convenient: low-battery save at 5%.
-F. Wanted from you
-14. Activity Tracker mockup.
+1. Search (X in a game list): the keyboard matches the OnionOS theme.
+2. ShallotsOS Volume Indicator (Settings > Appearance, on by default): after
+   ~5 s in the menu, volume up/down and FN+volume, in the menu and in a
+   game: themed popup at the top, no stock popup, no blink, buttons
+   (volume-down too) work normally; FrogUI shows its own battery. If
+   anything breaks: delete cubegm/shallots_osd, reboot, send
+   logs/shallots_osd.log (with log.txt) and frogui/.osd_failed.
+3. HCPS1 (Y > Emulator on a PS1 game): starts, sound, speed vs PCSX4ALL and
+   PCSX ReARMed (ReARMed's SPU thread is now off by default).
+4. Launch and back-to-menu speed (boot-script polls now 0.25 s;
+   cubegm/zhijack.sh lines 188 and 297 read `sleep 0.25` after two boots).
+B. SNES feel (no log.txt, no probe)
+5. Yoshi's Island on Stock Snes9x 2005 and on HCSNES Fast (Timed, max 2):
+   crackle, smoothness, lows; once with Filter = Nearest, once Bilinear.
+C. Not yet confirmed
+6. Options > About (picoarch and PCSX4ALL): full emulator name, version,
+   core file, game, video, audio; long values end in "...".
+7. Games tab: FN (GameSwitcher) in a game list, B, then Games: the systems
+   list again, on that system. SELECT in the Games list does nothing.
+8. Apps > Themes: previews, Left/Right or L1/R1, A applies, B back.
+9. PCSX4ALL: Cross = bottom (B), Circle = right (A); toast and FPS counter
+   look like picoarch's.
+10. GB/GBC and PS1 saves and states after the folder move; Activity Tracker
+    play time.
+11. Music: hold volume (with the new indicator the stock bar should be gone).
+12. Books, Videos, Images apps; low-battery save at 5% when convenient.
+D. Later
+13. Scraping: names and art on all systems; first open of a big folder.
+14. Kirby lag: if it happens, 15 s play, menu and back, 15 s more; send
+    logs/picoarch.log (with log.txt).
+15. Activity Tracker mockup (from you).
 
 ## Done
 
