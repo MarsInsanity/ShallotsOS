@@ -53,13 +53,13 @@ mGBA unplayable; Crash: HCPS1 still crackles and feels sluggish, PCSX4ALL
 (default) very playable but not full speed.
 
 A. New in this build
-0. Driver check (for a full ShallotsOS install without TreeFrogUI's
-   drivers): with log.txt on the card, boot once into the menu, then send
-   logs/driver_check.txt. It holds checksums and sizes only, no file
-   content. (R36SX v2.7 hardware running the v2.6 firmware.)
+0. Driver check: done. The R36SX card's own driver.so is TreeFrogUI's
+   driver_r36sx.so byte for byte, so an R36SX on the v2.6 firmware can
+   supply its own driver for a full ShallotsOS install.
 1. Power off (hold power) from the menu and from a game: the stock power-off
-   screen shows (cubevol's own picture is now copied to the screen). Also
-   plug in USB once: its screen shows.
+   screen shows. Now watches both of cubevol's fb1 mappings and counts a
+   grid of points. If it still doesn't show: with log.txt, send
+   logs/shallots_osd.log after a power-off. Also plug in USB once.
 2. Volume: hold volume up/down in a game and in the Music app: the popup /
    the Music slider follows step by step. Volume a few steps down, then
    switch screens: no false "no sound".
@@ -70,6 +70,7 @@ A. New in this build
 5. Books (new reader, cubegm/ebook, from MarsInsanity/ShallotsOS_ebook_reader):
    - pages no longer stretched vertically; text sharp;
    - footer: chapter, page, percent; SELECT menu in the theme's colours;
+   - button hints bar when a book opens (START shows/hides it);
    - DOWN/UP next/previous chapter; X contents list;
    - Y bookmark on/off (ribbon top right); menu > Bookmarks, X deletes;
    - change Text size: the same text stays on screen; position kept after

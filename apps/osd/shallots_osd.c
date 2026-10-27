@@ -371,6 +371,8 @@ static int fb1_open(void) {
 	fb1.w = v.xres;
 	fb1.h = v.yres;
 	fb1.line = f.line_length;
+	logf_("fb1 %dx%d virtual %dx%d offset %d, line %d, memory %u", v.xres, v.yres, v.xres_virtual,
+	      v.yres_virtual, v.yoffset, f.line_length, f.smem_len);
 	return 1;
 }
 
@@ -707,9 +709,11 @@ restore:
 /* 1: cubevol's fb1 is now private memory. 0: not ready yet (retry).
  * -1: give up for this cubevol. */
 /* Where cubevol's (now hidden) fb1 drawing lives in its memory. */
+#define MAX_MAPS 4
 static struct {
 	pid_t pid;
-	unsigned long addr, off, len;
+	int n;
+	unsigned long addr[MAX_MAPS], off[MAX_MAPS], len[MAX_MAPS];
 } shadow;
 
 static int redirect_cubevol(pid_t pid) {
@@ -734,14 +738,18 @@ static int redirect_cubevol(pid_t pid) {
 	int ok = 1;
 	for (int i = 0; i < n && ok; i++) {
 		ok = inject_anon_map(pid, entry, start[i], end[i] - start[i]) == 0;
-		logf_("cubevol %d: fb1 %08lx-%08lx %s", (int)pid, start[i], end[i], ok ? "redirected" : "FAILED");
+		logf_("cubevol %d: fb1 %08lx-%08lx (offset %lx) %s", (int)pid, start[i], end[i], off[i],
+		      ok ? "redirected" : "FAILED");
 	}
 	ptrace(PTRACE_DETACH, pid, 0, 0);
 	if (ok) {
 		shadow.pid = pid;
-		shadow.addr = start[0];
-		shadow.off = off[0];
-		shadow.len = end[0] - start[0];
+		shadow.n = n;
+		for (int i = 0; i < n; i++) {
+			shadow.addr[i] = start[i];
+			shadow.off[i] = off[i];
+			shadow.len[i] = end[i] - start[i];
+		}
 	}
 	return ok ? 1 : -1;
 }
@@ -776,10 +784,12 @@ static void mark_failed(const char *why) {
 /* ---- cubevol's full-screen pictures --------------------------------------- */
 
 /* cubevol still draws its power-off (and USB) screens, into memory nobody
- * sees. Watch that memory: when the centre and three points along the bottom
- * all turn opaque, a popup can't explain it, so it is a full-screen picture;
- * copy it to the real fb1 for as long as it stays. Only a change to full
- * counts, so a buffer that starts out opaque never triggers it. */
+ * sees (each of its fb1 mappings, possibly two pages it flips between).
+ * Watch that memory: when a quarter or more of an 8x6 grid of points
+ * spread over one mapping turns opaque, a popup can't explain it, so it is
+ * a full-screen picture (cubepoweroff.bmp may not reach the edges); copy that mapping to the same place in the real fb1 for as long
+ * as it stays. Only a change to full counts, so a buffer that starts out
+ * opaque never triggers it. */
 static int mirror_fd = -1;
 static pid_t mirror_pid;
 
@@ -795,63 +805,83 @@ static int shadow_open(void) {
 	return mirror_fd >= 0;
 }
 
-/* -1: can't tell. */
-static int shadow_full(void) {
-	if (!shadow.pid || !fb1_open() || !shadow_open())
+#define GRID_X 8
+#define GRID_Y 6
+/* Opaque points of the grid in mapping i (positions within the mapping, one
+ * fb1 page from its start); -1: can't tell. */
+static int shadow_opaque(int i) {
+	if (!shadow.pid || i >= shadow.n || !fb1_open() || !shadow_open())
 		return -1;
-	const int pts[4][2] = {
-		{fb1.w / 2, fb1.h / 2}, {16, fb1.h - 16}, {fb1.w / 2, fb1.h - 16}, {fb1.w - 16, fb1.h - 16}};
-	for (int i = 0; i < 4; i++) {
-		unsigned long o = (unsigned long)pts[i][1] * fb1.line + (unsigned long)pts[i][0] * 4;
-		if (o < shadow.off || o - shadow.off + 4 > shadow.len)
-			return -1;
-		uint32_t px;
-		if (pread(mirror_fd, &px, 4, (off_t)(shadow.addr + (o - shadow.off))) != 4)
-			return -1;
-		if (!(px >> 24))
-			return 0;
-	}
-	return 1;
+	int n = 0;
+	for (int gy = 0; gy < GRID_Y; gy++)
+		for (int gx = 0; gx < GRID_X; gx++) {
+			int x = fb1.w * (2 * gx + 1) / (2 * GRID_X), y = fb1.h * (2 * gy + 1) / (2 * GRID_Y);
+			unsigned long o = (unsigned long)y * fb1.line + (unsigned long)x * 4;
+			if (o + 4 > shadow.len[i])
+				return -1;
+			uint32_t px;
+			if (pread(mirror_fd, &px, 4, (off_t)(shadow.addr[i] + o)) != 4)
+				return -1;
+			n += (px >> 24) != 0;
+		}
+	return n;
+}
+static int shadow_full(int i) {
+	int n = shadow_opaque(i);
+	return n < 0 ? -1 : n * 4 >= GRID_X * GRID_Y;
 }
 
-static void shadow_copy(void) {
-	if (shadow.off >= fb1.len)
+static void shadow_copy(int i) {
+	if (shadow.off[i] >= fb1.len)
 		return;
-	size_t n = shadow.len;
-	if (n > fb1.len - shadow.off)
-		n = fb1.len - shadow.off;
-	if (pread(mirror_fd, fb1.mem + shadow.off, n, (off_t)shadow.addr) > 0)
+	size_t n = shadow.len[i];
+	if (n > fb1.len - shadow.off[i])
+		n = fb1.len - shadow.off[i];
+	if (pread(mirror_fd, fb1.mem + shadow.off[i], n, (off_t)shadow.addr[i]) > 0)
 		ioctl(fb1.fd, FBIOBLANK, FB_BLANK_UNBLANK);
 }
 
 /* Returns 1 while cubevol's picture is on screen. */
 static int mirror_tick(void) {
-	static int prev = -1, active;
+	static int prev[MAX_MAPS] = {-1, -1, -1, -1}, active[MAX_MAPS];
 	static pid_t for_pid;
 	if (for_pid != shadow.pid) {   /* new cubevol: new baseline */
 		for_pid = shadow.pid;
-		prev = -1;
-		active = 0;
+		for (int i = 0; i < MAX_MAPS; i++) { prev[i] = -1; active[i] = 0; }
 	}
-	int full = shadow_full();
-	if (full < 0)
-		return active;
-	if (prev < 0) {
-		prev = full;
-		return 0;
+	int any = 0;
+	for (int i = 0; i < shadow.n; i++) {
+		int cnt = shadow_opaque(i);
+		if (cnt < 0) { any |= active[i]; continue; }
+		int full = cnt * 4 >= GRID_X * GRID_Y;
+		static int last_cnt[MAX_MAPS] = {-1, -1, -1, -1};
+		if (cnt != last_cnt[i] && prev[i] >= 0)
+			logf_("mapping %d: %d/%d opaque", i, cnt, GRID_X * GRID_Y);
+		last_cnt[i] = cnt;
+		if (prev[i] < 0) {
+			prev[i] = full;
+			logf_("mapping %d baseline: %d/%d opaque", i, cnt, GRID_X * GRID_Y);
+			continue;
+		}
+		if (full && (active[i] || !prev[i])) {
+			if (!active[i])
+				logf_("mapping %d: full-screen picture (%d/%d opaque), shown", i, cnt, GRID_X * GRID_Y);
+			active[i] = 1;
+			fb1.shown = 0;   /* our popup is under it */
+			shadow_copy(i);
+		} else if (!full && active[i]) {
+			unsigned long off = shadow.off[i];
+			size_t n = shadow.len[i];
+			if (off < fb1.len) {
+				if (n > fb1.len - off) n = fb1.len - off;
+				memset(fb1.mem + off, 0, n);
+			}
+			active[i] = 0;
+		}
+		prev[i] = full;
+		any |= active[i];
 	}
-	if (full && (active || !prev)) {
-		if (!active)
-			logf_("cubevol full-screen picture: shown");
-		active = 1;
-		fb1.shown = 0;   /* our popup is under it */
-		shadow_copy();
-	} else if (!full && active) {
-		memset(fb1.mem, 0, fb1.len);
-		active = 0;
-	}
-	prev = full;
-	return active;
+	return any;
 }
 
 /* ---- Driver check (diagnostic) ------------------------------------------ */
@@ -955,14 +985,14 @@ static void driver_check(void) {
 	mkdir(SD "/logs", 0777);
 	FILE *o = fopen(SD "/logs/driver_check.txt", "w");
 	if (!o) return;
-	char v[160] = "";
+	char v[400] = "";
 	fprintf(o, "ShallotsOS driver check (checksums only)\n");
 	if (file_value("/tmp/tfdevice.env", "TF_DEVICE", v, sizeof v)) fprintf(o, "TF_DEVICE=%s\n", v);
 	if (file_value("/tmp/tfdevice.env", "TF_DRIVER", v, sizeof v)) fprintf(o, "TF_DRIVER=%s (in use)\n", v);
 	fprintf(o, "driver27.flag: %s\n", access(SD "/cubegm/driver27.flag", F_OK) == 0 ? "present" : "absent");
 	FILE *pv = fopen("/proc/version", "r");
 	if (pv) {
-		if (fgets(v, sizeof v, pv)) fprintf(o, "kernel: %s", v);
+		if (fgets(v, sizeof v, pv)) fprintf(o, "kernel: %s%s", v, strchr(v, '\n') ? "" : "\n");
 		fclose(pv);
 	}
 	check_one(o, SD "/cubegm/driver.so");
@@ -1031,10 +1061,12 @@ int main(void) {
 			unlink(PID_FILE);
 			if (cv_state != 1)
 				return 0;
+			logf_("SIGTERM: showing the power-off screen");
 			for (int i = 0; i < 100; i++) {
-				if (shadow_full() == 1)
-					shadow_copy();
-				else
+				int shown = 0;
+				for (int m = 0; m < shadow.n; m++)
+					if (shadow_full(m) == 1) { shadow_copy(m); shown = 1; }
+				if (!shown)
 					show_poweroff();
 				usleep(200000);
 			}
