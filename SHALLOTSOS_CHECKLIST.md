@@ -395,6 +395,8 @@ USB debug shell (live debugging over USB-C):
       root shell; `logs` helper; log `cubegm/logs/usb_debug.log`
 - [x] Settings > System > USB Debug Shell (off by default), starts at once and
       at boot; USB mode stops it first
+- [x] Build: run 40570141467 (ShallotsOS 7d95fb8); both modules built,
+      vermagic `4.4.186-release preempt MIPS32_R2 32BIT` (matches stock)
 - [ ] Device test: modules load, COM port appears, PuTTY shell works while a
       game runs; MTP still works after it
 
