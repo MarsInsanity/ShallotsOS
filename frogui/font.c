@@ -5,6 +5,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -24,7 +29,6 @@ static float ui_font_size = DEFAULT_FONT_SIZE * UI_SCALE / 100.0f;
 #define GLYPH_CACHE_SIZE 4096
 #define MAX_STACK_CODEPOINTS 512
 
-#define FONT_BUFFER_MAX_SIZE (24 * 1024 * 1024)
 #define GLYPH_PIXEL_POOL_SIZE (2 * 1024 * 1024)
 
 typedef struct {
@@ -42,22 +46,18 @@ typedef struct {
 typedef struct {
   FT_Face ft_face;
   hb_font_t *hb_font;
-  uint8_t *buffer;
-  size_t buffer_size;
+  void *mmap_ptr;
+  size_t mmap_size;
   int loaded;
 } FontFace;
-
-static uint8_t primary_font_bytes[FONT_BUFFER_MAX_SIZE];
-static uint8_t fallback_font_bytes[FONT_BUFFER_MAX_SIZE];
-static uint8_t latin_font_bytes[FONT_BUFFER_MAX_SIZE];
 
 static uint8_t glyph_bitmap_arena[GLYPH_PIXEL_POOL_SIZE];
 static size_t arena_offset = 0;
 
 static FT_Library ft_library = NULL;
-static FontFace primary_font = {.buffer = primary_font_bytes};
-static FontFace fallback_font = {.buffer = fallback_font_bytes};
-static FontFace latin_font = {.buffer = latin_font_bytes};
+static FontFace primary_font = {0};
+static FontFace fallback_font = {0};
+static FontFace latin_font = {0};
 
 static hb_buffer_t *hb_buf = NULL;
 static int language_force_font_id = 0;
@@ -271,43 +271,43 @@ static void unload_font_face(FontFace *face) {
     FT_Done_Face(face->ft_face);
     face->ft_face = NULL;
   }
+  if (face->mmap_ptr && face->mmap_ptr != MAP_FAILED) {
+    munmap(face->mmap_ptr, face->mmap_size);
+    face->mmap_ptr = NULL;
+    face->mmap_size = 0;
+  }
   face->loaded = 0;
   clear_glyph_cache();
 }
 
 static int load_font_face(FontFace *face, const char *paths[], int path_count) {
-  FILE *fp = NULL;
+  int fd = -1;
+  struct stat st;
   for (int i = 0; i < path_count; i++) {
     if (!paths[i])
       continue;
-    fp = fopen(paths[i], "rb");
-    if (fp)
+    fd = open(paths[i], O_RDONLY);
+    if (fd >= 0)
       break;
   }
-  if (!fp)
+  if (fd < 0)
     return 0;
 
-  fseek(fp, 0, SEEK_END);
-  long size = ftell(fp);
-  fseek(fp, 0, SEEK_SET);
-
-  if (size <= 0 || size > FONT_BUFFER_MAX_SIZE) {
-    fclose(fp);
+  if (fstat(fd, &st) < 0 || st.st_size <= 0 || st.st_size > LONG_MAX) {
+    close(fd);
     return 0;
   }
 
   unload_font_face(face);
-
-  if (fread(face->buffer, 1, (size_t)size, fp) != (size_t)size) {
-    fclose(fp);
-    unload_font_face(face);
+  void *mapped = mmap(NULL, (size_t)st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+  close(fd);
+  if (mapped == MAP_FAILED)
     return 0;
-  }
-  fclose(fp);
-  face->buffer_size = (size_t)size;
+  face->mmap_ptr = mapped;
+  face->mmap_size = (size_t)st.st_size;
 
-  if (FT_New_Memory_Face(ft_library, face->buffer, (FT_Long)face->buffer_size,
-                         0, &face->ft_face)) {
+  if (FT_New_Memory_Face(ft_library, (const FT_Byte *)face->mmap_ptr,
+                         (FT_Long)face->mmap_size, 0, &face->ft_face)) {
     unload_font_face(face);
     return 0;
   }
@@ -377,7 +377,7 @@ void font_load_from_settings(const char *font_name) {
   } else if (strcmp(font_name, "GamePocket") == 0) {
     font_filename = "GamePocket-Regular-ZeroKern.ttf";
   } else {
-    font_filename = "BPreplayBold.otf";
+    font_filename = "alium_Nunito.ttf";
   }
   if (load_font_file(font_filename)) {
     font_sync_language_fallback();
@@ -389,7 +389,7 @@ void font_init(void) {
     return;
   hb_buf = hb_buffer_create();
 
-  if (!load_font_file("BPreplayBold.otf")) {
+  if (!load_font_file("alium_Nunito.ttf")) {
     font_load_from_settings("GamePocket");
   }
 
@@ -662,39 +662,34 @@ int font_face_open(const char *path) {
   if (free_slot < 0)
     return -1;
 
-  FILE *fp = fopen(path, "rb");
-  if (!fp)
+  /* Mapped like the built-in faces: the file stays on the card and only the
+   * pages FreeType touches are read. */
+  int fd = open(path, O_RDONLY);
+  if (fd < 0)
     return -1;
-  fseek(fp, 0, SEEK_END);
-  long size = ftell(fp);
-  fseek(fp, 0, SEEK_SET);
-  if (size <= 0 || size > FONT_BUFFER_MAX_SIZE) {
-    fclose(fp);
-    return -1;
-  }
-  uint8_t *bytes = malloc((size_t)size);
-  if (!bytes || fread(bytes, 1, (size_t)size, fp) != (size_t)size) {
-    free(bytes);
-    fclose(fp);
+  struct stat st;
+  if (fstat(fd, &st) < 0 || st.st_size <= 0 || st.st_size > LONG_MAX) {
+    close(fd);
     return -1;
   }
-  fclose(fp);
+  void *mapped = mmap(NULL, (size_t)st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+  close(fd);
+  if (mapped == MAP_FAILED)
+    return -1;
 
   FontFace *face = &extra_faces[free_slot].face;
   memset(face, 0, sizeof *face);
-  face->buffer = bytes;
-  face->buffer_size = (size_t)size;
-  if (FT_New_Memory_Face(ft_library, bytes, (FT_Long)size, 0, &face->ft_face)) {
-    free(bytes);
-    memset(face, 0, sizeof *face);
+  face->mmap_ptr = mapped;
+  face->mmap_size = (size_t)st.st_size;
+  if (FT_New_Memory_Face(ft_library, (const FT_Byte *)mapped, (FT_Long)st.st_size, 0,
+                         &face->ft_face)) {
+    unload_font_face(face);
     return -1;
   }
   FT_Set_Pixel_Sizes(face->ft_face, 0, (FT_UInt)ui_font_size);
   face->hb_font = hb_ft_font_create_referenced(face->ft_face);
   if (!face->hb_font) {
-    FT_Done_Face(face->ft_face);
-    free(bytes);
-    memset(face, 0, sizeof *face);
+    unload_font_face(face);   /* also unmaps the file */
     return -1;
   }
   face->loaded = 1;
@@ -726,9 +721,7 @@ void font_face_close_all(void) {
     FontFace *face = &extra_faces[i].face;
     if (!face->loaded)
       continue;
-    uint8_t *bytes = face->buffer;
-    unload_font_face(face);
-    free(bytes);
+    unload_font_face(face);   /* unmaps the file */
     memset(&extra_faces[i], 0, sizeof extra_faces[i]);
   }
 }

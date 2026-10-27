@@ -362,9 +362,22 @@ void render_toast(uint16_t *framebuffer, const char *text) {
                  COLOR_SELECT_TEXT, 1);
 }
 
+static void render_text_pillbox_moving(uint16_t *framebuffer, int x, int text_y,
+                                       int pill_y, const char *text) {
+  int baseline, cap_h;
+  font_cap_metrics(&baseline, &cap_h);
+  int width = font_measure_text(text, 0) + 14;
+  int height = cap_h + 14;
+  render_rounded_rect(framebuffer, x - 7, pill_y + (baseline - cap_h) - 7,
+                      width, height, 6, COLOR_SELECT_BG);
+  font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, x, text_y, text,
+                 COLOR_SELECT_TEXT, 0);
+}
+
 /* Draw one row at an explicit pixel y (used by the animated list). */
 void render_menu_row(uint16_t *framebuffer, const char *name, int is_dir,
-                     int is_selected, int is_favorited, int y) {
+                     int is_selected, int is_favorited, int y,
+                     int selected_pill_y) {
   if (!framebuffer || !name)
     return;
 
@@ -377,8 +390,7 @@ void render_menu_row(uint16_t *framebuffer, const char *name, int is_dir,
   }
 
   if (is_selected) {
-    render_text_pillbox(framebuffer, text_x, y, name, COLOR_SELECT_BG,
-                        COLOR_SELECT_TEXT, 7, 0);
+    render_text_pillbox_moving(framebuffer, text_x, y, selected_pill_y, name);
   } else {
     uint16_t text_color = is_dir ? COLOR_FOLDER : COLOR_DISABLED;
     font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, text_x, y, name,
@@ -388,7 +400,7 @@ void render_menu_row(uint16_t *framebuffer, const char *name, int is_dir,
 
 void render_menu_item(uint16_t *framebuffer, int index, const char *name,
                       int is_dir, int is_selected, int scroll_offset,
-                      int is_favorited) {
+                      int is_favorited, int selected_pill_y) {
   if (!framebuffer || !name)
     return;
 
@@ -397,12 +409,12 @@ void render_menu_item(uint16_t *framebuffer, int index, const char *name,
     return;
 
   render_menu_row(framebuffer, name, is_dir, is_selected, is_favorited,
-                  START_Y + visible_index * ITEM_HEIGHT);
+                  START_Y + visible_index * ITEM_HEIGHT, selected_pill_y);
 }
 
 void render_menu_item_centered(uint16_t *framebuffer, int index,
                                const char *name, int is_dir, int is_selected,
-                               int scroll_offset) {
+                               int scroll_offset, int selected_pill_y) {
   if (!framebuffer || !name)
     return;
 
@@ -415,8 +427,7 @@ void render_menu_item_centered(uint16_t *framebuffer, int index,
   if (text_x < PADDING)
     text_x = PADDING;
   if (is_selected) {
-    render_text_pillbox(framebuffer, text_x, y, name, COLOR_SELECT_BG,
-                        COLOR_SELECT_TEXT, 7, 0);
+    render_text_pillbox_moving(framebuffer, text_x, y, selected_pill_y, name);
   } else {
     font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, text_x, y, name,
                    is_dir ? COLOR_FOLDER : COLOR_DISABLED, 0);
@@ -598,6 +609,15 @@ int load_game_artwork(const char *game_path, ArtworkKind kind,
   char base[1024];
   if (!game_path || !thumb)
     return 0;
+  /* Port launchers live at ports/ root; data is in a hidden sibling folder. */
+  const char *slash = strrchr(game_path, '/');
+  const char *dot = strrchr(game_path, '.');
+  if (kind == ARTWORK_BOXART && slash && dot && strcasecmp(dot, ".sh") == 0) {
+    int n = snprintf(base, sizeof base, "%.*s.png", (int)(dot - game_path),
+                     game_path);
+    if (n > 0 && (size_t)n < sizeof base && load_thumbnail(base, thumb))
+      return 1;
+  }
   uint64_t game_hash = artwork_hash(game_path);
   uint64_t folder_sig = artwork_folder_signature(game_path);
   if (artwork_miss_contains(game_hash, folder_sig, kind)) {

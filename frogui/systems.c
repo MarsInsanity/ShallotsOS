@@ -22,7 +22,7 @@ static const ShSystem systems[] = {
     {"fds", "Family Computer Disk System", "fds", {C("fceumm")}},
     {"snes", "Super Nintendo Entertainment System", "sfc",
      {C("snes9x2005_plus"), C("snes9x2002"), C("snes9x2005"), C("snes9x2010"),
-      C("hcsnes_fast"), C("hcsnes_plus"), STOCK("sfc")}},
+      C("hcsnes_fast"), C("hcsnes_plus"), STOCK("sfc"), C("snes9x-Z")}},
     {"gb", "Game Boy", "gb", {C("gambatte"), C("gearboy"), C("tgbdual")}},
     {"gbc", "Game Boy Color", "gbc", {C("gambatte"), C("gearboy"), C("tgbdual")}},
     {"gba", "Game Boy Advance", "gba",
@@ -39,6 +39,7 @@ static const ShSystem systems[] = {
     {"segacd", "Sega CD", "segacd", {C("genesis_plus_gx"), C("picodrive")}},
     {"sega32x", "Sega 32X", "32X", {C("picodrive")}},
     {"psx", "Sony Playstation 1", "ps", {PCSX4ALL, C("pcsx_rearmed"), C("hcps1"), C("qpsx")}},
+    {"pokket", "Sony PocketStation", "ps", {C("pokket")}},
     {"psp", "Sony Playstation Portable", "psp", {PPSSPP, C("ppsspp")}},
     {"pcengine", "PC Engine", "pce", {C("mednafen_pce_fast"), C("mednafen_supergrafx")}},
     {"supergrafx", "Supergrafx", "sgfx", {C("mednafen_supergrafx")}},
@@ -74,7 +75,7 @@ static const ShSystem systems[] = {
     {"thomson", "Thomson", "thomson", {C("theodore")}},
     {"x68000", "Sharp X68000", "x68000", {C("x68k")}},
     {"dos", "Dos (x86)", "dos", {PICO286}},
-    {"pico8", "PICO-8", "pico", {C("fake08"), C("retro8")}},
+    {"pico8", "PICO-8", "pico", {C("picante8"), C("fake08"), C("retro8")}},
     {"tic80", "TIC-80", "tic", {C("tic80")}},
     {"lowresnx", "LowRes NX", "lowresnx", {C("lowresnx")}},
     {"arduboy", "Arduboy", "arduboy", {C("ardens"), C("arduous")}},
@@ -88,6 +89,7 @@ static const ShSystem systems[] = {
     {"rickdangerous", "Rick Dangerous", "ports", {C("xrick")}},
     {"outrun", "Out Run", "ports", {C("cannonball")}},
     {"gong", "Gong", "ports", {C("gong")}},
+    {"openbor", "OpenBOR", "ports", {C("openbor")}},
 };
 #define SYSTEMS_N ((int)(sizeof systems / sizeof systems[0]))
 
@@ -103,6 +105,8 @@ static const struct {
     {"nest", "nes", C("nestopia")},
     {"SFC", "snes", NULL},
     {"snes02", "snes", C("snes9x2002")},
+    {"snesz", "snes", C("snes9x-Z")},
+    {"zsnes", "snes", C("snes9x-Z")},
     {"gbgb", "gb", C("gearboy")},
     {"gbb", "gb", C("tgbdual")},
     {"dblcherrygb", "gb", NULL},
@@ -142,6 +146,7 @@ static const struct {
     {"xrick", "rickdangerous", NULL},
     {"fake08", "pico8", NULL},
     {"retro8", "pico8", C("retro8")},
+    {"picante8", "pico8", NULL},
     {"pico286", "dos", NULL},
     {"lowres-nx", "lowresnx", NULL},
     {"m2k", "mame", NULL},
@@ -228,7 +233,8 @@ const char *systems_core_label(const char *core, char *buf, size_t size) {
       {"geolith", "Geolith"}, {"fbneo", "FinalBurn Neo"}, {"mame2000", "MAME 2000"},
       {"mame2003_plus", "MAME 2003-Plus"}, {"mednafen_pce_fast", "Beetle PCE Fast"},
       {"mednafen_supergrafx", "Beetle SuperGrafx"}, {"vice_x64", "VICE x64"},
-      {"frodo", "Frodo"}, {"fake08", "FAKE-08"}, {"retro8", "Retro8"},
+      {"frodo", "Frodo"}, {"fake08", "FAKE-08"}, {"retro8", "Retro8"}, {"picante8", "Picante8"},
+      {"snes9x-Z", "Snes9x-Z"}, {"pokket", "Pokket"}, {"openbor", "OpenBOR"},
       {"ardens", "Ardens"}, {"arduous", "Arduous"}, {"race", "RACE"},
   };
   const char *base = strrchr(core, '/');
