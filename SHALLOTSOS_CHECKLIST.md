@@ -31,12 +31,12 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40459029974
-  (ShallotsOS `9993ce9`, picoarch `63edd03`, PCSX4ALL `3f97ecb`, HCSNES 0.3 `6a71a77`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40459427428
+  (ShallotsOS `cf72033`, picoarch `e6aeda0`, PCSX4ALL `3f97ecb`, HCSNES 0.3 `6a71a77`)
 
 ## User to-do (device tests)
 
-Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40459029974
+Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40459427428
 Before: back up the SD card. For feel tests remove `log.txt` and the
 stockprobe (uninstall_stockprobe.bat); put `log.txt` back only when a test
 asks for logs.
@@ -51,8 +51,13 @@ A. New in this build
    popup. (It now reads the stored volume, not the live level FrogUI mutes.)
 2. Power off (hold power) from the menu and from a game: the stock
    power-off screen (cubepoweroff.bmp) shows again.
-3. HCPS1: known so far: picture wide and short, crackle in heavy Crash
-   Bandicoot scenes (being looked at).
+3. Aspect ratio (picoarch, Bilinear): the selected ratio is now applied on
+   R36SX (it was ignored, so PS1 512x240 looked wide and short).
+   - Crash Bandicoot (ReARMed and HCPS1), Native: normal 4:3 shape.
+   - SNES/NES/Genesis, Native: now 4:3, filling the screen (was ~8:7
+     width). Y > Aspect Ratio > 8:7 gives the narrower picture.
+   - Try 8:7 and 16:9 once each: the shape changes.
+   - HCPS1 crackle in heavy Crash Bandicoot scenes: still open.
 4. Launch and back-to-menu speed (boot-script polls now 0.25 s;
    cubegm/zhijack.sh lines 188 and 297 read `sleep 0.25` after two boots).
 B. SNES feel (no log.txt, no probe)
