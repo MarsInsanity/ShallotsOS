@@ -168,7 +168,7 @@ D. Later
       to find the intermittent input lag that the menu clears
 - [x] gamelist.xml / miyoogamelist.xml (`frogui/gamelist.c`): `<image>` /
       `<thumbnail>` as box art first, `<name>` with Settings > General >
-      Names from gamelist.xml (off by default) in lists and the
+      Names from gamelist.xml (on by default) in lists and the
       GameSwitcher; relative and foreign absolute paths; entities/CDATA;
       parsed once per file change, 6 LRU lists in memory (6,000 games /
       6.7 MB: 14 ms on the host); scraper folders (media, Imgs...) hidden
@@ -379,8 +379,11 @@ Full ShallotsOS install (no TreeFrogUI install first):
       artifacts (no release is published)
 - [x] First package build: run 40479764817 (ShallotsOS f554af6), artifacts
       `ShallotsOS-full`, `ShallotsOS-update`
-- [ ] Device test on the R36SX: fresh card from the R36SX v2.6 backup plus
-      the full package; then an update.zip over it
+- [x] Device test on the R36SX: full install works
+- [ ] Device test: update.zip over a full install
+- [x] ShallotsOS defaults: Animations off, ShallotsOS volume indicator on,
+      stock battery indicator off, names from gamelist.xml on (only when
+      `frogui/settings.txt` has no saved value)
 
 
 ## Next

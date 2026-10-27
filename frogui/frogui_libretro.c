@@ -1009,7 +1009,7 @@ static int settings_power_resume = 1;
 static int settings_quick_resume = 0;      /* boot straight into last game: 0=off, 1=on. Settings key stays "auto_resume" for upgrade compat. */
 static int settings_custom_aspect_ratios = 0; /* expose forced aspect-ratio choices in PicoArch */
 static int settings_autosave_autoload = 1; /* auto-save on pause/quit + auto-load on any game launch (boot or manual pick): 0=off, 1=on */
-static int settings_anim = 1;           /* UI animations: 0=off, 1=on */
+static int settings_anim = 0;           /* UI animations: 0=off (ShallotsOS default), 1=on */
 static int settings_menu_sounds = 0;    /* short navigation tick: 0=off, 1=on */
 enum { STYLE_VERTICAL, STYLE_HORIZONTAL, STYLE_SYSTEM, STYLE_COUNT };
 static int settings_style = STYLE_VERTICAL;
@@ -1017,12 +1017,12 @@ static int settings_center_text = 0;   /* center labels in the vertical system l
 static int settings_friendly_names = 1; /* expand system folder codes in either style */
 static int settings_hide_empty = 1;     /* hide rom folders with no games: 0=off, 1=on */
 static int settings_hide_extensions = 1; /* hide file extensions in the browser: 0=off, 1=on */
-static int settings_gamelist_names = 0; /* game names from gamelist.xml / miyoogamelist.xml */
+static int settings_gamelist_names = 1; /* game names from gamelist.xml / miyoogamelist.xml */
 static int settings_backgrounds = 1;     /* show per-system background images: 0=off (solid theme bg), 1=on */
 static int settings_background_dim = 15; /* darken background artwork: 0=unchanged, 100=black */
 static int settings_file_cache = 1;      /* cache folder listings (mtime-keyed) for fast nav: 0=off, 1=on */
 static int settings_battery_color = 0;   /* "Nel Battery Mode": solid color light by level instead of fill bar */
-static int settings_stock_battery = 1;   /* cubevol's original fb1 indicator */
+static int settings_stock_battery = 0;   /* cubevol's original fb1 indicator */
 static int settings_osd = 1;             /* ShallotsOS volume/brightness popups (cubegm/shallots_osd) */
 /* OnionOS theme folder in /mnt/sdcard/Themes ("off" = TreeFrogUI layouts).
  * Kept by name because the theme list is scanned from the card. */
