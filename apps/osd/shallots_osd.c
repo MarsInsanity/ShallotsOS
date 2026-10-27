@@ -55,7 +55,6 @@
 #define PID_FILE "/tmp/shallots_osd.pid"
 #define MEDIA_MARKER "/tmp/shallotsos_media_osd"   /* the media player draws its own */
 
-#define I2SO_GET_VOLUME 0x4001080Cu   /* cubevol's api_get_snd_volume: 1 byte, 0..100 */
 
 static long long now_ms(void) {
 	struct timespec t;
@@ -395,6 +394,63 @@ static void popup_show(int kind, int value, int msec) {
 	fb1.until = now_ms() + msec;
 }
 
+/* cubevol shows cubegm/cubepoweroff.bmp on fb1 when the console powers off;
+ * that drawing is now out of sight, so show it here. Shutdown sends SIGTERM
+ * to every process. Uncompressed 24/32-bit BMP, centred, black around it. */
+#define POWEROFF_BMP SD "/cubegm/cubepoweroff.bmp"
+
+static void show_poweroff(void) {
+	if (!fb1_open())
+		return;
+	for (int y = 0; y < fb1.h; y++)
+		for (int x = 0; x < fb1.w; x++)
+			((uint32_t *)(fb1.mem + (size_t)y * fb1.line))[x] = 0xFF000000u;
+	FILE *f = fopen(POWEROFF_BMP, "rb");
+	unsigned char h[54];
+	if (f && fread(h, 1, sizeof h, f) == sizeof h && h[0] == 'B' && h[1] == 'M') {
+		uint32_t off = h[10] | h[11] << 8 | h[12] << 16 | (uint32_t)h[13] << 24;
+		int32_t w = (int32_t)(h[18] | h[19] << 8 | h[20] << 16 | (uint32_t)h[21] << 24);
+		int32_t ht = (int32_t)(h[22] | h[23] << 8 | h[24] << 16 | (uint32_t)h[25] << 24);
+		int bpp = h[28] | h[29] << 8;
+		uint32_t comp = h[30] | h[31] << 8 | h[32] << 16 | (uint32_t)h[33] << 24;
+		int top_down = ht < 0;
+		if (top_down)
+			ht = -ht;
+		if ((bpp == 24 || bpp == 32) && (comp == 0 || comp == 3) && w > 0 && ht > 0 &&
+		    w <= 4096 && ht <= 4096) {
+			int bypp = bpp / 8;
+			size_t row_len = ((size_t)w * bypp + 3) & ~(size_t)3;
+			unsigned char *row = malloc(row_len);
+			int ox = (fb1.w - w) / 2, oy = (fb1.h - ht) / 2;
+			for (int r = 0; row && r < ht; r++) {
+				if (fseek(f, (long)(off + (size_t)r * row_len), SEEK_SET) || fread(row, 1, row_len, f) != row_len)
+					break;
+				int y = oy + (top_down ? r : ht - 1 - r);
+				if (y < 0 || y >= fb1.h)
+					continue;
+				uint32_t *dst = (uint32_t *)(fb1.mem + (size_t)y * fb1.line);
+				for (int x = 0; x < w; x++) {
+					int dx = ox + x;
+					if (dx < 0 || dx >= fb1.w)
+						continue;
+					unsigned char *p = row + (size_t)x * bypp;
+					dst[dx] = 0xFF000000u | (uint32_t)p[2] << 16 | (uint32_t)p[1] << 8 | p[0];
+				}
+			}
+			free(row);
+		}
+	}
+	if (f)
+		fclose(f);
+	ioctl(fb1.fd, FBIOBLANK, FB_BLANK_UNBLANK);
+}
+
+static volatile sig_atomic_t g_term;
+static void on_term(int sig) {
+	(void)sig;
+	g_term = 1;
+}
+
 static void popup_tick(void) {
 	if (!fb1.shown || now_ms() < fb1.until)
 		return;
@@ -406,28 +462,37 @@ static void popup_tick(void) {
 
 /* ---- Values --------------------------------------------------------------- */
 
-/* Opened per read, like cubevol: a held audio fd could get in the way of
- * the frontends' own audio setup. */
+/* The values the user set, as cubevol stores them (persistentmem, the same
+ * slots FrogUI and the media player read). Not the live I2SO volume: FrogUI
+ * mutes that while its menu has no sound, which read as "volume 0". */
+struct pmem_req {
+	unsigned short flag, id, len, pad;
+	void *buf;
+};
+#define PMEM_GET 0x400C2602u
+
 static int read_volume(void) {
-	int fd = open("/dev/sndC0i2so", O_WRONLY);
+	int fd = open("/dev/persistentmem", O_RDWR);
 	if (fd < 0)
 		return -1;
-	unsigned char v = 0;
-	int ok = ioctl(fd, I2SO_GET_VOLUME, &v) == 0;
+	unsigned char buf[260] = {0};
+	struct pmem_req req = {3, 0, 260, 0, buf};
+	int ok = ioctl(fd, PMEM_GET, &req) == 0;
 	close(fd);
-	return ok && v <= 100 ? v : -1;
+	return ok && buf[0] <= 100 ? buf[0] : -1;
 }
 
 /* Raw backlight (23..255) back to cubevol's 0..100 level. */
 static int read_brightness(void) {
-	int fd = open("/dev/backlight", O_RDWR);
+	int fd = open("/dev/persistentmem", O_RDWR);
 	if (fd < 0)
 		return -1;
-	int raw = -1;
-	if (read(fd, &raw, sizeof raw) != (ssize_t)sizeof raw)
-		raw = -1;
+	int value = 0;
+	struct pmem_req req = {1, 30, 1, 0, &value};
+	int ok = ioctl(fd, PMEM_GET, &req) == 0;
 	close(fd);
-	if (raw < 23)
+	int raw = value & 0xFF;
+	if (!ok || raw < 23)
 		return -1;
 	if (raw < 66)
 		return raw - 23;
@@ -696,6 +761,10 @@ int main(void) {
 	if (chdir("/") != 0)
 		return 1;
 	(void)!nice(5);   /* popups can wait a little; the game cannot */
+	struct sigaction sa;
+	memset(&sa, 0, sizeof sa);
+	sa.sa_handler = on_term;   /* no SA_RESTART: wakes the poll sleep */
+	sigaction(SIGTERM, &sa, NULL);
 	load_colours();
 	logf_("started");
 
@@ -706,6 +775,19 @@ int main(void) {
 	time_t skin_mtime = 0;
 
 	for (;;) {
+		if (g_term) {
+			/* Powering off: only if cubevol's own screen can't be seen.
+			 * picoarch clears fb1 as it exits, maybe just after this, so
+			 * keep the screen up until the system stops this process. */
+			unlink(PID_FILE);
+			if (cv_state != 1)
+				return 0;
+			for (int i = 0; i < 100; i++) {
+				show_poweroff();
+				usleep(200000);
+			}
+			return 0;
+		}
 		long long t = now_ms();
 		if (t - cv_check >= 1000) {
 			cv_check = t;
