@@ -854,6 +854,137 @@ static int mirror_tick(void) {
 	return active;
 }
 
+/* ---- Driver check (diagnostic) ------------------------------------------ */
+
+/* With log.txt on the card, once per boot: which display/audio driver this
+ * console has and which one runs, as checksums only (logs/driver_check.txt).
+ * This tells whether a console can supply its own driver for a ShallotsOS
+ * install. No file content is copied. */
+typedef struct { uint32_t h[4]; uint64_t n; unsigned char b[64]; size_t bl; } Md5;
+static const uint32_t md5_k[64] = {
+	0xd76aa478,0xe8c7b756,0x242070db,0xc1bdceee,0xf57c0faf,0x4787c62a,0xa8304613,0xfd469501,
+	0x698098d8,0x8b44f7af,0xffff5bb1,0x895cd7be,0x6b901122,0xfd987193,0xa679438e,0x49b40821,
+	0xf61e2562,0xc040b340,0x265e5a51,0xe9b6c7aa,0xd62f105d,0x02441453,0xd8a1e681,0xe7d3fbc8,
+	0x21e1cde6,0xc33707d6,0xf4d50d87,0x455a14ed,0xa9e3e905,0xfcefa3f8,0x676f02d9,0x8d2a4c8a,
+	0xfffa3942,0x8771f681,0x6d9d6122,0xfde5380c,0xa4beea44,0x4bdecfa9,0xf6bb4b60,0xbebfbc70,
+	0x289b7ec6,0xeaa127fa,0xd4ef3085,0x04881d05,0xd9d4d039,0xe6db99e5,0x1fa27cf8,0xc4ac5665,
+	0xf4292244,0x432aff97,0xab9423a7,0xfc93a039,0x655b59c3,0x8f0ccc92,0xffeff47d,0x85845dd1,
+	0x6fa87e4f,0xfe2ce6e0,0xa3014314,0x4e0811a1,0xf7537e82,0xbd3af235,0x2ad7d2bb,0xeb86d391};
+static const unsigned char md5_r[64] = {
+	7,12,17,22,7,12,17,22,7,12,17,22,7,12,17,22,5,9,14,20,5,9,14,20,5,9,14,20,5,9,14,20,
+	4,11,16,23,4,11,16,23,4,11,16,23,4,11,16,23,6,10,15,21,6,10,15,21,6,10,15,21,6,10,15,21};
+static void md5_block(Md5 *m, const unsigned char *p) {
+	uint32_t w[16], a = m->h[0], b = m->h[1], c = m->h[2], d = m->h[3];
+	for (int i = 0; i < 16; i++)
+		w[i] = p[i*4] | p[i*4+1] << 8 | p[i*4+2] << 16 | (uint32_t)p[i*4+3] << 24;
+	for (int i = 0; i < 64; i++) {
+		uint32_t f; int g;
+		if (i < 16) { f = (b & c) | (~b & d); g = i; }
+		else if (i < 32) { f = (d & b) | (~d & c); g = (5*i + 1) & 15; }
+		else if (i < 48) { f = b ^ c ^ d; g = (3*i + 5) & 15; }
+		else { f = c ^ (b | ~d); g = (7*i) & 15; }
+		uint32_t t = d; d = c; c = b;
+		uint32_t x = a + f + md5_k[i] + w[g];
+		b += (x << md5_r[i]) | (x >> (32 - md5_r[i]));
+		a = t;
+	}
+	m->h[0] += a; m->h[1] += b; m->h[2] += c; m->h[3] += d;
+}
+static void md5_add(Md5 *m, const unsigned char *p, size_t n) {
+	m->n += n;
+	while (n) {
+		size_t k = 64 - m->bl < n ? 64 - m->bl : n;
+		memcpy(m->b + m->bl, p, k);
+		m->bl += k; p += k; n -= k;
+		if (m->bl == 64) { md5_block(m, m->b); m->bl = 0; }
+	}
+}
+static void md5_hex(Md5 *m, char out[33]) {
+	uint64_t bits = m->n * 8;
+	unsigned char pad = 0x80, z = 0, len[8];
+	md5_add(m, &pad, 1);
+	while (m->bl != 56) md5_add(m, &z, 1);
+	for (int i = 0; i < 8; i++) len[i] = (unsigned char)(bits >> (8*i));
+	md5_add(m, len, 8);
+	for (int i = 0; i < 16; i++)
+		sprintf(out + i*2, "%02x", (m->h[i/4] >> (8*(i%4))) & 255);
+}
+/* 0 when the file can't be read. */
+static long file_md5(const char *path, char out[33], unsigned char magic[4]) {
+	FILE *f = fopen(path, "rb");
+	if (!f) return 0;
+	Md5 m = {{0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476}, 0, {0}, 0};
+	unsigned char buf[4096];
+	size_t r;
+	long total = 0;
+	memset(magic, 0, 4);
+	while ((r = fread(buf, 1, sizeof buf, f)) > 0) {
+		if (!total) memcpy(magic, buf, r < 4 ? r : 4);
+		md5_add(&m, buf, r);
+		total += (long)r;
+	}
+	fclose(f);
+	md5_hex(&m, out);
+	return total;
+}
+static const char *known_driver(const char *md5) {
+	static const char *k[][2] = {
+		{"f19ff1cebbb57a9a657084e1ce27b02c", "TreeFrogUI driver_r36sx.so (= SF3500 card driver)"},
+		{"b8655fbf58c4e61fc705b2ff77c0d8bd", "TreeFrogUI driver_r36sx27.so (stubbed)"},
+		{"ee629cce4710d501a7feb682e2850def", "TreeFrogUI driver_sf3500.so (= SF3500 decrypted)"},
+		{"83ceee0dfc442eb684147eebd33024c4", "TreeFrogUI driver_sf3000.so (= SF3000 card driver)"},
+		{"19377667bf2af1c55845f85290e1a85a", "TreeFrogUI driver_gb350.so"},
+		{"ee32501eb84e2bbdfbe559fa7c60af29", "R36HD card driver (encrypted)"},
+	};
+	for (size_t i = 0; i < sizeof k / sizeof k[0]; i++)
+		if (!strcmp(md5, k[i][0])) return k[i][1];
+	return "unknown";
+}
+static void check_one(FILE *o, const char *path) {
+	char md5[33];
+	unsigned char mg[4];
+	long n = file_md5(path, md5, mg);
+	if (!n) { fprintf(o, "%s: missing\n", path); return; }
+	fprintf(o, "%s: %ld bytes, %s, md5 %s (%s)\n", path, n,
+	        memcmp(mg, "\177ELF", 4) ? "encrypted/not ELF" : "ELF", md5, known_driver(md5));
+}
+static void driver_check(void) {
+	if (access(LOG_ENABLE, F_OK) != 0 || access("/tmp/shallots_driver_check", F_OK) == 0)
+		return;
+	close(open("/tmp/shallots_driver_check", O_CREAT | O_WRONLY, 0644));
+	mkdir(SD "/logs", 0777);
+	FILE *o = fopen(SD "/logs/driver_check.txt", "w");
+	if (!o) return;
+	char v[160] = "";
+	fprintf(o, "ShallotsOS driver check (checksums only)\n");
+	if (file_value("/tmp/tfdevice.env", "TF_DEVICE", v, sizeof v)) fprintf(o, "TF_DEVICE=%s\n", v);
+	if (file_value("/tmp/tfdevice.env", "TF_DRIVER", v, sizeof v)) fprintf(o, "TF_DRIVER=%s (in use)\n", v);
+	fprintf(o, "driver27.flag: %s\n", access(SD "/cubegm/driver27.flag", F_OK) == 0 ? "present" : "absent");
+	FILE *pv = fopen("/proc/version", "r");
+	if (pv) {
+		if (fgets(v, sizeof v, pv)) fprintf(o, "kernel: %s", v);
+		fclose(pv);
+	}
+	check_one(o, SD "/cubegm/driver.so");
+	check_one(o, "/tmp/cubegm/driver.so");
+	DIR *d = opendir(SD "/cubegm");
+	struct dirent *e;
+	while (d && (e = readdir(d))) {
+		if (strncmp(e->d_name, "driver_", 7) || !strstr(e->d_name, ".so")) continue;
+		char p[300];
+		snprintf(p, sizeof p, SD "/cubegm/%s", e->d_name);
+		check_one(o, p);
+	}
+	if (d) closedir(d);
+	fprintf(o, "/tmp/cubegm:");
+	d = opendir("/tmp/cubegm");
+	while (d && (e = readdir(d)))
+		if (e->d_name[0] != '.') fprintf(o, " %s", e->d_name);
+	if (d) closedir(d);
+	fprintf(o, "\n");
+	fclose(o);
+}
+
 /* ---- Main loop ------------------------------------------------------------ */
 
 static int already_running(void) {
@@ -868,6 +999,7 @@ static int already_running(void) {
 }
 
 int main(void) {
+	driver_check();
 	if (already_running() || !osd_enabled())
 		return 0;
 	FILE *pf = fopen(PID_FILE, "w");

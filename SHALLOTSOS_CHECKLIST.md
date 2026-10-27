@@ -53,6 +53,10 @@ mGBA unplayable; Crash: HCPS1 still crackles and feels sluggish, PCSX4ALL
 (default) very playable but not full speed.
 
 A. New in this build
+0. Driver check (for a full ShallotsOS install without TreeFrogUI's
+   drivers): with log.txt on the card, boot once into the menu, then send
+   logs/driver_check.txt. It holds checksums and sizes only, no file
+   content. (R36SX v2.7 hardware running the v2.6 firmware.)
 1. Power off (hold power) from the menu and from a game: the stock power-off
    screen shows (cubevol's own picture is now copied to the screen). Also
    plug in USB once: its screen shows.
