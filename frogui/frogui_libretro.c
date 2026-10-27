@@ -3185,25 +3185,31 @@ static void request_game_launch(const char *core_path, const char *rom_path) {
     if (environ_cb) environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
 }
 
-/* The boot script (cubegm/zhijack.sh, written at install) polls for the
- * menu's launch request with "sleep 0.05" while the picoarch it started is
- * alive. picoarch execs between this menu and games in one process, so that
- * poll runs through every game: 20 new processes a second, 10-15% of the
- * single CPU core. Poll once a second instead (the request file is only a
- * fallback). Same length, overwritten in place: safe while the script runs;
- * it takes effect at the next boot. */
-static void slow_launcher_poll(void) {
-    static const char from[] = "sleep 0.05", to[] = "sleep 1.00";
-    char buf[16384];
+/* The boot script (cubegm/zhijack.sh, written at install) polls with
+ * "sleep 0.05": for FrogUI's launch request while the menu runs, and in
+ * TreeFrogUI's newer script also for the game's next-launch request while a
+ * game runs. Each poll starts a process: 20 a second, 10-15% of the single
+ * CPU core during games. Poll every 0.25 s instead (~4 a second, at most a
+ * quarter second added to a launch). Earlier builds wrote "sleep 1.00",
+ * which added up to a second per launch; that is corrected too. Same length,
+ * overwritten in place: safe while the script runs. The script runs from a
+ * RAM copy made at boot, so this applies from the next boot. */
+static void tune_launcher_poll(void) {
+    static const char *const from[] = { "sleep 0.05", "sleep 1.00" };
+    static const char to[] = "sleep 0.25";
+    char buf[65536];
     FILE *f = fopen(SDCARD_BASE "/cubegm/zhijack.sh", "r+");
     if (!f) return;
     size_t n = fread(buf, 1, sizeof buf - 1, f);
     buf[n] = '\0';
-    char *hit = strstr(buf, from);
-    if (hit && !fseek(f, (long)(hit - buf), SEEK_SET)) {
-        fwrite(to, 1, sizeof to - 1, f);
-        dbg("zhijack.sh: launcher poll slowed to 1 s (next boot)");
+    int changed = 0;
+    for (size_t k = 0; k < sizeof from / sizeof from[0]; k++) {
+        for (char *hit = strstr(buf, from[k]); hit; hit = strstr(hit + 1, from[k])) {
+            if (fseek(f, (long)(hit - buf), SEEK_SET) == 0 && fwrite(to, 1, sizeof to - 1, f) == sizeof to - 1)
+                changed++;
+        }
     }
+    if (changed) dbg("zhijack.sh: launcher polls set to 0.25 s (next boot)");
     fclose(f);
 }
 
@@ -5409,7 +5415,7 @@ void retro_set_input_state(retro_input_state_t cb)              { input_state_cb
 
 void retro_init(void) {
     dbg("retro_init start");
-    slow_launcher_poll();
+    tune_launcher_poll();
     /* Runtime panel geometry from picoarch (device-detected). Must run before
      * font_init / any layout use. Falls back to render.c defaults if env unset. */
     {
