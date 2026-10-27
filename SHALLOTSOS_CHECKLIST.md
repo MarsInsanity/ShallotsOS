@@ -400,6 +400,17 @@ USB debug shell (live debugging over USB-C):
 - [ ] Device test: modules load, COM port appears, PuTTY shell works while a
       game runs; MTP still works after it
 
+GBA: gpSP (latest):
+
+- [x] TreeFrogUI's `gpsp_libretro.so` is upstream libretro/gpsp `2db57b1`
+      (4 June 2026), 23 commits behind (I/O read semantics and VRAM-execution
+      fixes with MIPS dynarec changes, EEPROM detection, sound mixing)
+- [x] The overlay builds current upstream gpSP (`gpsp_ref` input, default
+      master) as `gpsp_latest_libretro.so`, "gpSP (latest)" in Y > Emulator
+      for GBA, next to the pinned gpSP; saves are shared (same ROM folder)
+- [ ] Device test: speed vs gpSP; Hamtaro: Ham-Ham Heartbreak and GTA
+      Advance (symptoms on the old gpSP still to be described)
+
 
 ## Next
 

@@ -19,6 +19,8 @@ on:
       - 'apps/usb_debug/**'
       - 'apps/usb_mode/**'
       - 'scripts/build_usb_serial_modules.sh'
+      - 'scripts/build_gpsp_latest.sh'
+      - 'patches/gpsp-upstream-sf3000.patch'
       - 'hijack/**'
       - 'scripts/shallots_package.sh'
       - 'docs/INSTALL-ShallotsOS.md'
@@ -40,6 +42,9 @@ on:
       ebook_ref:
         description: ShallotsOS_ebook_reader branch, tag or commit to build
         default: claude/shallotsos-reader
+      gpsp_ref:
+        description: libretro/gpsp branch, tag or commit for "gpSP (latest)"
+        default: master
       version:
         description: Version written to cubegm/version.txt (default dev-<commit>)
         default: ''
@@ -54,6 +59,7 @@ env:
   HCPS1_REF: ${{ inputs.hcps1_ref || 'main' }}
   PCSX4ALL_REF: ${{ inputs.pcsx4all_ref || 'claude/shallotsos-menu-integration' }}
   EBOOK_REF: ${{ inputs.ebook_ref || 'claude/shallotsos-reader' }}
+  GPSP_REF: ${{ inputs.gpsp_ref || 'master' }}
   MUPDF_VERSION: 1.24.10
   # The TreeFrogUI full release the ShallotsOS packages are built on.
   TREEFROG_BASE_URL: https://github.com/tzubertowski/TreeFrogUI/releases/download/v1.8.0_q/TreeFrogUI_v1.8.0_q.zip
@@ -170,6 +176,23 @@ jobs:
           file hcps1-src/dist/sf3000/hcps1_libretro.so
           echo "HCPS1_SHA=$(git -C hcps1-src rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
+      # "gpSP (latest)": current upstream libretro/gpsp as its own GBA choice,
+      # next to TreeFrogUI's pinned gpSP. Experimental: a failure leaves it out.
+      - name: Check out gpSP (upstream)
+        uses: actions/checkout@v4
+        with:
+          repository: libretro/gpsp
+          ref: ${{ env.GPSP_REF }}
+          path: gpsp-src
+
+      - name: Build gpSP (latest)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          sdk="$HOME/sf3000-work/sf3000toolchain/mipsel-buildroot-linux-gnu_sdk-buildroot"
+          bash scripts/build_gpsp_latest.sh gpsp-src "$sdk" "$RUNNER_TEMP/gpsp_latest_libretro.so"
+          echo "GPSP_SHA=$(git -C gpsp-src rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
       - name: Build PCSX4ALL
         run: |
           set -euo pipefail
@@ -265,6 +288,9 @@ jobs:
           cp "$HOME/sf3000-work/picoarch/picoarch" "$HOME/sf3000-work/picoarch/picoarch_hi" "$out/cubegm/"
           cp "$RUNNER_TEMP/video_player" "$out/cubegm/"
           cp "$RUNNER_TEMP/shallots_osd" "$out/cubegm/"
+          if [ -n "${GPSP_SHA:-}" ] && [ -f "$RUNNER_TEMP/gpsp_latest_libretro.so" ]; then
+            cp "$RUNNER_TEMP/gpsp_latest_libretro.so" "$out/cubegm/cores/"
+          fi
           # USB debug shell, and USB mode that hands the port over from it.
           install -m 0755 apps/usb_debug/usb_debug.sh apps/usb_mode/usb_mode.sh "$out/cubegm/"
           if [ -f "$RUNNER_TEMP/usbserial/usb_f_acm.ko" ]; then
@@ -287,7 +313,7 @@ jobs:
           cp -a assets/system-icons/. "$out/frogui/system-icons/"
           cp -a frogui/lang/builtin "$out/frogui/lang/"
           cat > "$out/SHALLOTSOS-README.txt" <<EOF
-          ShallotsOS overlay (ShallotsOS ${GITHUB_SHA::7}, picoarch ${PICOARCH_SHA}, HCSNES ${HCSNES_SHA}, HCPS1 ${HCPS1_SHA:-not built}, PCSX4ALL ${PCSX4ALL_SHA}, Books ${EBOOK_SHA:-not built})
+          ShallotsOS overlay (ShallotsOS ${GITHUB_SHA::7}, picoarch ${PICOARCH_SHA}, HCSNES ${HCSNES_SHA}, HCPS1 ${HCPS1_SHA:-not built}, PCSX4ALL ${PCSX4ALL_SHA}, Books ${EBOOK_SHA:-not built}, gpSP latest ${GPSP_SHA:-not built})
 
           Copy everything in this folder to the root of an SD card that
           already runs TreeFrogUI, replacing existing files when asked:
@@ -296,6 +322,8 @@ jobs:
             cubegm/cores/hcsnes_*_libretro.so  HCSNES Fast / Plus, experimental
                                              SNES emulators (Y on a game > Emulator)
             cubegm/cores/hcps1_libretro.so   HCPS1, experimental PS1 emulator
+            cubegm/cores/gpsp_latest_libretro.so  gpSP (latest): current upstream
+                                             gpSP, a separate GBA choice
             cubegm/picoarch, picoarch_hi     emulator frontend and in-game menu
             cubegm/video_player              music and video player
             cubegm/shallots_osd              ShallotsOS volume/brightness popups
