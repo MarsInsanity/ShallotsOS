@@ -31,12 +31,12 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40467252299
-  (ShallotsOS `0441bd5`, picoarch `7a907a9`, Books reader `53ece93`, PCSX4ALL `3f97ecb`, HCSNES 0.4 `84ce531`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40468707881
+  (ShallotsOS `2026488`, picoarch `4abb023`, Books reader `53ece93`, PCSX4ALL `75967a2`, HCSNES 0.4 `84ce531`)
 
 ## User to-do (device tests)
 
-Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40467252299
+Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40468707881
 Before: back up the SD card. For feel tests remove `log.txt` and the
 stockprobe (uninstall_stockprobe.bat); put `log.txt` back only when a test
 asks for logs.
@@ -79,8 +79,8 @@ B. SNES feel (no log.txt, no probe)
 C. Not yet confirmed
 7. Games tab: FN (GameSwitcher) in a game list, B, then Games: the systems
    list again, on that system. SELECT in the Games list does nothing.
-8. PCSX4ALL FPS counter does not look like picoarch's: photo of both
-    needed (the code already copies picoarch's card).
+8. FPS counter (PCSX4ALL, and ReARMed/HCPS1 in picoarch): Crash Bandicoot
+    with Show FPS on: "FPS: 30.0 (60)" no longer squeezed sideways.
 9. GB/GBC and PS1 saves and states after the folder move; Activity Tracker
     play time.
 10. Videos, Images apps; low-battery save at 5% when convenient.
