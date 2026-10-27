@@ -1,0 +1,6 @@
+# frogui/ is ShallotsOS's copy of FrogUI (TreeFrogUI pins it as a submodule).
+# It contains FrogUI up to this commit; to update, apply FrogUI's changes from
+# here to TreeFrogUI's new pin with: git diff <this> <new> | git apply --3way
+# --directory=frogui --exclude=frogui/frogui_libretro.so, then update this.
+UPSTREAM_URL=https://github.com/tzubertowski/FrogUI
+UPSTREAM_COMMIT=e3a5b94af277f6f85a4b881cdf693c23cb6f4dd2
