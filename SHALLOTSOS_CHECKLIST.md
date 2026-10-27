@@ -31,12 +31,12 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40440812453
-  (ShallotsOS `e3fc1a3`, picoarch `2485cde`, PCSX4ALL `3f97ecb`, HCSNES 0.3 `6a71a77`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40442802636
+  (ShallotsOS `1c10798`, picoarch `2485cde`, PCSX4ALL `3f97ecb`, HCSNES 0.3 `6a71a77`)
 
 ## User to-do (device tests)
 
-Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40440812453
+Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40442802636
 Before: back up the SD card; keep an empty `log.txt` at the card root.
 Confirmed earlier: folder move prompt and move, NES save states, Resume,
 GameSwitcher, Recents, Favourites, Y-menu search/emulator/favourite, box art.
@@ -45,12 +45,12 @@ A. New in this build
 00. Options > About (picoarch and PCSX4ALL): the running emulator's full
     name, version and core file, the game, video and audio (PS1: CPU
     mode, disc ID, BIOS). Long values end in "...".
-0a. Boot-script poll fix (build below): boot ShallotsOS once, power off,
-    boot again (the fix applies from the second boot). Then Yoshi's Island
-    on "Stock Snes9x 2005" and on HCSNES Fast (Timed, max 2): crackle and
-    smoothness vs before and vs the stock OS. Send logs/stockprobe.log
-    (probe v3 still installed) and picoarch.log. Expected in the probe's
-    "system" line: new processes/s ~1 (was ~24), sys ~6-8% (was ~19%).
+0a. Boot-script poll fix (build below): install, boot once, power off,
+    boot again (applies from the second boot). cubegm/zhijack.sh lines 188
+    and 297 should then read `sleep 0.25`. First play WITHOUT the probe
+    (uninstall_stockprobe.bat): crackle, smoothness, game/menu opening speed
+    vs before and vs the stock OS. Then optionally with the probe for one
+    minute: its "system" line should show ~4 new processes/s (was ~24).
 0. Why the stock firmware is smoother: play the Yoshi's Island intro and
    the first level for ~1 minute on "Stock Snes9x 2005", then the same on
    HCSNES Fast (Options > Emulator options: Frameskip Fixed, max 1). Send
