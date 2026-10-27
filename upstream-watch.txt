@@ -1,0 +1,35 @@
+# Upstream projects the monthly "Upstream watch" workflow reports on.
+# Columns: name  repository  tier  pinned-commit
+#   tier: monthly (active, heavily used) or quarterly (steady, slower)
+#   pinned-commit: the upstream commit ShallotsOS ships, when known ("-" if
+#   not); the report then lists everything since it, not only the last month.
+# The report never builds or ships anything; it says what is worth testing.
+
+TreeFrogUI             tzubertowski/TreeFrogUI          monthly    -
+TreeFrogUI picoarch    tzubertowski/TreeFrogUI_picoarch monthly    -
+TreeFrogUI ports       tzubertowski/TreeFrogUI_PortsCollection monthly -
+gpSP                   libretro/gpsp                    monthly    2db57b1
+PCSX-ReARMed           libretro/pcsx_rearmed            monthly    -
+PicoDrive              libretro/picodrive               monthly    -
+Genesis Plus GX        libretro/Genesis-Plus-GX         monthly    -
+Geolith                libretro/geolith-libretro        monthly    -
+snes9x-Z               andrezaiats/snes9x-Z             monthly    -
+Picante8               MustardOS/picante8               monthly    -
+Fake-08                jtothebell/fake-08               monthly    -
+Ardens                 tiberiusbrown/Ardens             monthly    -
+DSperate               beebono/DSperate                 monthly    -
+
+Gambatte               libretro/gambatte-libretro       quarterly  -
+FCEUmm                 libretro/libretro-fceumm         quarterly  -
+mGBA                   libretro/mgba                    quarterly  -
+VICE                   libretro/vice-libretro           quarterly  -
+Gearboy                drhelius/Gearboy                 quarterly  -
+Gearsystem             drhelius/Gearsystem              quarterly  -
+Gearcoleco             drhelius/Gearcoleco              quarterly  -
+Beetle PCE Fast        libretro/beetle-pce-fast-libretro quarterly -
+Beetle WonderSwan      libretro/beetle-wswan-libretro   quarterly  -
+Beetle VB              libretro/beetle-vb-libretro      quarterly  -
+Beetle PC-FX           libretro/beetle-pcfx-libretro    quarterly  -
+TIC-80                 nesbox/TIC-80                    quarterly  -
+Nestopia               libretro/nestopia                quarterly  -
+Fuse                   libretro/fuse-libretro           quarterly  -

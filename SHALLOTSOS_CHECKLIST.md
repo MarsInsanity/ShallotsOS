@@ -411,6 +411,17 @@ GBA: gpSP (latest):
 - [ ] Device test: speed vs gpSP; Hamtaro: Ham-Ham Heartbreak and GTA
       Advance (symptoms on the old gpSP still to be described)
 
+Upstream watch:
+
+- [x] `.github/workflows/upstream-watch.yml` + `scripts/upstream_watch.py`:
+      monthly report of new commits in `upstream-watch.txt` projects
+      (monthly tier: TreeFrogUI, gpSP, PCSX-ReARMed, PicoDrive, GPGX, Geolith,
+      snes9x-Z, PICO-8 cores, Ardens, DSperate; quarterly tier in Jan/Apr/Jul/
+      Oct), flagging MIPS-code changes and fix/speed titles; run summary,
+      artifact, and a comment on an "Upstream watch" issue if Issues are on
+- [ ] The monthly schedule starts once the workflow is on `main` (GitHub runs
+      schedules from the default branch); until then it runs on pushes to it
+
 
 ## Next
 

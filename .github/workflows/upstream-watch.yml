@@ -1,0 +1,72 @@
+name: Upstream watch
+
+# Once a month, lists new commits in the emulators and projects ShallotsOS
+# builds on (upstream-watch.txt), flagging MIPS-code changes and fix/speed
+# titles, so it is clear which updates are worth testing. It builds and ships
+# nothing. The report is the run's summary and an artifact, and (when the
+# repository has Issues on) a comment on the "Upstream watch" issue.
+# GitHub runs schedules from the default branch only.
+on:
+  schedule:
+    - cron: '17 14 1 * *'
+  workflow_dispatch:
+    inputs:
+      all_tiers:
+        description: Include the quarterly projects whatever the month
+        type: boolean
+        default: false
+  push:
+    branches:
+      - 'claude/**'
+    paths:
+      - 'upstream-watch.txt'
+      - 'scripts/upstream_watch.py'
+      - '.github/workflows/upstream-watch.yml'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read upstream histories
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          args=()
+          if [ "${{ inputs.all_tiers }}" = true ] || [ "${{ github.event_name }}" = push ]; then
+            args+=(--all-tiers)
+          fi
+          python3 scripts/upstream_watch.py "${args[@]}" --out report.md
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the report
+        uses: actions/upload-artifact@v4
+        with:
+          name: upstream-watch
+          path: report.md
+
+      # Monthly runs only; a fork without Issues just skips this.
+      - name: Comment on the "Upstream watch" issue
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/${{ github.repository }}"
+          auth=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json")
+          num=$(curl -fsS "${auth[@]}" "$api/issues?state=open&per_page=100" |
+            python3 -c "import json,sys; print(next((i['number'] for i in json.load(sys.stdin) if i['title'] == 'Upstream watch' and 'pull_request' not in i), ''))")
+          if [ -z "$num" ]; then
+            num=$(python3 -c "import json; print(json.dumps({'title': 'Upstream watch', 'body': 'Monthly reports from the Upstream watch workflow (upstream-watch.txt).'}))" |
+              curl -fsS "${auth[@]}" -X POST "$api/issues" -d @- | python3 -c "import json,sys; print(json.load(sys.stdin)['number'])")
+          fi
+          python3 -c "import json,sys; print(json.dumps({'body': open('report.md').read()[:65000]}))" |
+            curl -fsS "${auth[@]}" -X POST "$api/issues/$num/comments" -d @- > /dev/null
+          echo "Report posted to issue #$num"
