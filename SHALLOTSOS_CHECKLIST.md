@@ -31,12 +31,12 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40474027568
-  (ShallotsOS `3dc3215`, picoarch `4abb023`, Books reader `7e6c60e`, PCSX4ALL `75967a2`, HCSNES 0.4 `84ce531`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40475842078
+  (ShallotsOS `8740e53`, picoarch `9ed8e9a`, Books reader `7e6c60e`, PCSX4ALL `75967a2`, HCSNES 0.4 `84ce531`)
 
 ## User to-do (device tests)
 
-Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40474027568
+Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40475842078
 Before: back up the SD card. For feel tests remove `log.txt` and the
 stockprobe (uninstall_stockprobe.bat); put `log.txt` back only when a test
 asks for logs.
@@ -52,7 +52,20 @@ better, crackle only at scene changes (intro, cutscene end, map); Neo Geo
 mGBA unplayable; Crash: HCPS1 still crackles and feels sluggish, PCSX4ALL
 (default) very playable but not full speed.
 
-A. New in this build
+A. New in this build: merged with TreeFrogUI v1.8.0_q (FrogUI e3a5b94,
+   picoarch f77a0d5). Your card's TreeFrogUI base files stay as they are;
+   the new launcher script (zhijack.sh) only comes with a full install.
+M1. Menu basics after the merge: OnionOS home, Games/Favorites/Recents/Apps/
+    Settings, theme switch, search (X), Y menu, launch a game and back,
+    GameSwitcher. Anything that looks different from the last build?
+M2. New from TreeFrogUI: screenshot shortcut in the menu; selection pill
+    animation in picoarch's menus (Y in a game > Options: the highlight
+    slides; long option names keep scrolling slowly by themselves).
+M3. New systems in the Y menu / Games: Snes9x-Z as a SNES emulator,
+    Picante8 for PICO-8 (now default), PocketStation (pokket), OpenBOR;
+    the cores themselves come from a TreeFrogUI update, not this overlay.
+M4. Ports: a roms/ports folder (TreeFrogUI Ports Collection) browses as
+    one Ports system; a port with files missing shows what is missing.
 0. Driver check: done. The R36SX card's own driver.so is TreeFrogUI's
    driver_r36sx.so byte for byte, so an R36SX on the v2.6 firmware can
    supply its own driver for a full ShallotsOS install.
