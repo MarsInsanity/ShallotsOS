@@ -220,9 +220,14 @@ static uint32_t logical_keys(volatile uint32_t *raw) {
     return out;
 }
 
+/* shallots_osd (ShallotsOS's volume popup) stays quiet while this file
+ * exists: the player draws its own slider in the HUD. */
+#define OSD_QUIET_MARKER "/tmp/shallotsos_media_osd"
+
 static int overlay_open(Overlay *o) {
     memset(o, 0, sizeof(*o));
     o->fd = -1;
+    { FILE *m = fopen(OSD_QUIET_MARKER, "w"); if (m) fclose(m); }
     read_device_geometry(&o->logical_w, &o->logical_h, &o->rotation);
     o->fd = open("/dev/fb1", O_RDWR);
     if (o->fd < 0) return -1;
@@ -293,6 +298,7 @@ static void overlay_clear(Overlay *o) {
 }
 
 static void overlay_close(Overlay *o) {
+    unlink(OSD_QUIET_MARKER);
     overlay_clear(o);
     if (o->flipped) {
         struct fb_var_screeninfo v = o->vi;

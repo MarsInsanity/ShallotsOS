@@ -34,6 +34,8 @@
   "settings.menu_sounds": "Menu de sonidos",
   "settings.battery_colour_mode": "Modo de color de la bateria",
   "settings.stock_battery_indicator": "Indicador de batería original",
+  "settings.shallotsos_osd": "Indicador de volumen ShallotsOS",
+  "toast.osd_restart": "El indicador de volumen original vuelve tras reiniciar",
   "settings.background_images": "Imágenes de fondo",
   "settings.background_dim": "Atenuación del fondo",
   "settings.wallpaper": "Fondo de pantalla",

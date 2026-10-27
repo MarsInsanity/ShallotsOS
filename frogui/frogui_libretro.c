@@ -12,6 +12,7 @@
 #include <string.h>
 #include <strings.h>
 #include <stdint.h>
+#include <signal.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -921,6 +922,7 @@ static int settings_background_dim = 15; /* darken background artwork: 0=unchang
 static int settings_file_cache = 1;      /* cache folder listings (mtime-keyed) for fast nav: 0=off, 1=on */
 static int settings_battery_color = 0;   /* "Nel Battery Mode": solid color light by level instead of fill bar */
 static int settings_stock_battery = 1;   /* cubevol's original fb1 indicator */
+static int settings_osd = 1;             /* ShallotsOS volume/brightness popups (cubegm/shallots_osd) */
 /* OnionOS theme folder in /mnt/sdcard/Themes ("off" = TreeFrogUI layouts).
  * Kept by name because the theme list is scanned from the card. */
 #define ONION_DEFAULT_THEME "ShallotsOS"
@@ -978,7 +980,51 @@ static int onion_apply(void) {
 }
 
 int frogui_battery_color_mode(void) { return settings_battery_color; }
-static int frogui_stock_battery_indicator(void) { return settings_stock_battery; }
+/* shallots_osd takes cubevol's drawing off fb1, its battery glyph included,
+ * so FrogUI draws its own battery then. It gives up (and cubevol keeps its
+ * overlay) if the takeover ever failed. */
+#define OSD_BIN    SDCARD_BASE "/cubegm/shallots_osd"
+#define OSD_FAILED SDCARD_BASE "/frogui/.osd_failed"
+static int osd_active(void) {
+    return settings_osd && access(OSD_BIN, X_OK) == 0 && access(OSD_FAILED, F_OK) != 0;
+}
+static int frogui_stock_battery_indicator(void) { return settings_stock_battery && !osd_active(); }
+
+/* Start shallots_osd unless it already runs. It runs from a /tmp copy so it
+ * never keeps the SD card busy (USB mode unmounts it). */
+static void osd_daemon_ensure(void) {
+    if (!osd_active()) return;
+    FILE *pf = fopen("/tmp/shallots_osd.pid", "r");
+    int pid = 0;
+    if (pf) { if (fscanf(pf, "%d", &pid) != 1) pid = 0; fclose(pf); }
+    if (pid > 0 && kill(pid, 0) == 0) {
+        char comm[32] = "", path[48];
+        snprintf(path, sizeof path, "/proc/%d/comm", pid);
+        FILE *cf = fopen(path, "r");
+        if (cf) { if (!fgets(comm, sizeof comm, cf)) comm[0] = '\0'; fclose(cf); }
+        if (strncmp(comm, "shallots_osd", 12) == 0) return;
+    }
+    const char *tmp = "/tmp/shallots_osd";
+    FILE *in = fopen(OSD_BIN, "rb"), *out = in ? fopen(tmp, "wb") : NULL;
+    if (out) {
+        char buf[8192];
+        size_t n;
+        while ((n = fread(buf, 1, sizeof buf, in)) > 0) fwrite(buf, 1, n, out);
+        fclose(out);
+        chmod(tmp, 0755);
+    }
+    if (in) fclose(in);
+    if (!out) return;
+    pid_t child = fork();
+    if (child == 0) {
+        setsid();
+        for (int fd = 0; fd < 256; fd++) close(fd);   /* no picoarch devices */
+        open("/dev/null", O_RDWR); dup(0); dup(0);
+        execl(tmp, "shallots_osd", (char *)NULL);
+        _exit(127);
+    }
+    dbg(child > 0 ? "shallots_osd started" : "shallots_osd: fork failed");
+}
 static int settings_game_switcher = 1;  /* recents as box-art carousel: 0=off, 1=on */
 /* In-game keys for the emulator menu / GameSwitcher, read by picoarch; each
  * replaces the others: 0 = FN (tap / hold), 1 = hold SELECT / hold START,
@@ -1025,7 +1071,7 @@ typedef struct {
 } SRow;
 
 static const SRow settings_rows[] = {
-    { RT_HEADER, "settings.appearance" }, { RT_ONION_THEME, "settings.onion_theme" }, { RT_THEME, "settings.theme" }, { RT_THEME_PACK, "settings.background_theme_pack" }, { RT_STYLE, "settings.style" }, { RT_ICON_PACK, "settings.icon_pack" }, { RT_TOGGLE, "settings.center_text", &settings_center_text }, { RT_TOGGLE, "settings.friendly_system_names", &settings_friendly_names }, { RT_FONT, "settings.font" }, { RT_RANGE, "settings.font_size", &settings_font_size, 18, 26, 1 }, { RT_TOGGLE, "settings.battery_colour_mode", &settings_battery_color }, { RT_TOGGLE, "settings.stock_battery_indicator", &settings_stock_battery }, { RT_TOGGLE, "settings.background_images", &settings_backgrounds }, { RT_RANGE, "settings.background_dim", &settings_background_dim, 0, 100, 5 }, { RT_WALLPAPER, "settings.wallpaper" }, { RT_WALLFIT, "settings.background_image_fit" },
+    { RT_HEADER, "settings.appearance" }, { RT_ONION_THEME, "settings.onion_theme" }, { RT_THEME, "settings.theme" }, { RT_THEME_PACK, "settings.background_theme_pack" }, { RT_STYLE, "settings.style" }, { RT_ICON_PACK, "settings.icon_pack" }, { RT_TOGGLE, "settings.center_text", &settings_center_text }, { RT_TOGGLE, "settings.friendly_system_names", &settings_friendly_names }, { RT_FONT, "settings.font" }, { RT_RANGE, "settings.font_size", &settings_font_size, 18, 26, 1 }, { RT_TOGGLE, "settings.battery_colour_mode", &settings_battery_color }, { RT_TOGGLE, "settings.shallotsos_osd", &settings_osd }, { RT_TOGGLE, "settings.stock_battery_indicator", &settings_stock_battery }, { RT_TOGGLE, "settings.background_images", &settings_backgrounds }, { RT_RANGE, "settings.background_dim", &settings_background_dim, 0, 100, 5 }, { RT_WALLPAPER, "settings.wallpaper" }, { RT_WALLFIT, "settings.background_image_fit" },
     { RT_HEADER, "settings.general" }, { RT_LANGUAGE, "settings.language", &settings_language }, { RT_RANGE, "settings.brightness", &settings_brightness, 0, 100, SETTINGS_BRIGHTNESS_STEP }, { RT_RANGE, "settings.volume", &settings_volume, 0, 100, 5 }, { RT_TOGGLE, "settings.animations", &settings_anim }, { RT_TOGGLE, "settings.menu_sounds", &settings_menu_sounds }, { RT_TOGGLE, "settings.hide_extensions", &settings_hide_extensions }, { RT_TOGGLE, "settings.gamelist_names", &settings_gamelist_names }, { RT_TOGGLE, "settings.hide_empty_folders", &settings_hide_empty },
     { RT_HEADER, "settings.library" }, { RT_ROM_SOURCE, "settings.rom_source" }, { RT_OTG_STATUS, "settings.otg_storage" }, { RT_TOGGLE, "settings.game_switcher", &settings_game_switcher }, { RT_RANGE, "settings.game_keys", &settings_game_keys, 0, 2, 1 }, { RT_TOGGLE, "settings.start_in_recents", &settings_load_recents }, { RT_TOGGLE, "settings.show_recents", &settings_show_recents },
     { RT_HEADER, "settings.gameplay" }, { RT_TOGGLE, "settings.power_resume", &settings_power_resume }, { RT_TOGGLE, "settings.quick_resume", &settings_quick_resume }, { RT_TOGGLE, "settings.autosave_autoload", &settings_autosave_autoload }, { RT_TOGGLE, "settings.custom_aspect_ratios", &settings_custom_aspect_ratios },
@@ -1039,6 +1085,7 @@ static bool otg_roms_available(void);
 static bool settings_row_enabled(const SRow *r) {
     if (!r) return false;
     if (r->val == &settings_sleep_poweroff) return settings_disable_sleep != 0;
+    if (r->val == &settings_stock_battery) return !osd_active();   /* ShallotsOS draws the battery */
     if (onion_theme_active()) {
         /* The Onion theme supplies colours, layout and backgrounds. Icon
          * packs still fill in consoles the theme has no icon for. */
@@ -1325,6 +1372,10 @@ static void settings_preview_row(const SRow *r) {
         break;
     case RT_TOGGLE:
         if (r->val == &settings_anim) banner_set_anim(settings_anim);
+        if (r->val == &settings_osd) {
+            if (settings_osd) osd_daemon_ensure();
+            else ui_toast_show(tr_or("toast.osd_restart", "The stock volume popup returns after a restart"));
+        }
         break;
     default:
         break;
@@ -1454,6 +1505,8 @@ static void settings_load_file(void) {
             settings_battery_color = (strcmp(val, "on") == 0) ? 1 : 0;
         } else if (strcmp(line, "stock_battery") == 0) {
             settings_stock_battery = (strcmp(val, "on") == 0) ? 1 : 0;
+        } else if (strcmp(line, "osd") == 0) {
+            settings_osd = strcmp(val, "stock") != 0;
         } else if (strcmp(line, "sleep_poweroff") == 0) {
             int secs = atoi(val);
             for (int k = 0; k < SLEEP_POWEROFF_N; k++)
@@ -1568,6 +1621,7 @@ static void settings_save_file(void) {
                                        : gs_header_mode == 1 ? "game" : "total");
     fprintf(f, "battery_color=%s\n", onoff_names[settings_battery_color]);
     fprintf(f, "stock_battery=%s\n", onoff_names[settings_stock_battery]);
+    fprintf(f, "osd=%s\n", settings_osd ? "shallotsos" : "stock");
     fprintf(f, "game_switcher=%s\n", onoff_names[settings_game_switcher]);
     fprintf(f, "game_keys=%s\n", game_keys_values[settings_game_keys]);
     fprintf(f, "load_recents=%s\n", onoff_names[settings_load_recents]);
@@ -5471,6 +5525,7 @@ void retro_init(void) {
     cube_pmem_backlight_sync(settings_brightness);
     fb1_set_visible(1);   /* leave the live volume/input daemon untouched */
     settings_apply();
+    osd_daemon_ensure();
     settings_bl_reassert = 120; /* re-assert safety net past cubevol's delayed apply */
     settings_audio_mute_reassert = settings_menu_sounds ? 0 : 120;
     dbg("settings loaded");

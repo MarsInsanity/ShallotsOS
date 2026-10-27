@@ -14,6 +14,7 @@ on:
       - 'assets/system-icons/**'
       - 'sdcard/cubegm/xgame-logo.bmp'
       - 'apps/video_player/**'
+      - 'apps/osd/**'
       - '.github/workflows/shallotsos-overlay.yml'
   workflow_dispatch:
     inputs:
@@ -160,6 +161,16 @@ jobs:
             TARGET="$RUNNER_TEMP/video_player"
           file "$RUNNER_TEMP/video_player"
 
+      # ShallotsOS's volume/brightness popups (replaces cubevol's).
+      - name: Build shallots_osd
+        run: |
+          set -euo pipefail
+          sdk="$HOME/sf3000-work/sf3000toolchain/mipsel-buildroot-linux-gnu_sdk-buildroot"
+          "$sdk/opt/ext-toolchain/bin/mips-mti-linux-gnu-gcc" -EL -mips32r2 -mtune=74kc -mhard-float \
+            --sysroot="$sdk/mipsel-buildroot-linux-gnu/sysroot" -O2 -Wall -Wextra -s \
+            -o "$RUNNER_TEMP/shallots_osd" apps/osd/shallots_osd.c
+          file "$RUNNER_TEMP/shallots_osd"
+
       - name: Assemble the SD-card overlay
         run: |
           set -euo pipefail
@@ -173,6 +184,7 @@ jobs:
           fi
           cp "$HOME/sf3000-work/picoarch/picoarch" "$HOME/sf3000-work/picoarch/picoarch_hi" "$out/cubegm/"
           cp "$RUNNER_TEMP/video_player" "$out/cubegm/"
+          cp "$RUNNER_TEMP/shallots_osd" "$out/cubegm/"
           cp pcsx4all-src/build/pcsx4all "$out/cubegm/"
           # Boot logo for 640x480 panels (R36SX, R36HD, GB350).
           cp sdcard/cubegm/xgame-logo.bmp "$out/cubegm/"
@@ -196,6 +208,7 @@ jobs:
             cubegm/cores/hcps1_libretro.so   HCPS1, experimental PS1 emulator
             cubegm/picoarch, picoarch_hi     emulator frontend and in-game menu
             cubegm/video_player              music and video player
+            cubegm/shallots_osd              ShallotsOS volume/brightness popups
             cubegm/pcsx4all                  PS1 emulator (picoarch's menu and keys)
             cubegm/xgame-logo.bmp            ShallotsOS boot logo (640x480 panels:
                                              R36SX, R36HD, GB350; skip it on an

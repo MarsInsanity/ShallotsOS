@@ -38,6 +38,8 @@
   "settings.menu_sounds": "Menu Sounds",
   "settings.battery_colour_mode": "Battery Colour Mode",
   "settings.stock_battery_indicator": "Stock Battery Indicator",
+  "settings.shallotsos_osd": "ShallotsOS Volume Indicator",
+  "toast.osd_restart": "The stock volume popup returns after a restart",
   "settings.background_images": "Background Images",
   "settings.background_dim": "Background Dim",
   "settings.wallpaper": "Wallpaper",

@@ -38,6 +38,8 @@
   "settings.menu_sounds": "メニュー音",
   "settings.battery_colour_mode": "バッテリーカラーモード",
   "settings.stock_battery_indicator": "純正バッテリー表示",
+  "settings.shallotsos_osd": "ShallotsOS 音量表示",
+  "toast.osd_restart": "元の音量表示は再起動後に戻ります",
   "settings.background_images": "背景イメージ",
   "settings.background_dim": "背景の暗さ",
   "settings.wallpaper": "壁紙",

@@ -34,6 +34,8 @@
   "settings.menu_sounds": "Menu Sounds",
   "settings.battery_colour_mode": "Battery Colour Mode",
   "settings.stock_battery_indicator": "原始电池指示器",
+  "settings.shallotsos_osd": "ShallotsOS 音量指示",
+  "toast.osd_restart": "原装音量提示将在重启后恢复",
   "settings.background_images": "Background Images",
   "settings.background_dim": "Background Dim",
   "settings.wallpaper": "Wallpaper",

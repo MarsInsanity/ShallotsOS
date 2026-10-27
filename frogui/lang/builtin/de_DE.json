@@ -38,6 +38,8 @@
   "settings.menu_sounds": "Menütöne",
   "settings.battery_colour_mode": "Batterie-Farbmodus",
   "settings.stock_battery_indicator": "Original-Batterieanzeige",
+  "settings.shallotsos_osd": "ShallotsOS-Lautstärkeanzeige",
+  "toast.osd_restart": "Die Original-Lautstärkeanzeige kehrt nach einem Neustart zurück",
   "settings.background_images": "Hintergrundbilder",
   "settings.background_dim": "Hintergrund abdunkeln",
   "settings.wallpaper": "Hintergrundbild",

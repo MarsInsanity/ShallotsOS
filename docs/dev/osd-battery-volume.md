@@ -91,3 +91,35 @@ layer-disable ioctl is found.
 |----------|--------------|-----------------------------|---------------|
 | Backlight| `0x400C2602` | `{1, 30, 1, 0, &byte}`      | raw 23..255   |
 | Volume   | `0x400C2602` | `{3, 0, 260, 0, buf[260]}`  | `buf[0]` 0..100 |
+
+## ShallotsOS indicator (2026): take fb1 away from cubevol instead
+
+`apps/osd/shallots_osd.c`, shipped as `cubegm/shallots_osd`, started by FrogUI
+(from a /tmp copy) when Settings > ShallotsOS Volume Indicator is on.
+
+- cubevol maps `/dev/fb1` once in `fb_framebuffer_init` (open, ioctl, mmap,
+  close) and then only draws through that mapping. The helper attaches to
+  the live cubevol with ptrace and runs one `mmap(MAP_FIXED|MAP_ANONYMOUS)`
+  over each `/dev/fb1` range from `/proc/<pid>/maps`.
+  - The two instructions (`syscall; break`) are written at cubevol's ELF
+    entry point, which never runs again.
+  - Registers, the code words and the stack argument words are restored
+    afterwards.
+  - `regs[0]` is cleared during the call so the kernel does not restart the
+    syscall the thread was stopped in.
+  - cubevol keeps handling buttons, volume, brightness, battery and sleep.
+    Its LVGL output now lands in private memory. No restart and no code
+    patch, so it works on every cubevol variant.
+- The helper polls the live volume (`ioctl(/dev/sndC0i2so, 0x4001080C)`,
+  1 byte 0..100) and backlight (`read(/dev/backlight)`, raw 23..255 mapped
+  back to 0..100) every 50 ms. It draws a themed card (`cubegm/skin/skin.txt`
+  colours) at the top of fb1 for 1.5 s on a change, plus a low-battery card
+  (≤10%, not charging).
+- **Safety:** if cubevol is gone 0.8 s after the swap, the helper restarts it
+  and writes `frogui/.osd_failed`. While that file exists nothing swaps, and
+  FrogUI/picoarch fall back to cubevol's own overlay.
+- FrogUI draws its own header battery while the helper is active. picoarch
+  does not blank fb1 during play. The media player creates
+  `/tmp/shallotsos_media_osd` so the helper stays quiet under its own slider.
+- Turning the setting off takes effect after a restart: the swapped cubevol
+  cannot get its fb1 mapping back.

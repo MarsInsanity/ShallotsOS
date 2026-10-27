@@ -42,6 +42,15 @@ Confirmed earlier: folder move prompt and move, NES save states, Resume,
 GameSwitcher, Recents, Favourites, Y-menu search/emulator/favourite, box art.
 
 A. New in this build
+000. Search (X in a game list): the keyboard now matches the OnionOS theme
+     (theme background, header, hint bar, rounded keys, highlight colour).
+0000. ShallotsOS Volume Indicator (Settings > Appearance, on by default):
+     after the menu has been open ~5 s, press volume up/down and FN+volume
+     (brightness), in the menu and in a game: a themed popup at the top, no
+     stock popup and no blink. Buttons must keep working normally (volume
+     down too). FrogUI shows its own battery. If anything breaks, delete
+     cubegm/shallots_osd and reboot; send logs/shallots_osd.log (with
+     log.txt) and frogui/.osd_failed if it exists.
 00. Options > About (picoarch and PCSX4ALL): the running emulator's full
     name, version and core file, the game, video and audio (PS1: CPU
     mode, disc ID, BIOS). Long values end in "...".

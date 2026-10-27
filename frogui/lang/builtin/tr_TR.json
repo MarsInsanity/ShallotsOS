@@ -38,6 +38,8 @@
   "settings.menu_sounds": "Menü sesleri",
   "settings.battery_colour_mode": "Pil renk modu",
   "settings.stock_battery_indicator": "Orijinal pil göstergesi",
+  "settings.shallotsos_osd": "ShallotsOS Ses Göstergesi",
+  "toast.osd_restart": "Orijinal ses göstergesi yeniden başlatmadan sonra geri gelir",
   "settings.background_images": "Arka plan resimleri",
   "settings.background_dim": "Arka plan karartma",
   "settings.wallpaper": "Duvar kağıdı",

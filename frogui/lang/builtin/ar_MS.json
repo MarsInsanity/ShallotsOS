@@ -38,6 +38,8 @@
   "settings.menu_sounds": "أصوات القائمة",
   "settings.battery_colour_mode": "وضع لون البطارية",
   "settings.stock_battery_indicator": "مؤشر البطارية الأصلي",
+  "settings.shallotsos_osd": "مؤشر صوت ShallotsOS",
+  "toast.osd_restart": "يعود مؤشر الصوت الأصلي بعد إعادة التشغيل",
   "settings.background_images": "صور الخلفية",
   "settings.background_dim": "تعتيم الخلفية",
   "settings.wallpaper": "خلفية الشاشة",
