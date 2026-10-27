@@ -46,6 +46,9 @@ Auto preview, boot-script poll fix (other processes 25% -> 8% of the CPU),
 OnionOS search keyboard, ShallotsOS volume indicator (first build), PS1 4:3
 aspect, quick launch/back, Themes app, picoarch and PCSX4ALL About screens,
 PCSX4ALL buttons, EPUBs open, no stock bar in Music.
+Merge (v1.8.0_q) on device: menu works as before at a first look (M1);
+no big visible changes (M2); Picante8 is the PICO-8 default (M3).
+Snes9x-Z and the other new cores arrive with the full package.
 Results so far (timed frameskip build): Yoshi's Island on Snes9x 2005 much
 better, crackle only at scene changes (intro, cutscene end, map); Neo Geo
 (Magical Drop 3) full speed and quicker to open; GBA fine on gpSP (default),
