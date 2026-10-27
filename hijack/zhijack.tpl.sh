@@ -175,7 +175,7 @@ while true; do
             kill -9 "$UI_PID" 2>/dev/null
             break
         fi
-        sleep 0.05
+        sleep 1
     done
     wait "$UI_PID"
     RC=$?

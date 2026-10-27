@@ -3185,6 +3185,28 @@ static void request_game_launch(const char *core_path, const char *rom_path) {
     if (environ_cb) environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
 }
 
+/* The boot script (cubegm/zhijack.sh, written at install) polls for the
+ * menu's launch request with "sleep 0.05" while the picoarch it started is
+ * alive. picoarch execs between this menu and games in one process, so that
+ * poll runs through every game: 20 new processes a second, 10-15% of the
+ * single CPU core. Poll once a second instead (the request file is only a
+ * fallback). Same length, overwritten in place: safe while the script runs;
+ * it takes effect at the next boot. */
+static void slow_launcher_poll(void) {
+    static const char from[] = "sleep 0.05", to[] = "sleep 1.00";
+    char buf[16384];
+    FILE *f = fopen(SDCARD_BASE "/cubegm/zhijack.sh", "r+");
+    if (!f) return;
+    size_t n = fread(buf, 1, sizeof buf - 1, f);
+    buf[n] = '\0';
+    char *hit = strstr(buf, from);
+    if (hit && !fseek(f, (long)(hit - buf), SEEK_SET)) {
+        fwrite(to, 1, sizeof to - 1, f);
+        dbg("zhijack.sh: launcher poll slowed to 1 s (next boot)");
+    }
+    fclose(f);
+}
+
 /* DSperate (its launcher sets HOME to cubegm/dsperate/data) draws every
  * frame by default. Give it adaptive frameskip - drawing is skipped only
  * while the game falls behind, up to 2 frames in a row - unless the user's
@@ -5387,6 +5409,7 @@ void retro_set_input_state(retro_input_state_t cb)              { input_state_cb
 
 void retro_init(void) {
     dbg("retro_init start");
+    slow_launcher_poll();
     /* Runtime panel geometry from picoarch (device-detected). Must run before
      * font_init / any layout use. Falls back to render.c defaults if env unset. */
     {
