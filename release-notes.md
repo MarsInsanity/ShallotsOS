@@ -1,42 +1,16 @@
-## TreeFrogUI v1.6.0 prerelease
+# TreeFrogUI v1.8.0_q prerelease
 
-Changes since v1.6.0_m:
+## Changes since v1.8.0_p
 
-- Updated the standalone DSperate package with the current MIPS JIT build, SF3000 controls (D-pad, face buttons, L1/L2), and START+SELECT exit.
-- Improved SF3000 PicoArch audio delivery with a larger buffer, longer prefill, and best-effort real-time audio-thread scheduling to reduce underruns under CPU load.
-- Disabled automatic frameskip by default in PCSX-ReARMed, PicoDrive, Beetle PCE Fast, SNES9x 2002, and SNES9x 2005; it remains available as a manual option.
-- Fixed Activity Tracker long ROM titles so they marquee within their available row width without covering the play-time bar.
-- Added Captain Claw through the [FroggyClaw](https://github.com/Synaps33/FroggyClaw) libretro core; place a legally obtained `CLAW.REZ` in `roms/openclaw/`.
-- Added standalone Diablo 1 through [FroggyDiablo](https://github.com/tzubertowski/FroggyDiablo), based on the original [DevilutionX](https://github.com/diasurgical/devilutionX), including its open-source engine asset; place legally obtained `DIABDAT.MPQ` data in `roms/diablo/`.
-- Fixed OpenClaw SF3000 loading by isolating its SDL compatibility layer from PicoArch's host SDL and removing firmware-only runtime symbol dependencies.
+- **FrogUI:** Restored the mainline core, including working **Games → Ports** browsing and launchers, friendly names for Java Games (`j2me`), Picante8 (`picante8`), and Ports (`ports`), and the animated selected-item pill. The `zsnes` folder selects Snes9x-Z and reuses SNES artwork and background. Startup stays black while enabled background art loads; disabling backgrounds shows the theme color immediately.
+- **FrogUI performance and memory:** Restored the fast three-frame background and carousel transitions, Recents startup default, and idle-deferred banner loading. Font files are memory-mapped instead of reserving three 24 MiB buffers, reducing the built core's static memory by about 75 MiB. All twelve built-in locale files now contain the same translation keys.
+- **PicoArch:** Retains the corrected submenu pill alignment and smoother, slower option-label scrolling from v1.8.0_p.
 
-Changes since v1.5.0:
+## Other changes included since the v1.0.15 stable base
 
-- Added **Minecraft Pocket Edition 0.6.1** through the [FroggyPE](https://github.com/Synaps33/FroggyPE) libretro core, with a one-click `roms/mcpe/` launcher, packaged assets, localized system naming, and theme-matched Minecraft artwork.
-- Added **ClassiCube / Minecraft** support based on [Synaps33 / FroggyCraft](https://github.com/Synaps33/FroggyCraft), with a `roms/classicube/` launch entry, friendly localized system naming, themed backgrounds, and the packaged `texpacks/default.zip`.
-- Enabled ClassiCube sound effects on SF3000 through the libretro audio callback, with the official ClassiCube audio pack packaged at `roms/classicube/audio/default.zip`.
-- Added **Java Games** support through the FroggyKVM J2ME / MIDP 2.0 emulator. Put `.jar` or `.jad` files in `roms/j2me/`; the release includes the core, runtime classes, artwork, and ROM folder.
-- Added FluidLite MIDI synthesis for Java Games, with the SoundFont accepted from either `bios/` or `cubegm/bios/`.
-- Fixed Java Games crashes caused by unsupported SF3000 CPU instructions, reduced launcher and Java heap memory pressure, and added centered aspect-preserving scaling for portrait and low-resolution games.
-- Fixed Java Games RMS save enumeration on SF3000 so existing Doom RPG and other J2ME saves are visible and load correctly; removed temporary RMS diagnostics from the release build.
-- Added the experimental QPSX PlayStation core as `cubegm/cores/qpsx_libretro.so`.
-- Added Nintendo DS through the latest locally tested DSperate SF3000 package in `roms/nds`, with the audited MIPS JIT enabled by default.
-- Language selection now discovers locales from installed translation JSON files, so adding a locale no longer requires C registration. German and Turkish translations are included.
-- Completed the built-in translations across supported locales and fixed remaining untranslated or wrong-language labels.
-- Added Arabic support and improved complex Unicode rendering through HarfBuzz and SheenBidi, including the required fonts and licenses.
-- Added optional Allium-inspired colour palettes, the Nunito font, and adjustable UI font sizes from 18 to 26 px.
-- Fixed idle speaker static, silent PS1 launches, media playback after audio handoff, and inaudible launcher menu ticks.
-- Shared system volume between FrogUI Settings, the in-game menu, and physical volume buttons.
-- Added a selectable stock or TreeFrogUI battery indicator shared by FrogUI and PicoArch; the stock overlay now appears in menus without covering gameplay.
-- Restored the calibrated TreeFrogUI battery curve from v1.5.0_l so the custom indicator reports gradual percentages consistently in FrogUI and PicoArch.
-- Improved offline-update recovery with explicit same-version repair installs and safe FAT32 document-name migration that only removes a case-conflicting file when its verified replacement is present.
-- Added an optional FrogShell Developer Mode with a terminal, command history, script and executable launching, and USB keyboard input where supported.
-- Added caps, symbols, and modifier keys to FrogShell's on-screen keyboard.
-- Included upstream ebook-reader progress saving and local fixes for page-turn freezes, hidden progress files, and page fitting.
-- Added 117 newly tested PS1 games to the compatibility list.
-- Release builds now compile FrogShell and the ebook reader from source.
-- Fixed release CI dependency ordering and packaging for new cores, runtime assets, fonts, artwork, and licenses.
+- Added Snes9x-Z as a slower, compatibility-oriented alternative SNES core, plus Picante8, experimental Duke Nukem 3D, ClassiCube, Minecraft PE, Captain Claw, Diablo 1, Java Games, Nintendo DS and experimental QPSX support. Added OpenLara and VVVVVV under **Games → Ports**, with setup guides for user-supplied game data; ports have a separate release collection.
+- Added support profiles and install guidance for R36SX/R36 HD variants, SF3000, SF3000 HD, SF3000HD without HDMI, SF3100, SF3500 and GB350.
+- Added FrogUI menu-frame screenshots, Nunito, improved translations and Arabic text rendering, shared volume and battery indicators, and PICO-8 system alternatives.
+- Improved game handoff, PicoArch audio startup and underrun handling, Java saves and game exit, ebook progress and page turning, and offline update recovery.
 
-Thanks to [Synaps33](https://github.com/Synaps33) for FroggyPE, FroggyCraft, FroggyKVM, and the original [FroggyClaw](https://github.com/Synaps33/FroggyClaw) port; [diasurgical](https://github.com/diasurgical) and the DevilutionX contributors for the original Diablo engine; [MartStartIV](https://github.com/MartStartIV) for the German and Turkish translations in [PR #43](https://github.com/tzubertowski/FrogUI/pull/43) and [PR #44](https://github.com/tzubertowski/FrogUI/pull/44), and for the updater recovery ideas in [PR #75](https://github.com/tzubertowski/TreeFrogUI/pull/75); [ozkaoz](https://github.com/ozkaoz) for audio fixes and FrogShell Developer Mode; [Maheshivara](https://github.com/Maheshivara) for ebook-reader improvements and translation updates; [spanscape](https://github.com/spanscape) for Japanese translation updates; and [Trademarked69](https://github.com/Trademarked69) for Picoarch build and logging fixes.
-
-This is a prerelease for testing. Copy `update.zip` to the SD-card root and reboot, or use the full ZIP with the matching `install_first/<device>/` files for a fresh installation. Keep a backup of your card.
+For a fresh installation, use the full archive and matching `install_first/<device>/` files. To update an existing installation, copy `update.zip` to the SD-card root and reboot. Back up your card first.

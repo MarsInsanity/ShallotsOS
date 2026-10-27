@@ -46,30 +46,21 @@ J2ME_BANNER_NAO="$(pwd)/assets/j2me/java-games-nao-black.png"
 MINECRAFT_BANNER_NEXTUI="$(pwd)/assets/minecraft/minecraft-artbook-nextui.jpg"
 MINECRAFT_BANNER_NEXT="$(pwd)/assets/minecraft/minecraft-artbook-next.jpg"
 MINECRAFT_BANNER_NAO="$(pwd)/assets/minecraft/minecraft-nao-black.jpg"
-FROGGYCRAFT_ROOT="${FROGGYCRAFT_ROOT:-/home/tomaszz/sf3000-work/FroggyCraft}"
-CLASSICUBE_CORE="$FROGGYCRAFT_ROOT/source/classicube_sf2000/classicube_libretro.so"
-CLASSICUBE_TEXPACK="$FROGGYCRAFT_ROOT/source/classicube_sf2000/texpacks/default.zip"
-CLASSICUBE_AUDIO_ZIP="${CLASSICUBE_AUDIO_ZIP:-$FROGGYCRAFT_ROOT/audio.zip}"
-FROGGYPE_ROOT="${FROGGYPE_ROOT:-/home/tomaszz/sf3000-work/FroggyPE}"
-MCPE_CORE="$FROGGYPE_ROOT/mcpe_libretro.so"
-FROGGYCLAW_ROOT="${FROGGYCLAW_ROOT:-/home/tomaszz/sf3000-work/FroggyClaw}"
-CLAW_CORE="$FROGGYCLAW_ROOT/openclaw_libretro.so"
-CLAW_ASSETS="$FROGGYCLAW_ROOT/Build_Release/ASSETS.ZIP"
-CLAW_FONT="$FROGGYCLAW_ROOT/Build_Release/clacon.ttf"
-CLAW_BANNER_NEXTUI="$(pwd)/assets/claw/openclaw-artbook-nextui.png"
-CLAW_BANNER_NEXT="$(pwd)/assets/claw/openclaw-artbook-next.png"
-CLAW_BANNER_NAO="$(pwd)/assets/claw/openclaw-nao-black.png"
-DIABLO_BIN="${DIABLO_BIN:-/home/tomaszz/sf3000-work/FroggyDiablo-sf3000-build/devilutionx}"
-DIABLO_LAUNCHER="$(pwd)/assets/diablo/launch_diablo.sh"
-DIABLO_MARKER="$(pwd)/assets/diablo/Start Diablo 1.diablo"
-DIABLO_ENGINE_ASSET="$(pwd)/assets/diablo/devilutionx.mpq"
-DIABLO_BANNER_NEXTUI="$(pwd)/assets/diablo/diablo-artbook-nextui.png"
-DIABLO_BANNER_NEXT="$(pwd)/assets/diablo/diablo-artbook-next.png"
-DIABLO_BANNER_NAO="$(pwd)/assets/diablo/diablo-nao-black.png"
+PICANTE8_CORE="${PICANTE8_CORE:-/home/tomaszz/sf3000-work/picante8/picante8_libretro.so}"
+SNES9X_Z_CORE="$(pwd)/build/snes9x-Z_libretro.so"
+SNES9X_Z_LICENSE="$(pwd)/build/Snes9x-Z.LICENSE"
+POKKET_CORE="$(pwd)/build/pokket_libretro.so"
+POKKET_LICENSE="$(pwd)/build/Pokket.LICENSE"
+POKKET_CORE_LICENSE="$(pwd)/build/Pokket-core.MIT"
+OPENBOR_ROOT="${OPENBOR_ROOT:-$(pwd)/../OpenBOR-TreeFrogUI}"
+[ -f "$OPENBOR_ROOT/build_libretro.sh" ] || OPENBOR_ROOT="$(pwd)/cores/OpenBOR"
+OPENBOR_CORE="${OPENBOR_CORE:-$OPENBOR_ROOT/build/sf3000/openbor_libretro.so}"
 NDS_BANNER_NEXTUI="$(pwd)/assets/nds/nds-artbook-nextui.jpg"
 NDS_BANNER_NEXT="$(pwd)/assets/nds/nds-artbook-next.jpg"
 NDS_BANNER_NAO="$(pwd)/assets/nds/nds-nao-black.jpg"
-DIABLO_SDL_IMAGE="${DIABLO_SDL_IMAGE:-/home/tomaszz/sf3000-work/sf3000toolchain/mipsel-buildroot-linux-gnu_sdk-buildroot/mipsel-buildroot-linux-gnu/sysroot/usr/lib/libSDL_image-1.2.so.0}"
+POKKET_BANNER_NEXTUI="$(pwd)/assets/pokket/pokket-artbook-nextui.jpg"
+POKKET_BANNER_NEXT="$(pwd)/assets/pokket/pokket-artbook-next.jpg"
+POKKET_BANNER_NAO="$(pwd)/assets/pokket/pokket-nao-black.jpg"
 EBOOK=/home/tomaszz/sf3000-work/ebook/ebook
 DSPERATE=${DSPERATE:-/home/tomaszz/sf3000-work/dsperate/build/sf3000-package}
 TYRQUAKE=/home/tomaszz/sf3000-work/tyrquake-og/tyrquake_libretro.so
@@ -88,6 +79,9 @@ declare -A STOCK=(
   # the proven driver_r36sx.so and never swaps. Reuses the R36SX stock xml/boot.
   [r36hd]=/home/tomaszz/sf3000-work/R36SX_sdcard/cubegm
   [sf3000]=/home/tomaszz/sf3000-work/SF3000_sdcard/SF3000_sdcard/cubegm
+  # SF3000HD without HDMI uses the SF3000 boot/display format; reuse its autorun
+  # XML while keeping this hardware's driver selection in the device profile.
+  [sf3000hd_nohdmi]=/home/tomaszz/sf3000-work/SF3000_sdcard/SF3000_sdcard/cubegm
   [sf3500]=/home/tomaszz/sf3000-work/SF3500_sdcard_v1.1/cubegm
   # SF3000_HD = HDMI-out variant. Same SoC/panel(854x480)/disp_frame as SF3500,
   # byte-identical encrypted driver.so, identical config/filelist. It even detects
@@ -120,6 +114,9 @@ declare -A HJ=(
   # FrogShell is now a libretro core and is rotated by picoarch's SF display
   # path; the old 270-degree standalone-shell value double-rotates media.
   [sf3000]="  SF3000   854 480 16 9   90  dispframe driver_sf3000.so  kill"
+  # Its backed-up cubegm/driver.so is byte-identical to driver_r36sx.so; keep
+  # SF3000 display geometry but select that matching library for audio.
+  [sf3000hd_nohdmi]="SF3000   854 480 16 9   90  dispframe driver_r36sx.so   kill"
   [sf3500]="  SF3500   854 480 16 9   90  dispframe driver_sf3500.so  kill"
   [sf3000hd]="SF3500   854 480 16 9   90  dispframe driver_sf3500.so  kill"
   [sf3100]="  SF3500   854 480 16 9   90  dispframe driver_sf3500.so  kill"
@@ -135,6 +132,7 @@ declare -A HJ=(
 # on that device (sleep lives elsewhere, or cubevol differs). Addresses are the
 # stores that ARM sleep: tap, idle-timeout, set_sleep_mode_state, msg-269 send.
 declare -A NOSLEEP_ADDRS=(
+  # shortcut: sleep-disable offsets stay unavailable until this revision's distinct cubevol is verified.
   # Original R36SX plus the newer R36SX v2.7/R36HD cubevol variant. Only the
   # three instructions matching the running ELF are touched.
   [r36sx]="0x406d24:0xac62bb18 0x40701c:0xae02bb18 0x406b50:0xac44bb18 0x406d84:0xac62bcc8 0x407088:0xae02bcc8 0x406bb0:0xac44bcc8"
@@ -167,39 +165,32 @@ cp_if_diff() { [ -f "$1" ] || return 0; cmp -s "$1" "$2" && return 0; cp "$1" "$
 [ -f "$MINECRAFT_BANNER_NEXTUI" ] || { echo "missing Minecraft NextUI artwork: $MINECRAFT_BANNER_NEXTUI" >&2; exit 1; }
 [ -f "$MINECRAFT_BANNER_NEXT" ] || { echo "missing Minecraft Next artwork: $MINECRAFT_BANNER_NEXT" >&2; exit 1; }
 [ -f "$MINECRAFT_BANNER_NAO" ] || { echo "missing Minecraft Nao artwork: $MINECRAFT_BANNER_NAO" >&2; exit 1; }
-[ -f "$CLASSICUBE_CORE" ] || { echo "missing ClassiCube core: $CLASSICUBE_CORE" >&2; exit 1; }
-[ -f "$CLASSICUBE_TEXPACK" ] || { echo "missing ClassiCube texture pack: $CLASSICUBE_TEXPACK" >&2; exit 1; }
-[ -f "$CLASSICUBE_AUDIO_ZIP" ] || { echo "missing ClassiCube audio pack: $CLASSICUBE_AUDIO_ZIP" >&2; exit 1; }
-[ -f "$MCPE_CORE" ] || { echo "missing Minecraft PE core: $MCPE_CORE" >&2; exit 1; }
-[ -f "$CLAW_CORE" ] || { echo "missing Captain Claw core: $CLAW_CORE" >&2; exit 1; }
-[ -f "$CLAW_ASSETS" ] || { echo "missing Captain Claw assets: $CLAW_ASSETS" >&2; exit 1; }
-[ -f "$CLAW_FONT" ] || { echo "missing Captain Claw font: $CLAW_FONT" >&2; exit 1; }
-[ -f "$CLAW_BANNER_NEXTUI" ] || { echo "missing Captain Claw NextUI artwork: $CLAW_BANNER_NEXTUI" >&2; exit 1; }
-[ -f "$CLAW_BANNER_NEXT" ] || { echo "missing Captain Claw Next artwork: $CLAW_BANNER_NEXT" >&2; exit 1; }
-[ -f "$CLAW_BANNER_NAO" ] || { echo "missing Captain Claw Nao artwork: $CLAW_BANNER_NAO" >&2; exit 1; }
-[ -x "$DIABLO_BIN" ] || { echo "missing executable Diablo SF3000 build: $DIABLO_BIN" >&2; exit 1; }
-[ -f "$DIABLO_LAUNCHER" ] || { echo "missing Diablo launcher: $DIABLO_LAUNCHER" >&2; exit 1; }
-[ -f "$DIABLO_MARKER" ] || { echo "missing Diablo launcher marker: $DIABLO_MARKER" >&2; exit 1; }
-[ -f "$DIABLO_ENGINE_ASSET" ] || { echo "missing Diablo engine asset: $DIABLO_ENGINE_ASSET" >&2; exit 1; }
-[ -f "$DIABLO_BANNER_NEXTUI" ] || { echo "missing Diablo NextUI artwork: $DIABLO_BANNER_NEXTUI" >&2; exit 1; }
-[ -f "$DIABLO_BANNER_NEXT" ] || { echo "missing Diablo Next artwork: $DIABLO_BANNER_NEXT" >&2; exit 1; }
-[ -f "$DIABLO_BANNER_NAO" ] || { echo "missing Diablo Nao artwork: $DIABLO_BANNER_NAO" >&2; exit 1; }
+[ -f "$PICANTE8_CORE" ] || { echo "missing Picante8 core: $PICANTE8_CORE" >&2; exit 1; }
+[ -s "$SNES9X_Z_CORE" ] || { echo "missing Snes9x-Z core: $SNES9X_Z_CORE (run ./scripts/build_snes9x_z.sh)" >&2; exit 1; }
+[ -s "$SNES9X_Z_LICENSE" ] || { echo "missing Snes9x-Z license: $SNES9X_Z_LICENSE" >&2; exit 1; }
+[ -s "$POKKET_CORE" ] || { echo "missing Pokket core: $POKKET_CORE (run ./scripts/build_pokket.sh)" >&2; exit 1; }
+[ -s "$POKKET_LICENSE" ] || { echo "missing Pokket license: $POKKET_LICENSE" >&2; exit 1; }
+[ -s "$POKKET_CORE_LICENSE" ] || { echo "missing Pokket core license: $POKKET_CORE_LICENSE" >&2; exit 1; }
+[ -s "$OPENBOR_CORE" ] || { echo "missing OpenBOR libretro core: $OPENBOR_CORE (run ./build_all.sh)" >&2; exit 1; }
 [ -f "$NDS_BANNER_NEXTUI" ] || { echo "missing NDS NextUI artwork: $NDS_BANNER_NEXTUI" >&2; exit 1; }
 [ -f "$NDS_BANNER_NEXT" ] || { echo "missing NDS Next artwork: $NDS_BANNER_NEXT" >&2; exit 1; }
 [ -f "$NDS_BANNER_NAO" ] || { echo "missing NDS Nao artwork: $NDS_BANNER_NAO" >&2; exit 1; }
-[ -f "$DIABLO_SDL_IMAGE" ] || { echo "missing Diablo SDL_image runtime: $DIABLO_SDL_IMAGE" >&2; exit 1; }
+[ -f "$POKKET_BANNER_NEXTUI" ] || { echo "missing Pokket Art Book NextUI artwork: $POKKET_BANNER_NEXTUI" >&2; exit 1; }
+[ -f "$POKKET_BANNER_NEXT" ] || { echo "missing Pokket Art Book Next artwork: $POKKET_BANNER_NEXT" >&2; exit 1; }
+[ -f "$POKKET_BANNER_NAO" ] || { echo "missing Pokket Nao Black artwork: $POKKET_BANNER_NAO" >&2; exit 1; }
 cp_if_diff "$PICOARCH"    "$STAGE/cubegm/picoarch"
 cp_if_diff "$PICOARCH_HI" "$STAGE/cubegm/picoarch_hi"
 cp_if_diff "$FROGUI"      "$STAGE/cubegm/cores/frogui_libretro.so"
 cp_if_diff "$(pwd)/build/qpsx_libretro.so" "$STAGE/cubegm/cores/qpsx_libretro.so"
 cp_if_diff "$(pwd)/build/j2me_libretro.so" "$STAGE/cubegm/cores/j2me_libretro.so"
-cp_if_diff "$CLASSICUBE_CORE" "$STAGE/cubegm/cores/classicube_libretro.so"
-cp_if_diff "$MCPE_CORE" "$STAGE/cubegm/cores/mcpe_libretro.so"
-cp_if_diff "$CLAW_CORE" "$STAGE/cubegm/cores/openclaw_libretro.so"
-cp_if_diff "$DIABLO_BIN" "$STAGE/cubegm/devilutionx"
-cp_if_diff "$DIABLO_LAUNCHER" "$STAGE/cubegm/devilutionx.sh"
-cp_if_diff "$DIABLO_SDL_IMAGE" "$STAGE/cubegm/lib/libSDL_image-1.2.so.0"
-chmod +x "$STAGE/cubegm/devilutionx" "$STAGE/cubegm/devilutionx.sh"
+cp_if_diff "$PICANTE8_CORE" "$STAGE/cubegm/cores/picante8_libretro.so"
+mkdir -p "$STAGE/cubegm/cores" "$STAGE/frogui/licenses" "$STAGE/roms/snesz" "$STAGE/roms/pokket"
+cp_if_diff "$SNES9X_Z_CORE" "$STAGE/cubegm/cores/snes9x-Z_libretro.so"
+cp_if_diff "$SNES9X_Z_LICENSE" "$STAGE/frogui/licenses/Snes9x-Z.LICENSE"
+cp_if_diff "$POKKET_CORE" "$STAGE/cubegm/cores/pokket_libretro.so"
+cp_if_diff "$POKKET_LICENSE" "$STAGE/frogui/licenses/Pokket.LICENSE"
+cp_if_diff "$POKKET_CORE_LICENSE" "$STAGE/frogui/licenses/Pokket-core.MIT"
+cp_if_diff "$OPENBOR_CORE" "$STAGE/cubegm/cores/openbor_libretro.so"
 rm -f "$STAGE/cubegm/cores/fheroes2_libretro.so"
 mkdir -p "$STAGE/cubegm/bios"
 cp_if_diff "$J2ME_CLASSES" "$STAGE/cubegm/bios/classes.zip"
@@ -208,45 +199,21 @@ cp_if_diff "$J2ME_BANNER_NEXTUI" "$STAGE/frogui/j2me.png"
 cp_if_diff "$J2ME_BANNER_NEXTUI" "$STAGE/frogui/theme-packs/Art_Book_NextUI/j2me.png"
 cp_if_diff "$J2ME_BANNER_NEXT" "$STAGE/frogui/theme-packs/Art_Book_Next/j2me.png"
 cp_if_diff "$J2ME_BANNER_NAO" "$STAGE/frogui/theme-packs/Nao_Black/j2me.png"
-for name in classicube mcpe; do
-    cp_if_diff "$MINECRAFT_BANNER_NEXTUI" "$STAGE/frogui/$name.jpg"
-    cp_if_diff "$MINECRAFT_BANNER_NEXTUI" "$STAGE/frogui/theme-packs/Art_Book_NextUI/$name.jpg"
-    cp_if_diff "$MINECRAFT_BANNER_NEXT" "$STAGE/frogui/theme-packs/Art_Book_Next/$name.jpg"
-    cp_if_diff "$MINECRAFT_BANNER_NAO" "$STAGE/frogui/theme-packs/Nao_Black/$name.jpg"
-done
 mkdir -p "$STAGE/roms/j2me"
-mkdir -p "$STAGE/roms/classicube/texpacks"
-mkdir -p "$STAGE/roms/classicube/audio"
+mkdir -p "$STAGE/roms/openbor"
 rm -rf "$STAGE/roms/fheroes2"
-mkdir -p "$STAGE/roms/mcpe/data"
-rm -rf "$STAGE/roms/claw"
-rm -f "$STAGE/frogui/claw.png" \
-      "$STAGE/frogui/theme-packs/Art_Book_NextUI/claw.png" \
-      "$STAGE/frogui/theme-packs/Art_Book_Next/claw.png" \
-      "$STAGE/frogui/theme-packs/Nao_Black/claw.png"
-mkdir -p "$STAGE/roms/openclaw"
-mkdir -p "$STAGE/roms/diablo"
-cp_if_diff "$DIABLO_MARKER" "$STAGE/roms/diablo/Start Diablo 1.diablo"
-cp_if_diff "$DIABLO_ENGINE_ASSET" "$STAGE/roms/diablo/devilutionx.mpq"
-cp_if_diff "$DIABLO_BANNER_NEXTUI" "$STAGE/frogui/diablo.png"
-cp_if_diff "$DIABLO_BANNER_NEXTUI" "$STAGE/frogui/theme-packs/Art_Book_NextUI/diablo.png"
-cp_if_diff "$DIABLO_BANNER_NEXT" "$STAGE/frogui/theme-packs/Art_Book_Next/diablo.png"
-cp_if_diff "$DIABLO_BANNER_NAO" "$STAGE/frogui/theme-packs/Nao_Black/diablo.png"
+mkdir -p "$STAGE/roms/pico8" "$STAGE/roms/fake08" "$STAGE/roms/retro8"
+mkdir -p "$STAGE/frogui/theme-packs/Art_Book_NextUI" \
+    "$STAGE/frogui/theme-packs/Art_Book_Next" \
+    "$STAGE/frogui/theme-packs/Nao_Black"
 cp_if_diff "$NDS_BANNER_NEXTUI" "$STAGE/frogui/nds.jpg"
 cp_if_diff "$NDS_BANNER_NEXTUI" "$STAGE/frogui/theme-packs/Art_Book_NextUI/nds.jpg"
 cp_if_diff "$NDS_BANNER_NEXT" "$STAGE/frogui/theme-packs/Art_Book_Next/nds.jpg"
 cp_if_diff "$NDS_BANNER_NAO" "$STAGE/frogui/theme-packs/Nao_Black/nds.jpg"
-cp_if_diff "$CLAW_ASSETS" "$STAGE/roms/openclaw/ASSETS.ZIP"
-cp_if_diff "$CLAW_FONT" "$STAGE/roms/openclaw/clacon.ttf"
-cp_if_diff "$CLAW_BANNER_NEXTUI" "$STAGE/frogui/openclaw.png"
-cp_if_diff "$CLAW_BANNER_NEXTUI" "$STAGE/frogui/theme-packs/Art_Book_NextUI/openclaw.png"
-cp_if_diff "$CLAW_BANNER_NEXT" "$STAGE/frogui/theme-packs/Art_Book_Next/openclaw.png"
-cp_if_diff "$CLAW_BANNER_NAO" "$STAGE/frogui/theme-packs/Nao_Black/openclaw.png"
-cp_if_diff "$(pwd)/assets/claw/Start Captain Claw.claw" "$STAGE/roms/openclaw/Start Captain Claw.claw"
-rsync -rlt --delete "$FROGGYPE_ROOT/data/" "$STAGE/roms/mcpe/data/"
-cp_if_diff "$(pwd)/assets/mcpe/Start Minecraft PE.mcpe" "$STAGE/roms/mcpe/Start Minecraft PE.mcpe"
-cp_if_diff "$CLASSICUBE_TEXPACK" "$STAGE/roms/classicube/texpacks/default.zip"
-cp_if_diff "$CLASSICUBE_AUDIO_ZIP" "$STAGE/roms/classicube/audio/default.zip"
+cp_if_diff "$POKKET_BANNER_NEXTUI" "$STAGE/frogui/pokket.jpg"
+cp_if_diff "$POKKET_BANNER_NEXTUI" "$STAGE/frogui/theme-packs/Art_Book_NextUI/pokket.jpg"
+cp_if_diff "$POKKET_BANNER_NEXT" "$STAGE/frogui/theme-packs/Art_Book_Next/pokket.jpg"
+cp_if_diff "$POKKET_BANNER_NAO" "$STAGE/frogui/theme-packs/Nao_Black/pokket.jpg"
 # Runtime language packs are FrogUI data, not compiled-in strings. Keep the
 # staged copy in sync so release archives and local deployments behave alike.
 mkdir -p "$STAGE/frogui/lang"
@@ -282,6 +249,7 @@ cp -a "$STAGE/cubegm/cores/." "$OUT/cubegm/cores/"
 for f in picoarch picoarch_hi nosleep driver_r36sx.so driver_r36sx27.so driver_sf3000.so driver_sf3500.so driver_gb350.so; do
     cp "$STAGE/cubegm/$f" "$OUT/cubegm/$f"
 done
+install -m 0755 assets/ports/port_check.sh "$OUT/cubegm/port_check.sh"
 cp "$HIJACK/tfupdate.sh" "$OUT/cubegm/tfupdate.sh"
 chmod +x "$OUT/cubegm/tfupdate.sh"
 # zhijack.sh is per-device (generated into install_first/<dev>/cubegm/ below) - # the universal payload deliberately ships NO launcher and NO device detection.
@@ -289,7 +257,6 @@ chmod +x "$OUT/cubegm/tfupdate.sh"
 # REAL libSDL-1.2.so.0 (the soname the binaries link), cp -L dereferences the
 # staging symlink. The .0.11.4 target name is not needed by anything.
 cp -L "$STAGE/cubegm/lib/libSDL-1.2.so.0" "$OUT/cubegm/lib/libSDL-1.2.so.0"
-cp    "$STAGE/cubegm/lib/libSDL_image-1.2.so.0" "$OUT/cubegm/lib/libSDL_image-1.2.so.0"
 cp    "$STAGE/cubegm/lib/libpng12.so.0"   "$OUT/cubegm/lib/libpng12.so.0"
 # ppsspp_libretro.so links libpng16 (not the png12 the rest of the world uses);
 # its assets ride along automatically via the cubegm/bios/PPSSPP staging copy.
@@ -317,23 +284,43 @@ if [ -d "assets/onion" ]; then
     cp assets/onion/Themes/ShallotsOS/config.json "$OUT/frogui/onion/config.json"
     cp -a assets/onion/fonts/. "$OUT/frogui/onion/fonts/"
 fi
+mkdir -p "$OUT/frogui/port-help"
 # roms/ folder structure (the system subfolders FrogUI expects: gba, nes, snes…).
 # Ships empty folders + their .res/filelist scaffolding; users drop ROMs in.
 [ -d "$STAGE/roms" ] && cp -a "$STAGE/roms" "$OUT/roms"
+# Ports and their per-game binaries are distributed by TreeFrogUI_PortsCollection.
+rm -rf "$OUT/roms/ports" "$OUT/roms/diablo" "$OUT/roms/duke3d" \
+    "$OUT/roms/mcpe" "$OUT/roms/openclaw" "$OUT/roms/openlara" \
+    "$OUT/roms/undertale" "$OUT/roms/vvvvvv" "$OUT/roms/classicube"
+rm -f "$OUT/cubegm/cores/classicube_libretro.so" \
+    "$OUT/cubegm/cores/mcpe_libretro.so" \
+    "$OUT/cubegm/cores/openclaw_libretro.so" \
+    "$OUT/cubegm/cores/duke3d_libretro.so" \
+    "$OUT/cubegm/cores/butterscotch_libretro.so" \
+    "$OUT/cubegm/cores/openlara_libretro.so" \
+    "$OUT/cubegm/cores/vvvvvv_libretro.so" \
+    "$OUT/cubegm/devilutionx" "$OUT/cubegm/devilutionx.sh" \
+    "$OUT/cubegm/lib/libSDL_image-1.2.so.0"
+for art in diablo duke3d mcpe openclaw openlara undertale vvvvvv classicube; do
+    rm -f "$OUT/frogui/port-help/$art.png" "$OUT/frogui/$art.png" "$OUT/frogui/$art.jpg" \
+        "$OUT/frogui/system-icons/$art.png"
+    [ ! -d "$OUT/frogui/theme-packs" ] || find "$OUT/frogui/theme-packs" -type f \( -name "$art.png" -o -name "$art.jpg" -o -name "$art-*.png" -o -name "$art-*.jpg" \) -delete
+    [ ! -d "$OUT/frogui/icon-packs" ] || find "$OUT/frogui/icon-packs" -type f -name "$art.png" -delete
+done
+find "$OUT/roms/openbor" -type f -iname '*.pak' -delete
 mkdir -p "$OUT/roms/images"
 mkdir -p "$OUT/roms/music"
 mkdir -p "$OUT/roms/nds"
 mkdir -p "$OUT/roms/qpsx"
 mkdir -p "$OUT/roms/j2me"
-mkdir -p "$OUT/roms/mcpe"
-mkdir -p "$OUT/roms/diablo"
+mkdir -p "$OUT/roms/pico8" "$OUT/roms/fake08" "$OUT/roms/retro8"
 
 # 1b) Our extra assets the old release shipped (these are OURS, not stock OS):
 #     standalone frontends, BIOS, boot logos. NOT shipped: icube/icube_start
 #     (retired boot), cubevol + generic driver.so (stock), *.bak / test bins (junk).
 # (boot logos are NOT shipped here - install_first/<dev>/ provides the device-correct
 #  xgame-logo.bmp, so no fix_bootlogo script is needed.)
-for x in lgpt lgpt.elf pcsx4all pico286 rockbox rockbox.sh ebook video_player image_viewer ppsspp dsperate devilutionx devilutionx.sh; do
+for x in lgpt lgpt.elf pcsx4all pico286 rockbox rockbox.sh ebook video_player image_viewer ppsspp dsperate; do
     [ -e "$STAGE/cubegm/$x" ] && cp -a "$STAGE/cubegm/$x" "$OUT/cubegm/$x"
 done
 install -m 0755 apps/usb_mode/usb_mode.sh "$OUT/cubegm/usb_mode.sh"
@@ -358,7 +345,7 @@ install -m 0644 apps/usb_mode/modules/4.4.186-release/usb_f_mtp.ko \
 #     dropped as it documents the retired icube method).
 # User-facing docs come from the REPO ROOT (canonical, maintained) - the sdcard/
 # copies are stale stubs. Assets (picoarch.cfg) come from staging.
-for x in README.md install.md theme.md LICENSE.md; do
+for x in README.md theme.md LICENSE.md; do
     [ -f "$x" ] && cp "$x" "$OUT/$x"
 done
 mkdir -p "$OUT/docs"
@@ -372,6 +359,13 @@ if [ -d "docs/cores" ]; then
     mkdir -p "$OUT/docs/cores"
     cp -a docs/cores/. "$OUT/docs/cores/"
 fi
+# Port setup guides are published with the separate Ports Collection release.
+rm -f "$OUT/docs/cores/diablo.md" "$OUT/docs/cores/duke3d.md" \
+    "$OUT/docs/cores/mcpe.md" "$OUT/docs/cores/openclaw.md" \
+    "$OUT/docs/cores/openlara.md" "$OUT/docs/cores/undertale.md" \
+    "$OUT/docs/cores/vvvvvv.md" "$OUT/docs/cores/classicube.md"
+mkdir -p "$OUT/frogui/licenses"
+install -m 0644 "$OPENBOR_ROOT/engine/LICENSE" "$OUT/frogui/licenses/OpenBOR.LICENSE"
 for x in picoarch.cfg; do
     [ -e "$STAGE/$x" ] && cp -a "$STAGE/$x" "$OUT/$x"
 done
@@ -390,9 +384,11 @@ printf 'dummy.md,TreeFrogUI,MD\n' > "$OUT/$(dirname "$DUMMY_REL")/filelist.csv"
 # paths, and a new core name all silently failed on hardware).
 for dev in "${!STOCK[@]}"; do
     src="${STOCK[$dev]}"; dst="$OUT/install_first/$dev"
+    fallback_dev="$dev"
+    [ "$dev" != sf3000hd_nohdmi ] || fallback_dev=sf3000
     if [ ! -f "$src/setting.xml" ] && [ -n "$STOCK_FALLBACK" ] &&
-       [ -f "$STOCK_FALLBACK/$dev/cubegm/setting.xml" ]; then
-        src="$STOCK_FALLBACK/$dev/cubegm"
+       [ -f "$STOCK_FALLBACK/$fallback_dev/cubegm/setting.xml" ]; then
+        src="$STOCK_FALLBACK/$fallback_dev/cubegm"
     fi
     [ -d "$src" ] || { echo "WARN: no stock for $dev ($src) - skipping"; continue; }
     mkdir -p "$dst/cubegm/cores"
@@ -453,12 +449,12 @@ stays happy.
 > # 🔴 **DO NOT USE THE FACTORY/PREINSTALLED STOCK OS** 🔴
 >
 > **Format the SD card and set it up fresh with the exact backup linked in
-> `install.md`. This is not optional. Installing over the stock OS causes missing
+> `INSTALL.md`. This is not optional. Installing over the stock OS causes missing
 > audio, broken controls, display problems, crashes, and boot failures.**
 
 ## Steps
 1. **Format the SD card and perform a clean setup using the exact backup linked
-   in `install.md` for your device.** Do not install over, reuse, or merge with
+   in `INSTALL.md` for your device.** Do not install over, reuse, or merge with
    the factory/preinstalled stock OS. If your card has an older TreeFrogUI that
    replaced `cubegm/icube`, the clean backup setup restores it.
 2. Copy `cubegm/`, `frogui/`, `roms/`, `MD/` onto the SD root (merge/overwrite).
@@ -466,10 +462,12 @@ stays happy.
    (REQUIRED: it carries the launcher script and autorun setup for your device):
    - `install_first/r36sx/`    → R36SX (v2.6 and v2.7 - same xml)
    - `install_first/sf3000/`   → SF3000
+   - `install_first/sf3000hd_nohdmi/` → SF3000HD without HDMI (SF3000 boot/display path)
    - `install_first/sf3500/`   → SF3500
    - `install_first/sf3000hd/` → SF3000 HD (HDMI-out variant)
    - `install_first/sf3100/`   → SF3100
    - `install_first/gb350/`    → GB350
+   - SF3000HD without HDMI keeps stock sleep behavior; its `cubevol` offsets are not patched.
    (This sets the rkgame autorun + registers the hijack core for YOUR device.)
 4. Eject, boot. The stock menu loads, then jumps straight into TreeFrogUI.
 
@@ -500,7 +498,7 @@ done
 # r36sx: boot killall only, no loop kills (tested config)
 [ "$(grep -c 'killall rkgame' "$OUT/install_first/r36sx/cubegm/zhijack.sh")" = 1 ] \
     || fail "r36sx zhijack must contain exactly 1 killall rkgame (boot block only)"
-for dev in sf3000 sf3500 sf3000hd sf3100 gb350; do
+for dev in sf3000 sf3000hd_nohdmi sf3500 sf3000hd sf3100 gb350; do
     [ "$(grep -c 'killall rkgame' "$OUT/install_first/$dev/cubegm/zhijack.sh")" = 3 ] \
         || fail "$dev zhijack must contain 3 killall rkgame (boot + 2 loop)"
 done
@@ -510,6 +508,18 @@ for dev in "${!STOCK[@]}"; do
 done
 [ -f "$OUT/$DUMMY_REL" ] || fail "missing autorun dummy rom $DUMMY_REL"
 [ -x "$OUT/cubegm/tfupdate.sh" ] || fail "missing offline updater"
+[ ! -e "$OUT/roms/ports" ] || fail "ports must be installed from TreeFrogUI_PortsCollection"
+for core in classicube mcpe openclaw duke3d butterscotch openlara vvvvvv; do
+    [ ! -e "$OUT/cubegm/cores/${core}_libretro.so" ] \
+        || fail "port core ${core}_libretro.so must ship with its port"
+done
+[ ! -e "$OUT/cubegm/devilutionx" ] || fail "Diablo binary must ship with its port"
+[ -s "$OUT/cubegm/cores/openbor_libretro.so" ] || fail "missing OpenBOR core"
+[ -f "$OUT/docs/cores/openbor.md" ] || fail "missing OpenBOR setup guide"
+[ -f "$OUT/frogui/licenses/OpenBOR.LICENSE" ] || fail "missing OpenBOR license"
+[ -d "$OUT/roms/openbor" ] || fail "missing OpenBOR ROM folder"
+! find "$OUT/roms/openbor" -type f -iname '*.pak' -print -quit | grep -q . \
+    || fail "OpenBOR game data must not ship"
 grep -q 'sh /tmp/tfupdate.sh' "$OUT/install_first/sf3000/cubegm/zhijack.sh" \
     || fail "generated launchers do not invoke offline updater"
 

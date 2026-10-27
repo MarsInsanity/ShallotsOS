@@ -1,16 +1,16 @@
 # SF3000 Core Mappings
 
-ROM folder name → core .so file. Built = present in `build/`. ❌ = not built (see notes).
+ROM folder → core `.so` file. Game-specific ports are distributed separately
+by the [TreeFrogUI Ports Collection](https://github.com/tzubertowski/TreeFrogUI_PortsCollection/releases/latest).
+Emulator systems retain their normal `roms/<system>/` folders.
 
 ---
 
-## ClassiCube
+## Games
 
 | Folder | System | Core .so | Source |
 |--------|--------|----------|--------|
-| `classicube` | ClassiCube / Minecraft Classic | `classicube_libretro.so` | [tzubertowski/FroggyCraft](https://github.com/tzubertowski/FroggyCraft) |
-| `mcpe` | Minecraft Pocket Edition 0.6.1 | `mcpe_libretro.so` | [Synaps33/FroggyPE](https://github.com/Synaps33/FroggyPE) |
-| `openclaw` | Captain Claw | `openclaw_libretro.so` | [tzubertowski/FroggyClaw](https://github.com/tzubertowski/FroggyClaw) |
+| `openbor` | [OpenBOR](docs/cores/openbor.md), multiple user-supplied game/mod PAKs | `openbor_libretro.so` | [TreeFrogUI_openbor](https://github.com/tzubertowski/TreeFrogUI_openbor), legacy engine core |
 
 ## Nintendo
 
@@ -22,6 +22,8 @@ ROM folder name → core .so file. Built = present in `build/`. ❌ = not built 
 | `nest` | NES (accurate) | `nestopia_libretro.so` | [libretro/nestopia](https://github.com/libretro/nestopia) |
 | `snes`, `SFC` | SNES | `snes9x2005_plus_libretro.so` | [tzubertowski/snes9x2005](https://github.com/tzubertowski/snes9x2005) |
 | `snes02` | SNES (2002) | `snes9x2002_libretro.so` | [tzubertowski/snes9x2002](https://github.com/tzubertowski/snes9x2002) |
+| `snesz` | SNES (newer, compatibility-oriented alternative; slower than Snes9x 2005 on R36SX) | `snes9x-Z_libretro.so` | [andrezaiats/snes9x-Z](https://github.com/andrezaiats/snes9x-Z) |
+| `pokket` | PocketStation (requires user-supplied `cubegm/bios/pocketstation.bin`) | `pokket_libretro.so` | [mentalfoundry/Pokket](https://github.com/mentalfoundry/Pokket) |
 | `gb` | Game Boy | `gambatte_libretro.so` | [tzubertowski/libretro-gambatte](https://github.com/tzubertowski/libretro-gambatte) |
 | `gbgb` | Game Boy | `gearboy_libretro.so` | [drhelius/Gearboy](https://github.com/drhelius/Gearboy) |
 | `gbb`, `dblcherrygb` | GB (link cable) | `tgbdual_libretro.so` | [libretro/tgbdual-libretro](https://github.com/libretro/tgbdual-libretro) |
@@ -147,7 +149,8 @@ ROM folder name → core .so file. Built = present in `build/`. ❌ = not built 
 | `xrick` | Rick Dangerous | `xrick_libretro.so` | [libretro/xrick-libretro](https://github.com/libretro/xrick-libretro) |
 | `jnb` | Jump 'n Bump | `jumpnbump_libretro.so` | [libretro/jumpnbump-libretro](https://github.com/libretro/jumpnbump-libretro) |
 | `gong` | Pong clone | `gong_libretro.so` | [libretro/gong](https://github.com/libretro/gong) |
-| `pico8` (or legacy `fake08`) | PICO-8 | `fake08_libretro.so` | [tzubertowski/fake-08](https://github.com/tzubertowski/fake-08) (branch `sf3000`) |
+| `pico8` | PICO-8 (Picante8) | `picante8_libretro.so` | [MustardOS/picante8](https://github.com/MustardOS/picante8) |
+| `fake08` | PICO-8 (Fake-08) | `fake08_libretro.so` | [tzubertowski/fake-08](https://github.com/tzubertowski/fake-08) (branch `sf3000`) |
 | `ps1r` | PlayStation (lightrec JIT) | `pcsx_rearmed_libretro.so` | [libretro/pcsx_rearmed](https://github.com/libretro/pcsx_rearmed) + `patches/pcsx_rearmed-sf3000-lightrec.patch` |
 | `qpsx` | PlayStation (QPSX MIPS recompiler) | `qpsx_libretro.so` | [angree/sf2000-qpsx-playstation-emulator](https://github.com/angree/sf2000-qpsx-playstation-emulator) + `patches/qpsx-sf3000.patch` |
 | `retro8` | PICO-8 compat | `retro8_libretro.so` | [libretro/retro8](https://github.com/libretro/retro8) |

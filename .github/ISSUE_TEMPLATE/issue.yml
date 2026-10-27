@@ -17,6 +17,7 @@ body:
       options:
         - SF3000
         - SF3000HD
+        - SF3000HD without HDMI
         - SF3100
         - SF3500
         - GB350

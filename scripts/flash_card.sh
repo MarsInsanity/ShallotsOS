@@ -2,7 +2,7 @@
 # Clean TreeFrogUI install onto an SD card:
 #   format FAT32  ->  device stock backup  ->  TreeFrogUI payload + install_first/<dev>
 #
-# Usage:   sudo sh scripts/flash_card.sh <r36sx|sf3000|sf3500>  [/dev/sdX]
+# Usage:   sudo sh scripts/flash_card.sh <r36sx|sf3000|sf3000hd_nohdmi|sf3500>  [/dev/sdX]
 #          (device defaults to /dev/sda)
 #
 # Stock backups are user-supplied full card dumps (rootfs + stock cubegm + media
@@ -37,8 +37,9 @@ REL="$REPO/release"
 case "$1" in
   r36sx)  BK="$WORK/R36SX_sdcard";                INST=r36sx;  LABEL=R36SX  ; NOSLEEP="6d24:bb18 701c:bb18" ;;
   sf3000) BK="$WORK/SF3000_sdcard/SF3000_sdcard"; INST=sf3000; LABEL=SF3000 ; NOSLEEP="" ;;
+  sf3000hd_nohdmi) BK="$WORK/SF3000_new_sdcard";  INST=sf3000hd_nohdmi; LABEL=SF3000HD ; NOSLEEP="" ;;
   sf3500) BK="$WORK/SF3500_sdcard_v1.1";          INST=sf3500; LABEL=SF3500 ; NOSLEEP="" ;;
-  *) echo "usage: sudo sh $0 <r36sx|sf3000|sf3500> [/dev/sdX]"; exit 1 ;;
+  *) echo "usage: sudo sh $0 <r36sx|sf3000|sf3000hd_nohdmi|sf3500> [/dev/sdX]"; exit 1 ;;
 esac
 
 [ -d "$BK" ]                        || { echo "ABORT: stock backup not found: $BK"; exit 1; }

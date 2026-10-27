@@ -6,7 +6,7 @@
 
 A free, custom game-menu (frontend) for a range of MIPS-based Hichip handhelds - R36SX, SF3000, SF3500, GB350 and more (full list below). It replaces the stock menu and runs hundreds of retro systems.
 
-**Supported devices:** R36SX (v2.6 & v2.7), **R36 HD** (and R36SX clones - see [install guide](install.md#r36sx-clones-r36hd-etc)), SF3000, SF3000 HD, SF3100, SF3500, and GB350.
+**Supported devices:** R36SX (v2.6 & v2.7), **R36 HD** (and R36SX clones - see [install guide](install.md#r36sx-clones-r36hd-etc)), SF3000, SF3000 HD, SF3000HD without HDMI, SF3100, SF3500, and GB350.
 
 ![UI Preview on SF3000 Console](console.jpg)
 
@@ -45,7 +45,7 @@ A free, custom game-menu (frontend) for a range of MIPS-based Hichip handhelds -
 | Component | What it does |
 |-----------|-------------|
 | **TreeFrogUI** (`frogui_libretro.so`) | ROM browser and launcher, runs inside picoarch |
-| **58 emulator cores** | NES, SNES, GBA, Mega Drive, PC Engine, Amiga, Atari ST, J2ME, and more |
+| **Emulator cores** | NES, SNES, GBA, Mega Drive, PC Engine, Amiga, Atari ST, J2ME, and more |
 | **build system** | Cross-compile everything from source using the SF3000 toolchain |
 
 See [cores.md](cores.md) for the full folder→core mapping table.
@@ -55,7 +55,7 @@ See [cores.md](cores.md) for the full folder→core mapping table.
 ## Why TreeFrogUI?
 
 - **Minimalistic but powerful UI** - Clean, fast game selection screen with quick navigation.
-- **58 emulator cores** - Now supports 58 emulator cores compared to only 14 in the stock OS. This includes **Java Games** (J2ME / MIDP 2.0), **PICO-8** (via Fake08/Retro8), **Quake** (via Tyrquake), **Cave Story** (via NXEngine), **Doom** (via PrBoom), **PlayStation 1** (via PCSX ReArmed), plus classic computer systems like Commodore Amiga and Atari ST.
+- **Broad system support** - Includes **Java Games** (J2ME / MIDP 2.0), **PICO-8** (via Fake08/Retro8/Picante8), **Quake** (via Tyrquake), **Cave Story** (via NXEngine), **Doom** (via PrBoom), **PlayStation 1** (via PCSX ReArmed), plus classic computer systems like Commodore Amiga and Atari ST.
 - **Highly configurable cores** - Configurable settings for all cores, allowing for retro features like console palette swaps, LCD ghosting emulation, and more.
 - **In-game saves** - Fully supported across all compatible cores for seamless session saving and loading.
 - **Quick Resume** - Automatically boots back into the last played game upon device boot, skipping the frontend.
@@ -308,6 +308,7 @@ Some cores need BIOS/firmware files. Place them in the system folder the core ex
 | System | File needed |
 |--------|-------------|
 | PlayStation 1 | any 512 KiB PS1 BIOS in **`cubegm/bios/`** - PCSX4ALL matching is case-insensitive and prefers `scph*`. 📖 [full guide](docs/cores/ps1.md), **strongly recommended** |
+| PocketStation (`pokket`) | User-supplied `pocketstation.bin` in **`cubegm/bios/`** - 📖 [setup and supported formats](docs/cores/pokket.md) |
 | GBA (gpsp) | `gba_bios.bin` (official Nintendo GBA BIOS) |
 | Odyssey² / Videopac (o2em) | `o2rom.bin` in **`cubegm/bios/`** (exact filename; MD5 `562d5ebf9e030a40d6fabfc2f33139fd`) |
 | Amiga (UAE) | Kickstart ROM - 📖 [full guide](docs/cores/amiga.md) |
@@ -476,8 +477,8 @@ treefrog-ui/
 ### SF3000 family
 
 > [!NOTE]
-> One package now supports **six devices**, auto-detected at boot from the device
-> tree: **R36SX** (v2.6 / v2.7), **SF3000**, **SF3000 HD**, **SF3100**, **SF3500**,
+> One package now supports **seven device variants**, auto-detected at boot from the device
+> tree: **R36SX** (v2.6 / v2.7), **SF3000**, **SF3000 HD**, **SF3000HD without HDMI**, **SF3100**, **SF3500**,
 > and **GB350**. SF3000 HD, SF3100 and SF3500 share the same 854×480 panel + driver
 > (HD/SF3100 report as "SF3500" in the log, expected). GB350 is a 640×480 4:3
 > device. See the [install guide](install.md) for the per-device stock backup and
@@ -519,7 +520,7 @@ Donations go straight toward buying the next device to port to.
 - **angree** - Amiga (UAE4ALL) and Atari ST (castaway) ports for SF-series handhelds
 - **goph-R** - [SF3000-RE](https://github.com/goph-R/SF3000-RE) reverse engineering project and boot logo specs
 - **SjslTech** - [YouTube](https://www.youtube.com/@SjslTech) - R36SX testing & contributions
-- **[Synaps33](https://github.com/Synaps33)** - original [FroggyPE](https://github.com/Synaps33/FroggyPE), [FroggyCraft](https://github.com/Synaps33/FroggyCraft), [FroggyKVM](https://github.com/Synaps33/FroggyKVM), and [FroggyClaw](https://github.com/Synaps33/FroggyClaw) cores
+- **[Synaps33](https://github.com/Synaps33)** - original [FroggyPE](https://github.com/Synaps33/FroggyPE), [FroggyCraft](https://github.com/Synaps33/FroggyCraft), [FroggyKVM](https://github.com/Synaps33/FroggyKVM), [FroggyDuke](https://github.com/Synaps33/FroggyDuke), and [FroggyClaw](https://github.com/Synaps33/FroggyClaw) cores
 - **[diasurgical](https://github.com/diasurgical)** and the [DevilutionX contributors](https://github.com/diasurgical/DevilutionX/graphs/contributors) - original Diablo 1 engine and open-source port
 - All libretro core authors
 

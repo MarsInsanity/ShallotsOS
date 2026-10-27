@@ -28,19 +28,21 @@ if [ "${TF_ZHIJACK_RAM:-0}" != 1 ]; then
     exit 1
 fi
 
-# Diagnostics are OPT-IN so we don't chew the SD card in normal use: logging is
-# ON only if the user pre-created /mnt/sdcard/log.txt. Otherwise LOG=/dev/null and
-# every write below is a no-op (and picoarch's own dbg_log is gated the same way,
-# on log.txt existing). To debug: drop an empty log.txt on the card and reboot.
-if [ -f /mnt/sdcard/log.txt ]; then
-    LOG=/mnt/sdcard/log.txt
-    mv "$LOG" "$LOG.prev" 2>/dev/null
-    : > "$LOG"
-    echo "=== zhijack boot [@DEV_LABEL@] $(date '+%H:%M:%S' 2>/dev/null) ===" >> "$LOG"
-    sync
-else
-    LOG=/dev/null
-fi
+# Keep one bounded boot log and one previous boot for launch/crash diagnosis.
+LOG_DIR=/mnt/sdcard/cubegm/logs
+LOG=$LOG_DIR/zhijack.log
+LOG_LIMIT=131072
+mkdir -p "$LOG_DIR"
+mv "$LOG" "$LOG.prev" 2>/dev/null
+: > "$LOG"
+log_event() {
+    LOG_SIZE=$(wc -c < "$LOG" 2>/dev/null)
+    [ -n "$LOG_SIZE" ] && [ "$LOG_SIZE" -lt "$LOG_LIMIT" ] || return
+    LOG_REMAINING=$((LOG_LIMIT-LOG_SIZE))
+    printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null)" "$*" | head -c "$LOG_REMAINING" >> "$LOG"
+}
+log_event "=== zhijack boot [@DEV_LABEL@] pid=$$ ==="
+sync
 
 # Offline updates: users drop the official update.zip into the SD-card root.
 # Run a /tmp copy so the updater can atomically replace its own
@@ -52,12 +54,12 @@ if [ -f /mnt/sdcard/cubegm/tfupdate.sh ]; then
         sh /tmp/tfupdate.sh @DEV_LABEL@
         UPDATE_RC=$?
         if [ "$UPDATE_RC" = 10 ]; then
-            echo "offline update installed; restarting launcher" >> "$LOG"
+            log_event "offline update installed; restarting launcher"
             rm -rf /tmp/zhijack.lock
             exec /mnt/sdcard/cubegm/zhijack.sh
             exit 1
         elif [ "$UPDATE_RC" != 0 ]; then
-            echo "offline update failed rc=$UPDATE_RC; continuing current version" >> "$LOG"
+            log_event "offline update failed rc=$UPDATE_RC; continuing current version"
         fi
     fi
 fi
@@ -70,7 +72,7 @@ fi
 # On rkgame-direct devices (SF3500/HD/SF3100) there is no icube: STOP no-ops.
 kill -STOP $(pidof icube) 2>/dev/null
 killall rkgame 2>/dev/null
-echo "icube frozen, rkgame killed" >> "$LOG"
+log_event "icube frozen, rkgame killed"
 
 cat > /tmp/tfdevice.env <<EOF
 TF_DEVICE=@DEV@
@@ -97,7 +99,7 @@ if [ "$TF_DEVICE" = SF3000 ] && [ -f /mnt/sdcard/cubegm/driver_sf3500.so ] && \
     sed -i -e 's/^TF_DEVICE=.*/TF_DEVICE=SF3500/' \
            -e 's|^TF_DRIVER=.*|TF_DRIVER=/mnt/sdcard/cubegm/driver_sf3500.so|' /tmp/tfdevice.env
     export TF_DEVICE=SF3500
-    echo "SF3000 with encrypted (SF3500-class) driver detected → using driver_sf3500.so" >> "$LOG"
+    log_event "SF3000 with encrypted (SF3500-class) driver detected; using driver_sf3500.so"
 fi
 
 # R36SX driver self-selection. Some kernels (v2.7-class, but firmware traits    #@R36@
@@ -110,10 +112,11 @@ DRV_FLAG=/mnt/sdcard/cubegm/driver27.flag #@R36@
 SIGBUS_N=0 #@R36@
 if [ -f "$DRV_FLAG" ] && [ -f "$DRV_SAFE" ]; then #@R36@
     sed -i "s|^TF_DRIVER=.*|TF_DRIVER=$DRV_SAFE|" /tmp/tfdevice.env #@R36@
-    echo "driver: SAFE variant (previous boots hit SIGBUS)" >> "$LOG" #@R36@
+    log_event "driver: SAFE variant (previous boots hit SIGBUS)" #@R36@
 fi #@R36@
 
-echo "processes at boot:" >> "$LOG"; ps >> "$LOG" 2>&1; [ "$LOG" = /dev/null ] || sync
+log_event "processes at boot: $(ps 2>&1)"
+sync
 
 export LD_LIBRARY_PATH=/mnt/sdcard/cubegm/lib:/mnt/sdcard/cubegm/usr/lib:$LD_LIBRARY_PATH
 
@@ -125,12 +128,10 @@ for c in /sys/devices/system/cpu/cpu*/cpufreq; do
     mx=$(cat "$c/cpuinfo_max_freq" 2>/dev/null)
     [ -n "$mx" ] && [ -w "$c/scaling_min_freq" ] && echo "$mx" > "$c/scaling_min_freq" 2>/dev/null
 done
-if [ "$LOG" != /dev/null ]; then
-    echo "CPU frequency policy after performance request:" >> "$LOG"
-    for c in /sys/devices/system/cpu/cpu*/cpufreq; do
-        echo "$c governor=$(cat "$c/scaling_governor" 2>/dev/null) cur=$(cat "$c/scaling_cur_freq" 2>/dev/null) min=$(cat "$c/scaling_min_freq" 2>/dev/null) max=$(cat "$c/scaling_max_freq" 2>/dev/null) hwmax=$(cat "$c/cpuinfo_max_freq" 2>/dev/null)" >> "$LOG"
-    done
-fi
+log_event "CPU frequency policy after performance request:"
+for c in /sys/devices/system/cpu/cpu*/cpufreq; do
+    log_event "$c governor=$(cat "$c/scaling_governor" 2>/dev/null) cur=$(cat "$c/scaling_cur_freq" 2>/dev/null) min=$(cat "$c/scaling_min_freq" 2>/dev/null) max=$(cat "$c/scaling_max_freq" 2>/dev/null) hwmax=$(cat "$c/cpuinfo_max_freq" 2>/dev/null)"
+done
 
 # Input: cubevol (reads gpio -> /tmp/joy_key shm) must be up; picoarch reads the shm.
 pidof cubevol >/dev/null 2>&1 || { [ -x /usr/bin/cubevol ] && /usr/bin/cubevol & }
@@ -153,65 +154,114 @@ PICOARCH_HI=/mnt/sdcard/cubegm/picoarch_hi
 FROGUI_CORE=/mnt/sdcard/cubegm/cores/frogui_libretro.so
 LAUNCH=/mnt/sdcard/cubegm/frogui_launch.txt
 
+# Shell builtins only: these loops run all through a game, and on a single
+# CPU core every process they start (grep, a non-builtin test) costs the game
+# time. ShallotsOS measured the old 0.05 s polling at ~25% of the CPU.
+process_running() {
+    [ -r "/proc/$1/status" ] || return 1
+    kill -0 "$1" 2>/dev/null || return 1
+    while read -r PR_KEY PR_VAL _; do
+        [ "$PR_KEY" = State: ] || continue
+        [ "$PR_VAL" != Z ]
+        return
+    done < "/proc/$1/status"
+    return 0
+}
+# Poll intervals: the menu reacts to a launch within 0.25 s; during a game
+# (launch requests come from its own menu) 0.5 s is plenty.
+UI_POLL=0.25
+GAME_POLL=0.5
+
 ITER=0
+LAUNCH_PENDING=0
 while true; do
     ITER=$((ITER+1))
-    rm -f "$LAUNCH"
-    killall rkgame 2>/dev/null #@KILL@
-    echo "--- iter $ITER: frogui ---" >> "$LOG"
-    : > /tmp/treefrog_ui.log
-    # Keep child stdout off the SD.  USB mode must be able to unmount even
-    # when diagnostics are enabled via /mnt/sdcard/log.txt.
-    # FrogUI asks for shutdown after writing LAUNCH, but some R36HD PicoArch
-    # builds do not return from RETRO_ENVIRONMENT_SHUTDOWN. Watch the shared
-    # request while the UI is alive so a stuck frontend cannot block every game.
-    "$PICOARCH" "$FROGUI_CORE" "$FROGUI_CORE" >> /tmp/treefrog_ui.log 2>&1 &
-    UI_PID=$!
-    while kill -0 "$UI_PID" 2>/dev/null; do
+    if [ "$LAUNCH_PENDING" = 1 ] && [ -s "$LAUNCH" ]; then
+        log_event "queued launch request at UI-loop start iter=$ITER: $(sed -n '1,3p' "$LAUNCH" | tr '\n' '|')"
+    else
         if [ -s "$LAUNCH" ]; then
-            echo "frogui launch request detected while pid=$UI_PID is alive" >> "$LOG"
-            kill "$UI_PID" 2>/dev/null
-            sleep 0.1
-            kill -9 "$UI_PID" 2>/dev/null
-            break
+            log_event "stale launch request at UI-loop start iter=$ITER: $(sed -n '1,3p' "$LAUNCH" | tr '\n' '|')"
         fi
-        sleep 0.25
-    done
-    wait "$UI_PID"
-    RC=$?
-    if [ "$RC" != 0 ]; then
-        mkdir -p /mnt/sdcard/cubegm/logs
-        cp /tmp/treefrog_ui.log /mnt/sdcard/cubegm/logs/last_picoarch_crash.log
-        [ -f /tmp/j2me_memory.log ] && cp /tmp/j2me_memory.log /mnt/sdcard/cubegm/logs/j2me_memory.log
-        sync
-    fi
-    echo "frogui exited rc=$RC" >> "$LOG"
-    # SIGBUS in the menu with the full driver → count, and after 2 strikes    #@R36@
-    # flip to the safe driver for this and every future boot.                 #@R36@
-    if [ "$RC" = 138 ] && [ ! -f "$DRV_FLAG" ] && [ -f "$DRV_SAFE" ]; then #@R36@
-        SIGBUS_N=$((SIGBUS_N+1)) #@R36@
-        if [ "$SIGBUS_N" -ge 2 ]; then #@R36@
-            touch "$DRV_FLAG" #@R36@
-            sed -i "s|^TF_DRIVER=.*|TF_DRIVER=$DRV_SAFE|" /tmp/tfdevice.env #@R36@
-            echo "driver: 2x SIGBUS with full driver → switching to SAFE variant permanently" >> "$LOG" #@R36@
-            sync #@R36@
+        rm -f "$LAUNCH"
+        killall rkgame 2>/dev/null #@KILL@
+        log_event "--- iter $ITER: frogui ---"
+        : > /tmp/treefrog_ui.log
+        # Keep child stdout off the SD. USB mode must be able to unmount it.
+        "$PICOARCH" "$FROGUI_CORE" "$FROGUI_CORE" >> /tmp/treefrog_ui.log 2>&1 &
+        UI_PID=$!
+        log_event "ui started pid=$UI_PID iter=$ITER"
+        while process_running "$UI_PID"; do
+            if [ -s "$LAUNCH" ]; then
+                log_event "frogui launch request detected ui_pid=$UI_PID; stopping UI immediately"
+                kill -TERM "$UI_PID" 2>/dev/null
+                sleep 0.1
+                process_running "$UI_PID" && kill -KILL "$UI_PID" 2>/dev/null
+                break
+            fi
+            sleep $UI_POLL
+        done
+        wait "$UI_PID"
+        RC=$?
+        if [ "$RC" != 0 ]; then
+            mkdir -p /mnt/sdcard/cubegm/logs
+            cp /tmp/treefrog_ui.log /mnt/sdcard/cubegm/logs/last_picoarch_crash.log
+            [ -f /tmp/j2me_memory.log ] && cp /tmp/j2me_memory.log /mnt/sdcard/cubegm/logs/j2me_memory.log
+            sync
+        fi
+        log_event "frogui exited pid=$UI_PID rc=$RC"
+        # SIGBUS in the menu with the full driver → count, and after 2 strikes #@R36@
+        # flip to the safe driver for this and every future boot.              #@R36@
+        if [ "$RC" = 138 ] && [ ! -f "$DRV_FLAG" ] && [ -f "$DRV_SAFE" ]; then #@R36@
+            SIGBUS_N=$((SIGBUS_N+1)) #@R36@
+            if [ "$SIGBUS_N" -ge 2 ]; then #@R36@
+                touch "$DRV_FLAG" #@R36@
+                sed -i "s|^TF_DRIVER=.*|TF_DRIVER=$DRV_SAFE|" /tmp/tfdevice.env #@R36@
+                log_event "driver: 2x SIGBUS with full driver; switching to SAFE variant permanently" #@R36@
+                sync #@R36@
+            fi #@R36@
         fi #@R36@
-    fi #@R36@
+    fi
+    LAUNCH_PENDING=0
 
         if [ -f "$LAUNCH" ]; then
             LAUNCH_KIND=$(sed -n '1p' "$LAUNCH")
-            echo "launch payload kind=$LAUNCH_KIND line2=$(sed -n '2p' \"$LAUNCH\") line3=$(sed -n '3p' \"$LAUNCH\")" >> "$LOG"
+            log_event "launch file detected kind=$LAUNCH_KIND line1=$(sed -n '1p' "$LAUNCH") line2=$(sed -n '2p' "$LAUNCH") line3=$(sed -n '3p' "$LAUNCH")"
             if [ "$LAUNCH_KIND" = standalone ]; then
             BIN_PATH=$(sed -n '2p' "$LAUNCH")
             ARG_PATH=$(sed -n '3p' "$LAUNCH")
             rm -f "$LAUNCH"
             sleep 0.3
-            echo "--- iter $ITER: standalone [$BIN_PATH] ---" >> "$LOG"
+            log_event "--- iter $ITER: standalone [$BIN_PATH] ---"
+            log_event "standalone stat: $(ls -l "$BIN_PATH" 2>/dev/null)"
             if [ -n "$ARG_PATH" ]; then
-                "$BIN_PATH" "$ARG_PATH" >> /tmp/treefrog_ui.log 2>&1
+                case "$BIN_PATH" in
+                    *.sh) /bin/sh "$BIN_PATH" "$ARG_PATH" >> /tmp/treefrog_ui.log 2>&1 & STANDALONE_PID=$! ;;
+                    *)    "$BIN_PATH" "$ARG_PATH" >> /tmp/treefrog_ui.log 2>&1 & STANDALONE_PID=$! ;;
+                esac
             else
-                "$BIN_PATH" >> /tmp/treefrog_ui.log 2>&1
+                case "$BIN_PATH" in
+                    *.sh) /bin/sh "$BIN_PATH" >> /tmp/treefrog_ui.log 2>&1 & STANDALONE_PID=$! ;;
+                    *)    "$BIN_PATH" >> /tmp/treefrog_ui.log 2>&1 & STANDALONE_PID=$! ;;
+                esac
             fi
+            while process_running "$STANDALONE_PID"; do
+                if [ -s "$LAUNCH" ]; then
+                    log_event "standalone frontend requested next launch; stopping pid=$STANDALONE_PID"
+                    kill -TERM "$STANDALONE_PID" 2>/dev/null
+                    sleep 0.1
+                    process_running "$STANDALONE_PID" && kill -KILL "$STANDALONE_PID" 2>/dev/null
+                    break
+                fi
+                sleep $GAME_POLL
+            done
+            wait "$STANDALONE_PID"
+            STANDALONE_RC=$?
+            if [ -s "$LAUNCH" ]; then
+                LAUNCH_PENDING=1
+                log_event "standalone frontend returned a FrogUI launch request; handling it without another UI start"
+            fi
+            log_event "standalone child exited pid=$STANDALONE_PID rc=$STANDALONE_RC"
+            cp /tmp/treefrog_ui.log /mnt/sdcard/cubegm/logs/last_standalone.log 2>/dev/null
             sleep 0.2
             continue
         fi
@@ -225,52 +275,41 @@ while true; do
             case "$CORE_PATH" in
                 *gpsp*|*pcsx*|*ps1*|*ppsspp*) [ -f "$PICOARCH_HI" ] && BIN="$PICOARCH_HI" ;;
             esac
-            echo "--- iter $ITER: game [$CORE_PATH] via $BIN ---" >> "$LOG"
-            echo "launcher pid=$$ exe=$(readlink /proc/$$/exe 2>/dev/null)" >> "$LOG"
-            echo "bin stat: $(ls -l "$BIN" 2>/dev/null)" >> "$LOG"
-            echo "core stat: $(ls -l "$CORE_PATH" 2>/dev/null)" >> "$LOG"
-            echo "rom stat: $(ls -l "$ROM_PATH" 2>/dev/null)" >> "$LOG"
-            echo "device env: $(tr '\n' ' ' < /tmp/tfdevice.env 2>/dev/null)" >> "$LOG"
-            echo "pre-game ps:" >> "$LOG"; ps >> "$LOG" 2>&1
+            log_event "core/ROM start iter=$ITER core=$CORE_PATH rom=$ROM_PATH frontend=$BIN"
+            log_event "launcher pid=$$ exe=$(readlink /proc/$$/exe 2>/dev/null)"
+            log_event "bin stat: $(ls -l "$BIN" 2>/dev/null)"
+            log_event "core stat: $(ls -l "$CORE_PATH" 2>/dev/null)"
+            log_event "rom stat: $(ls -l "$ROM_PATH" 2>/dev/null)"
+            log_event "device env: $(tr '\n' ' ' < /tmp/tfdevice.env 2>/dev/null)"
+            log_event "pre-game processes: $(ps 2>&1)"
             # Record the exact child executable/PID; stock rkgame and the
             # TreeFrogUI child can otherwise produce indistinguishable driver
             # messages in the shared log.
             "$BIN" "$CORE_PATH" "$ROM_PATH" >> /tmp/treefrog_ui.log 2>&1 &
             GAME_PID=$!
-            # Keep diagnostics available while a core is still in startup.
-            # A hung/OOM-prone core otherwise leaves only the launcher PID
-            # snapshot and its useful libretro log is lost in /tmp.
-            # Only with diagnostics on (log.txt): every pass starts processes
-            # and writes the SD card, which costs the game CPU on one core.
-            GAME_MONITOR_PID=
-            if [ "$LOG" != /dev/null ]; then
-                mkdir -p /mnt/sdcard/cubegm/logs
-                : > /mnt/sdcard/cubegm/logs/last_game_status.log
-                : > /mnt/sdcard/cubegm/logs/last_game_live.log
-                (
-                    while kill -0 "$GAME_PID" 2>/dev/null; do
-                        echo "--- game monitor pid=$GAME_PID ---" >> /mnt/sdcard/cubegm/logs/last_game_status.log
-                        tr '\n' ' ' < "/proc/$GAME_PID/status" >> /mnt/sdcard/cubegm/logs/last_game_status.log 2>/dev/null
-                        echo >> /mnt/sdcard/cubegm/logs/last_game_status.log
-                        cp /tmp/treefrog_ui.log /mnt/sdcard/cubegm/logs/last_game_live.log 2>/dev/null
-                        sleep 10
-                    done
-                ) &
-                GAME_MONITOR_PID=$!
-            fi
             GAME_EXE=$(readlink "/proc/$GAME_PID/exe" 2>/dev/null)
-            echo "game pid=$GAME_PID exe=$GAME_EXE" >> "$LOG"
-            echo "game cmdline: $(tr '\0' ' ' < /proc/$GAME_PID/cmdline 2>/dev/null)" >> "$LOG"
-            echo "game status: $(tr '\n' ' ' < /proc/$GAME_PID/status 2>/dev/null)" >> "$LOG"
+            log_event "game pid=$GAME_PID exe=$GAME_EXE"
+            log_event "game cmdline: $(tr '\0' ' ' < /proc/$GAME_PID/cmdline 2>/dev/null)"
+            log_event "game status: $(tr '\n' ' ' < /proc/$GAME_PID/status 2>/dev/null)"
+            while process_running "$GAME_PID"; do
+                if [ -s "$LAUNCH" ]; then
+                    log_event "game frontend requested next launch; stopping pid=$GAME_PID"
+                    kill -TERM "$GAME_PID" 2>/dev/null
+                    sleep 0.1
+                    process_running "$GAME_PID" && kill -KILL "$GAME_PID" 2>/dev/null
+                    break
+                fi
+                sleep $GAME_POLL
+            done
             wait "$GAME_PID"
             GRC=$?
-            if [ -n "$GAME_MONITOR_PID" ]; then
-                kill "$GAME_MONITOR_PID" 2>/dev/null
-                wait "$GAME_MONITOR_PID" 2>/dev/null
+            if [ -s "$LAUNCH" ]; then
+                LAUNCH_PENDING=1
+                log_event "game frontend returned a FrogUI launch request; handling it without another UI start"
             fi
-            echo "game exited rc=$GRC" >> "$LOG"
+            log_event "core child exited pid=$GAME_PID rc=$GRC core=$CORE_PATH rom=$ROM_PATH"
+            mkdir -p /mnt/sdcard/cubegm/logs
             cp /tmp/treefrog_ui.log /mnt/sdcard/cubegm/logs/last_game.log 2>/dev/null
-            sync
         fi
     fi
     sleep 0.2

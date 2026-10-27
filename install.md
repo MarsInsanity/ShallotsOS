@@ -1,11 +1,11 @@
 # TreeFrogUI Installation Guide
 
-One TreeFrogUI package supports **seven devices** - it auto-detects which one it is
+One TreeFrogUI package supports **eight device variants** - it auto-detects which one it is
 at boot. Pick your device below, grab its required backup, then follow the same
 install steps for everyone.
 
 Supported: **R36SX** (v2.6 / v2.7) · **R36HD** · **SF3000** · **SF3000 HD** ·
-**SF3100** · **SF3500** · **GB350**.
+**SF3000HD without HDMI** · **SF3100** · **SF3500** · **GB350**.
 
 > [!CAUTION]
 > # 🔴 **DO NOT USE THE FACTORY/PREINSTALLED STOCK OS** 🔴
@@ -74,6 +74,15 @@ factory card, or substitute a different backup.
 - Install folder: **`install_first/sf3000hd/`**
 - Boot logo: included in this folder (no action needed)
 - Shares the SF3500 display + driver, so it reports as **SF3500** in `log.txt` - that's expected.
+</details>
+
+<details>
+<summary><b>SF3000HD without HDMI</b> (no-HDMI firmware revision)</summary>
+
+- 📦 [SF3000HD without HDMI stock backup](https://github.com/tzubertowski/H.OS_stock_backup/releases/download/stock-backups-v1/SF3000HD_without_HDMI_stock.7z)
+- Install folder: **`install_first/sf3000hd_nohdmi/`**
+- Uses the SF3000 boot and display driver path; it does not use the HDMI-out SF3000 HD profile.
+- Keeps stock sleep behavior; this firmware's `cubevol` is not patched by **Disable Sleep**.
 </details>
 
 <details>

@@ -1,5 +1,23 @@
 # TreeFrogUI agent instructions
 
+- Luna handles implementation; the main agent handles analysis/review when available.
+
+## Repository and branch workflow
+
+- The canonical checkout is `/home/tomaszz/sf3000-work/sf3000_treefrogui`. Keep
+  active TreeFrogUI work in this folder on `main`.
+- Do not create source clones, worktrees, or per-release repository copies under
+  `/tmp` or elsewhere. Do not create per-release branches.
+- If a task needs isolation, use at most one feature branch at a time. Keep
+  `main` as the integration branch and ask the user for explicit confirmation
+  before merging a feature branch into `main`.
+- Before branch changes, inspect and preserve all modified, untracked, and
+  submodule work. Never reset or overwrite existing work to make a checkout
+  clean; record where any temporarily stashed changes were saved.
+- Keep companion repositories such as FrogUI on their existing canonical
+  checkout and branch. Update their pinned commit from the canonical TreeFrogUI
+  checkout; do not make parallel copies of the same source.
+
 ## Releases
 
 - Start a fresh `release-notes.md` for every minor or major release; do not inherit or carry forward the previous release's changelog.
@@ -20,6 +38,11 @@
   reject any archive whose `base_version` is `unknown`; old v1.0 archives may
   predate the cumulative updater. Use the newest valid v1.0.x archive for both
   `base_tag` and `update_base_tag` when no older update-capable archive exists.
+- Reuse the current local core bundle for releases that do not change compiled
+  components. If a release changes a core or FrogUI system mapping, rebuild only
+  that binary, update the affected payload files and bundle checksums, and keep
+  every other binary from the previous bundle. Run `build_local_bundle.sh` only
+  when the full set of compiled components must change or no valid bundle exists.
 - Keep retained comparison ZIPs in `release/artifact/`. Keep current staging,
   the full ZIP, and `update.zip` in `release/latest/`.
 - Do not hand-edit generated content under `release/` and do not commit it.

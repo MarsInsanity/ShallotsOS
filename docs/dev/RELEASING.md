@@ -134,14 +134,25 @@ the public SF3000 toolchain, checks out the FrogUI `treefrogui` and picoarch `r3
 seeds ignored staging files from an existing full release, builds both
 frontends, and publishes the full ZIP plus `update.zip`.
 
+The workflow packages a locally built core bundle pinned in
+`.github/workflows/release.yml`; it does not compile the emulator cores on the
+runner. Reuse that bundle when no compiled component changed. When a release
+adds or changes a core or FrogUI system mapping, rebuild only the affected
+binary, replace the matching files in the bundle, regenerate `SHA256SUMS`, and
+publish a new immutable bundle tag in `tzubertowski/TreeFrogUI-core-builds`.
+Keep all unchanged binaries from the preceding bundle. Run
+`build_local_bundle.sh` only when the whole compiled set needs rebuilding or no
+valid bundle is available.
+
 It can be started in either of these ways:
 
 - Push a `vMAJOR.MINOR.RELEASE` tag. The workflow uses that tag and creates a
   prerelease automatically.
 - Run it from **Actions → Build TreeFrogUI release → Run workflow**. Enter a
   `tag` to publish a release, or leave it blank to produce downloadable
-  build-only artifacts. Set both base inputs to the appropriate v1.0.x stable
-  archives; normally `base_tag` is the newest v1.0.x release.
+  build-only artifacts. The cumulative update base is configured by
+  `LAST_MAJOR_UPDATE_BASE` and `LAST_MAJOR_UPDATE_ASSET` in the workflow; keep
+  these on the newest valid stable v1.0.x archive.
 
 Manual runs without a tag never mutate GitHub releases; they upload the ZIPs as
 workflow artifacts for testing.

@@ -1,0 +1,13 @@
+diff --git a/source/classicube_sf2000/upstream/src/sf2000/Platform_SF2000.c b/source/classicube_sf2000/upstream/src/sf2000/Platform_SF2000.c
+index 0000000..0000000 100644
+--- a/source/classicube_sf2000/upstream/src/sf2000/Platform_SF2000.c
++++ b/source/classicube_sf2000/upstream/src/sf2000/Platform_SF2000.c
+@@ -59,7 +59,7 @@ void Platform_EncodePath(cc_filepath* dst, const cc_string* path) {
+ 	char* str = dst->buffer;
+ #ifdef __mips__
+ 	#ifdef CC_SF3000
+-	static const char prefix[] = "/mnt/sdcard/roms/classicube/";
++	static const char prefix[] = "/mnt/sdcard/roms/ports/classicube/";
+ 	#else
+ 	static const char prefix[] = "/mnt/sda1/ROMS/classicube/";
+ 	#endif

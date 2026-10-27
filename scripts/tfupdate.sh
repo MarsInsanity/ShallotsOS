@@ -45,7 +45,7 @@ LOG="$SDROOT/update.log"
 DEVICE=${1:-}
 
 case "$DEVICE" in
-    r36sx|r36hd|sf3000|sf3500|sf3000hd|sf3100|gb350) ;;
+    r36sx|r36hd|sf3000|sf3000hd_nohdmi|sf3500|sf3000hd|sf3100|gb350) ;;
     *) 
         if [ -n "$PID_VISOR" ]; then kill "$PID_VISOR" 2>/dev/null; fi
         exit 0 

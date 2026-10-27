@@ -1,0 +1,20 @@
+diff --git a/src/platform/sf2000/libretro.cpp b/src/platform/sf2000/libretro.cpp
+index 0000000..0000000 100644
+--- a/src/platform/sf2000/libretro.cpp
++++ b/src/platform/sf2000/libretro.cpp
+@@ -220,13 +220,13 @@ bool retro_load_game(const struct retro_game_info *info) {
+         strncpy(level_path, info->path, sizeof(level_path) - 1);
+
+         // If it's a dummy rom (e.g., .gba), change it to level1.phd
+         if (strstr(level_path, ".gba") || strstr(level_path, ".GBA") || strstr(level_path, ".bin") || strstr(level_path, ".BIN")) {
+             char *last_slash = strrchr(level_path, '/');
+             if (last_slash) {
+                 *last_slash = '\0';
+-                strcat(level_path, "/level1.phd");
++                strcat(level_path, "/LEVEL1.PHD");
+             }
+         }
+     } else {
+-        snprintf(level_path, sizeof(level_path), "/mnt/sda1/roms/GBA/level1.phd");
++        snprintf(level_path, sizeof(level_path), "/mnt/sda1/roms/GBA/LEVEL1.PHD");
+     }

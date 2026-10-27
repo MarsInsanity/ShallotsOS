@@ -3,16 +3,16 @@ set -eu
 
 # TreeFrogUI passes the selected .diablo marker as argv[1]. DevilutionX uses
 # its working directory for the MPQ files, so deliberately ignore that marker.
-cd /mnt/sdcard/roms/diablo
+cd /mnt/sdcard/roms/ports/diablo
 {
     echo "=== Diablo startup $(date 2>/dev/null) ==="
     echo "pid=$$ cwd=$(pwd)"
-    ls -lh DIABDAT.MPQ devilutionx.mpq 2>&1
+    ls -lh DIABDAT.MPQ 2>&1
 } >> /mnt/sdcard/cubegm/logs/diablo_start.log 2>&1
 # The firmware can export an invalid locale and an unwritable desktop HOME;
 # DevilutionX's libc/SDL startup then aborts or appears to hang while creating
 # its preference path. Keep all runtime state with the game data instead.
-export HOME=/mnt/sdcard/roms/diablo
+export HOME=/mnt/sdcard/roms/ports/diablo
 export LC_ALL=C
 export LANG=C
 # SDL 1.2 otherwise tries to open /dev/mouse during SDL_Init. The SF3000 has

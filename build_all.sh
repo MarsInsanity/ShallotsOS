@@ -156,6 +156,12 @@ _b snes9x2002        snes9x2002                ""
 echo "-- snes9x2010 make (accurate SNES, per-game picker only; LTO objects not PIC-safe for this linker) --"
 _b snes9x2010        snes9x2010                "-f Makefile.libretro" "LTO="
 
+echo "-- Snes9x-Z make (MIPS, threaded renderer disabled by default) --"
+./scripts/build_snes9x_z.sh || exit $?
+
+echo "-- Pokket PocketStation core (MIPS) --"
+./scripts/build_pokket.sh || exit $?
+
 echo "-- gambatte make --"
 _b gambatte          libretro-gambatte         "-f Makefile.libretro"
 
@@ -201,6 +207,24 @@ make -C "$CORES/FroggyKVM" platform=sf3000 \
 [ -f "$CORES/FroggyKVM/j2me_libretro.so" ] && \
     cp "$CORES/FroggyKVM/j2me_libretro.so" "$OUT/j2me_libretro.so" && \
     "$STRIP" "$OUT/j2me_libretro.so" && echo "→ $OUT/j2me_libretro.so"
+
+# OpenBOR legacy SF3000 Libretro core. Source stays in the fork's local checkout.
+echo "-- OpenBOR SF3000 Libretro --"
+OPENBOR_ROOT="${OPENBOR_ROOT:-$PWD/../OpenBOR-TreeFrogUI}"
+if [ ! -f "$OPENBOR_ROOT/build_libretro.sh" ] && [ -f "$CORES/OpenBOR/build_libretro.sh" ]; then
+    OPENBOR_ROOT="$CORES/OpenBOR"
+fi
+if [ ! -f "$OPENBOR_ROOT/build_libretro.sh" ]; then
+    echo "ERROR: OpenBOR Libretro source/build script missing under $OPENBOR_ROOT" >&2
+    exit 1
+fi
+if ! "$OPENBOR_ROOT/build_libretro.sh" sf3000; then
+    echo "ERROR: OpenBOR SF3000 build failed" >&2
+    exit 1
+fi
+cp "$OPENBOR_ROOT/build/sf3000/openbor_libretro.so" "$OUT/openbor_libretro.so"
+"$STRIP" "$OUT/openbor_libretro.so"
+echo "→ $OUT/openbor_libretro.so"
 
 # ── standard cores ────────────────────────────────────────────────────────────
 echo "-- picodrive make --"
@@ -531,7 +555,9 @@ _b quasi88           libretro-quasi88          ""
 
 echo "-- geolith make --"
 # LTO disabled in libretro-geolith/libretro/Makefile (R_MIPS_HI16 PIC issue with GCC 6.3 LTO)
-_b geolith           libretro-geolith/libretro "" "LDFLAGS=$LDFLAGS_S"
+# This Makefile appends -O2 after wrapper flags. Use the trailing -O3 wrappers
+# so the 74Kc build is not left at -O2; keep all SF3000 target flags intact.
+_b geolith           libretro-geolith/libretro "" "CC=$WRAP/mips-gcc-O3 CXX=$WRAP/mips-g++-O3 LDFLAGS=$LDFLAGS_S"
 
 echo "-- xmil make --"
 _b x68k              libretro-xmil/libretro    ""

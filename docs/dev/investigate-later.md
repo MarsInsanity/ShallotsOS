@@ -3,6 +3,12 @@
 Running list of reported quirks worth a proper look, with the current
 understanding. Not blocking; parked here so they aren't lost.
 
+## Remove the legacy port-folder migration shim in the 1.8 prerelease
+
+FrogUI temporarily moves old `roms/<port>/` folders into `roms/ports/<port>/`
+for the 1.7 migration window. Remove that migration flow in the 1.8 prerelease,
+once users have had a release to move their data.
+
 ## Low-RAM devices: zRAM plus optional SD swap
 
 - Measure real OOM cases first: capture `MemAvailable`, `/proc/swaps`, process

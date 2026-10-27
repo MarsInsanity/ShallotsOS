@@ -15,6 +15,11 @@ on:
         required: true
         default: true
         type: boolean
+      notify_discord:
+        description: Post the release update to Discord
+        required: true
+        default: true
+        type: boolean
   repository_dispatch:
     types: [release]
 
@@ -28,15 +33,15 @@ permissions:
 env:
   # This archive is built and tested locally. CI only verifies, packages, and
   # publishes it; changing any of these values is a deliberate release action.
-  LOCAL_BUNDLE_TAG: local-build-v1.6.0-q
-  LOCAL_BUNDLE_ASSET: TreeFrogUI-local-build-v1.6.0-q.tar.gz
-  LOCAL_BUNDLE_SHA256: 2d9da31b8d73435f81c1ffc61f08e8d41e6b882deded815315cbd403b61e03ba
+  LOCAL_BUNDLE_TAG: local-build-v1.8.0-r
+  LOCAL_BUNDLE_ASSET: TreeFrogUI-local-build-v1.8.0-r.tar.gz
+  LOCAL_BUNDLE_SHA256: 1f8eb9b23e212c3ce2538983d4d045d6ae15e2ec0043ce7820e632bcd2d5a701
   CORE_BUILD_REPO: tzubertowski/TreeFrogUI-core-builds
   # update.zip is always cumulative from the last major stable baseline.
   # Change this deliberately when the product moves to a new major baseline;
   # never replace it with the latest prerelease.
-  LAST_MAJOR_UPDATE_BASE: v1.0.12
-  LAST_MAJOR_UPDATE_ASSET: TreeFrogUI_v1.0.12_c.zip
+  LAST_MAJOR_UPDATE_BASE: v1.0.15
+  LAST_MAJOR_UPDATE_ASSET: TreeFrogUI_v1.0.15_a.zip
 
 jobs:
   build:
@@ -99,6 +104,31 @@ jobs:
           mkdir -p release/latest
           cp -a "$RUNNER_TEMP/local-bundle/release" release/latest/release
 
+      - name: Remove ports from the TreeFrogUI release payload
+        run: |
+          set -euo pipefail
+          current=release/latest/release
+          # The pinned core bundle predates the separate Ports Collection.
+          rm -f "$current"/cubegm/cores/{classicube,mcpe,openclaw,duke3d,butterscotch,openlara,vvvvvv}_libretro.so
+          rm -f "$current/cubegm/devilutionx" "$current/cubegm/devilutionx.sh" \
+            "$current/cubegm/lib/libSDL_image-1.2.so.0"
+          rm -rf "$current/roms/ports" "$current/roms/diablo" "$current/roms/duke3d" \
+            "$current/roms/mcpe" "$current/roms/openclaw" "$current/roms/openlara" \
+            "$current/roms/undertale" "$current/roms/vvvvvv" "$current/roms/classicube"
+          rm -f "$current"/frogui/port-help/{classicube,diablo,duke3d,mcpe,openclaw,openlara,undertale,vvvvvv}.png \
+            "$current/frogui/licenses/VVVVVV.LICENSE"
+          rm -f "$current"/docs/cores/{classicube,diablo,duke3d,mcpe,openclaw,openlara,undertale,vvvvvv}.md
+          for art in classicube diablo duke3d mcpe openclaw openlara undertale vvvvvv; do
+            rm -f "$current/frogui/$art.png" "$current/frogui/$art.jpg" \
+              "$current/frogui/system-icons/$art.png"
+            if [[ -d "$current/frogui/theme-packs" ]]; then
+              find "$current/frogui/theme-packs" -type f \( -name "$art.png" -o -name "$art.jpg" -o -name "$art-*.png" -o -name "$art-*.jpg" \) -delete
+            fi
+            if [[ -d "$current/frogui/icon-packs" ]]; then
+              find "$current/frogui/icon-packs" -type f -name "$art.png" -delete
+            fi
+          done
+
       - name: Download cumulative update base
         env:
           GH_TOKEN: ${{ github.token }}
@@ -114,19 +144,26 @@ jobs:
           set -euo pipefail
           current=release/latest/release
           test -s "$current/cubegm/cores/j2me_libretro.so"
-          test -s "$current/cubegm/cores/mcpe_libretro.so"
-          test -s "$current/cubegm/cores/openclaw_libretro.so"
+          for core in classicube mcpe openclaw duke3d butterscotch openlara vvvvvv; do
+            test ! -e "$current/cubegm/cores/${core}_libretro.so"
+          done
+          test ! -e "$current/roms/ports"
+          test ! -e "$current/cubegm/devilutionx"
           test -s "$current/cubegm/bios/Roland_SC-55.sf2"
-          echo 'b1b50c73075a9db441fc5e8cac07d86e882fd97fcd0bd4b317f449023bb33ad7  '"$current/cubegm/dsperate/dsperate" | sha256sum -c -
+          echo '39c080709be1dca0056613b4f548aaffb1f0aaf18c1c988cdad3f37251e206a8  '"$current/cubegm/dsperate/dsperate" | sha256sum -c -
           required=(
             cubegm/picoarch cubegm/picoarch_hi
+            cubegm/port_check.sh
             cubegm/cores/frogui_libretro.so cubegm/cores/tyrquake_libretro.so
-            cubegm/cores/classicube_libretro.so cubegm/cores/mcpe_libretro.so
-            cubegm/cores/openclaw_libretro.so
+            cubegm/cores/snes9x-Z_libretro.so frogui/licenses/Snes9x-Z.LICENSE
+            cubegm/cores/pokket_libretro.so frogui/licenses/Pokket.LICENSE
+            frogui/licenses/Pokket-core.MIT
+            frogui/pokket.jpg
+            frogui/theme-packs/Art_Book_NextUI/pokket.jpg
+            frogui/theme-packs/Art_Book_Next/pokket.jpg
+            frogui/theme-packs/Nao_Black/pokket.jpg
             cubegm/ebook cubegm/dsperate/dsperate
-            cubegm/devilutionx cubegm/devilutionx.sh
-            roms/diablo/devilutionx.mpq
-            "roms/diablo/Start Diablo 1.diablo"
+            cubegm/cores/openbor_libretro.so
             cubegm/lib/libSDL-1.2.so.0 cubegm/lib/libpng12.so.0
             cubegm/lib/libpng16.so.16
           )
@@ -134,6 +171,18 @@ jobs:
             [[ -f "$current/$rel" ]] || { echo "Missing required payload: $rel" >&2; exit 1; }
           done
           [[ -d "$current/roms/nds" ]] || { echo 'Missing required ROM folder: roms/nds' >&2; exit 1; }
+          [[ -d "$current/roms/snesz" ]] || { echo 'Missing required ROM folder: roms/snesz' >&2; exit 1; }
+          [[ -d "$current/roms/pokket" ]] || { echo 'Missing required ROM folder: roms/pokket' >&2; exit 1; }
+          [[ -f "$current/docs/cores/pokket.md" ]] || { echo 'Missing Pokket setup guide' >&2; exit 1; }
+          for system in pico8 fake08 retro8; do
+            [[ -d "$current/roms/$system" ]] || { echo "Missing required ROM folder: roms/$system" >&2; exit 1; }
+          done
+          [[ -f "$current/docs/cores/ports.md" ]] || { echo 'Missing Ports Collection installation guide' >&2; exit 1; }
+          [[ -f "$current/docs/cores/openbor.md" ]] || { echo 'Missing OpenBOR guide' >&2; exit 1; }
+          if [[ -d "$current/roms/openbor" ]] && find "$current/roms/openbor" -type f -iname '*.pak' -print -quit | grep -q .; then
+            echo 'OpenBOR game PAK files must not be included in the release' >&2
+            exit 1
+          fi
           echo "Release sanity check passed: $(find "$current/cubegm/cores" -name '*.so' | wc -l) cores; resources present."
 
       - name: Package full install and update
@@ -176,7 +225,7 @@ jobs:
           PRERELEASE: ${{ inputs.prerelease || 'true' }}
         run: |
           set -euo pipefail
-          args=("$RELEASE_TAG" "release/latest/TreeFrogUI_${VERSION}.zip" "release/latest/update.zip" --repo "$GITHUB_REPOSITORY" --title "TreeFrogUI ${VERSION}" --notes-file release-notes.md)
+          args=("$RELEASE_TAG" "release/latest/TreeFrogUI_${VERSION}.zip" "release/latest/update.zip" --repo "$GITHUB_REPOSITORY" --title "TreeFrogUI ${VERSION}" --notes-file release-notes.md --target "$GITHUB_SHA")
           if [[ "$PRERELEASE" == true || "$RELEASE_TAG" == *-unstable* ]]; then args+=(--prerelease); fi
           if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$RELEASE_TAG" "release/latest/TreeFrogUI_${VERSION}.zip" release/latest/update.zip --clobber --repo "$GITHUB_REPOSITORY"
@@ -185,7 +234,7 @@ jobs:
           fi
 
       - name: Post concise release update to Discord
-        if: steps.names.outputs.tag != ''
+        if: steps.names.outputs.tag != '' && (github.event_name != 'workflow_dispatch' || inputs.notify_discord == true)
         env:
           GH_TOKEN: ${{ github.token }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_GITHUB_UPDATES_WEBHOOK }}
