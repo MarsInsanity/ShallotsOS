@@ -551,6 +551,7 @@ or bundled with devices for sale. Full license texts are in
 | libpicofe (menu and input library inside picoarch) | `libpicofe/` in picoarch | GPL v2+, LGPL v2.1+ or MAME license (your choice) | notaz and contributors |
 | PCSX4ALL (PS1, `cubegm/pcsx4all`) | [MarsInsanity/ShallotsOS_pcsx4all](https://github.com/MarsInsanity/ShallotsOS_pcsx4all), over [gameblabla/pcsx4all](https://github.com/gameblabla/pcsx4all) | GPL v2 | PCSX / PCSX-Reloaded / PCSX ReARMed authors, gameblabla, TreeFrogUI SF3000 port, ShallotsOS changes |
 | HCSNES (`hcsnes_fast`, `hcsnes_plus`, experimental SNES) | [MarsInsanity/HCSNES](https://github.com/MarsInsanity/HCSNES) | Snes9x license (non-commercial) for the emulator; MIT for HCSNES's own new files | Snes9x team; HCSNES contributors |
+| HCPS1 (`hcps1`, experimental PS1) | [MarsInsanity/HCPS1](https://github.com/MarsInsanity/HCPS1) | GPL v2 or later (PCSX ReARMed, Lightrec, GNU Lightning) | PCSX ReARMed authors; Lightrec and GNU Lightning authors; HCPS1 contributors |
 | Emulator cores | `cores/` | Each core's own license (GPL, LGPL, BSD, MIT, MAME, non-commercial, ...) | Upstream libretro authors; see [cores.md](cores.md) |
 
 ### Libraries built into the menu

@@ -2,7 +2,7 @@
 
 ← [back to README](../../README.md)
 
-PS1 games (`roms/psx`) run on ShallotsOS's **PCSX4ALL** by default ([MarsInsanity/ShallotsOS_pcsx4all](https://github.com/MarsInsanity/ShallotsOS_pcsx4all), a standalone emulator with a fast MIPS recompiler). It works like the other systems: the same in-game menu as picoarch (FN, or the keys set in FrogUI's In-game Menu Keys), save slots with screenshots, SELECT+R2 / SELECT+L2, the GameSwitcher, resume after power-off and Auto-Save/Load. The libretro **pcsx_rearmed** (lightrec JIT) and **QPSX** can be picked per game or per system with Y > Emulator. The emulators keep separate memory cards: switching does not carry saves over.
+PS1 games (`roms/psx`) run on ShallotsOS's **PCSX4ALL** by default ([MarsInsanity/ShallotsOS_pcsx4all](https://github.com/MarsInsanity/ShallotsOS_pcsx4all), a standalone emulator with a fast MIPS recompiler). It works like the other systems: the same in-game menu as picoarch (FN, or the keys set in FrogUI's In-game Menu Keys), save slots with screenshots, SELECT+R2 / SELECT+L2, the GameSwitcher, resume after power-off and Auto-Save/Load. The libretro **pcsx_rearmed** (lightrec JIT), the experimental **HCPS1** (PCSX ReARMed with Lightrec, built for this hardware) and **QPSX** can be picked per game or per system with Y > Emulator. The emulators keep separate memory cards: switching does not carry saves over.
 
 **Use a real BIOS.** Without one, both cores fall back to HLE, which causes **graphical glitches, worse performance, and broken/hanging memory-card saves** (e.g. Harvest Moon). Drop **any** PS1 BIOS in **`cubegm/bios/`** and both cores find it:
 
@@ -10,6 +10,7 @@ PS1 games (`roms/psx`) run on ShallotsOS's **PCSX4ALL** by default ([MarsInsanit
 |------|-----------|------|
 | **PCSX4ALL** | `PS` | auto-detects any 512 KiB PS1 BIOS in `cubegm/bios/` |
 | **pcsx_rearmed** (lightrec) | `ps1r` | any `scph*.bin` in `cubegm/bios/` |
+| **HCPS1** (experimental, Lightrec) | Y > Emulator | any `scph*.bin` in `cubegm/bios/` |
 
 PCSX4ALL filename matching is case-insensitive. `scph1001.bin`,
 `SCPH5501.BIN`, `scph7001.bin` and other regional PS1 BIOS dumps work. Its

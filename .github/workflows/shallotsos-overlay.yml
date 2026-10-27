@@ -23,6 +23,9 @@ on:
       hcsnes_ref:
         description: HCSNES branch, tag or commit to build
         default: main
+      hcps1_ref:
+        description: HCPS1 branch, tag or commit to build
+        default: main
       pcsx4all_ref:
         description: ShallotsOS_pcsx4all branch, tag or commit to build
         default: claude/shallotsos-menu-integration
@@ -34,6 +37,7 @@ env:
   # The picoarch branch pushes build from, unless a manual run names another.
   PICOARCH_REF: ${{ inputs.picoarch_ref || 'claude/gameswitcher-fn-hold' }}
   HCSNES_REF: ${{ inputs.hcsnes_ref || 'main' }}
+  HCPS1_REF: ${{ inputs.hcps1_ref || 'main' }}
   PCSX4ALL_REF: ${{ inputs.pcsx4all_ref || 'claude/shallotsos-menu-integration' }}
   TOOLCHAIN_URL: https://github.com/game-de-it/sf3000/releases/download/sf3000_toolchain_v0.1/mipsel-buildroot-linux-gnu_sdk-buildroot.tar.gz
 
@@ -62,6 +66,16 @@ jobs:
           repository: MarsInsanity/HCSNES
           ref: ${{ env.HCSNES_REF }}
           path: hcsnes-src
+
+      # HCPS1: an experimental PS1 core (PCSX ReARMed with Lightrec, built
+      # for this hardware), offered as an extra PS1 emulator in the Y menu.
+      - name: Check out HCPS1
+        uses: actions/checkout@v4
+        with:
+          repository: MarsInsanity/HCPS1
+          ref: ${{ env.HCPS1_REF }}
+          path: hcps1-src
+          submodules: recursive
 
       # PCSX4ALL: the PS1 emulator (standalone), with picoarch's menu and keys.
       - name: Check out ShallotsOS_pcsx4all
@@ -116,6 +130,19 @@ jobs:
           file hcsnes-src/build/sf3000/hcsnes_*_libretro.so
           echo "HCSNES_SHA=$(git -C hcsnes-src rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
+      # Experimental: a failure here leaves HCPS1 out of the overlay instead
+      # of failing the whole build.
+      - name: Build the HCPS1 core
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          sdk="$HOME/sf3000-work/sf3000toolchain/mipsel-buildroot-linux-gnu_sdk-buildroot"
+          CROSS_COMPILE="$sdk/opt/ext-toolchain/bin/mips-mti-linux-gnu-" \
+          SYSROOT="$sdk/mipsel-buildroot-linux-gnu/sysroot" \
+            python3 hcps1-src/scripts/build.py --target sf3000 --jobs "$(nproc)"
+          file hcps1-src/dist/sf3000/hcps1_libretro.so
+          echo "HCPS1_SHA=$(git -C hcps1-src rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
       - name: Build PCSX4ALL
         run: |
           set -euo pipefail
@@ -141,6 +168,9 @@ jobs:
           cp frogui/out/frogui_libretro.so "$out/cubegm/cores/"
           cp hcsnes-src/build/sf3000/hcsnes_fast_libretro.so \
              hcsnes-src/build/sf3000/hcsnes_plus_libretro.so "$out/cubegm/cores/"
+          if [ -f hcps1-src/dist/sf3000/hcps1_libretro.so ]; then
+            cp hcps1-src/dist/sf3000/hcps1_libretro.so "$out/cubegm/cores/"
+          fi
           cp "$HOME/sf3000-work/picoarch/picoarch" "$HOME/sf3000-work/picoarch/picoarch_hi" "$out/cubegm/"
           cp "$RUNNER_TEMP/video_player" "$out/cubegm/"
           cp pcsx4all-src/build/pcsx4all "$out/cubegm/"
@@ -155,7 +185,7 @@ jobs:
           cp -a assets/system-icons/. "$out/frogui/system-icons/"
           cp -a frogui/lang/builtin "$out/frogui/lang/"
           cat > "$out/SHALLOTSOS-README.txt" <<EOF
-          ShallotsOS overlay (ShallotsOS ${GITHUB_SHA::7}, picoarch ${PICOARCH_SHA}, HCSNES ${HCSNES_SHA}, PCSX4ALL ${PCSX4ALL_SHA})
+          ShallotsOS overlay (ShallotsOS ${GITHUB_SHA::7}, picoarch ${PICOARCH_SHA}, HCSNES ${HCSNES_SHA}, HCPS1 ${HCPS1_SHA:-not built}, PCSX4ALL ${PCSX4ALL_SHA})
 
           Copy everything in this folder to the root of an SD card that
           already runs TreeFrogUI, replacing existing files when asked:
@@ -163,6 +193,7 @@ jobs:
             cubegm/cores/frogui_libretro.so  ShallotsOS menu
             cubegm/cores/hcsnes_*_libretro.so  HCSNES Fast / Plus, experimental
                                              SNES emulators (Y on a game > Emulator)
+            cubegm/cores/hcps1_libretro.so   HCPS1, experimental PS1 emulator
             cubegm/picoarch, picoarch_hi     emulator frontend and in-game menu
             cubegm/video_player              music and video player
             cubegm/pcsx4all                  PS1 emulator (picoarch's menu and keys)
