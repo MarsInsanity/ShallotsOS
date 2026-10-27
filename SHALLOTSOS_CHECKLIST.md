@@ -377,6 +377,8 @@ Full ShallotsOS install (no TreeFrogUI install first):
       are never replaced; log `cubegm/logs/shallots_setup.log`
 - [x] Overlay workflow uploads `ShallotsOS-full` and `ShallotsOS-update`
       artifacts (no release is published)
+- [x] First package build: run 40479764817 (ShallotsOS f554af6), artifacts
+      `ShallotsOS-full`, `ShallotsOS-update`
 - [ ] Device test on the R36SX: fresh card from the R36SX v2.6 backup plus
       the full package; then an update.zip over it
 
