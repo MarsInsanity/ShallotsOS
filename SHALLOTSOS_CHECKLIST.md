@@ -31,12 +31,12 @@ page.
 
 Latest test build:
 
-- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40468707881
-  (ShallotsOS `2026488`, picoarch `4abb023`, Books reader `53ece93`, PCSX4ALL `75967a2`, HCSNES 0.4 `84ce531`)
+- https://github.com/MarsInsanity/ShallotsOS/actions/runs/40470258884
+  (ShallotsOS `8e8f57a`, picoarch `4abb023`, Books reader `53ece93`, PCSX4ALL `75967a2`, HCSNES 0.4 `84ce531`)
 
 ## User to-do (device tests)
 
-Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40468707881
+Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40470258884
 Before: back up the SD card. For feel tests remove `log.txt` and the
 stockprobe (uninstall_stockprobe.bat); put `log.txt` back only when a test
 asks for logs.
