@@ -177,6 +177,17 @@ done
 pidof cubevol >/dev/null 2>&1 || { [ -x /usr/bin/cubevol ] && /usr/bin/cubevol & }
 sleep 0.5
 
+# ShallotsOS volume/brightness popups (Settings > ShallotsOS Volume
+# Indicator). FrogUI starts them too, but a game resumed after power-off
+# starts before FrogUI ever loads. From a /tmp copy so USB mode can unmount
+# the card; it exits by itself when the setting is off or one already runs.
+if [ -f /mnt/sdcard/cubegm/shallots_osd ] && \
+   cp /mnt/sdcard/cubegm/shallots_osd /tmp/shallots_osd 2>/dev/null; then
+    chmod 755 /tmp/shallots_osd
+    ( cd / && exec /tmp/shallots_osd ) </dev/null >/dev/null 2>&1 &
+    log_event "shallots_osd started at boot"
+fi
+
 # Optional: disable the power-button sleep (FrogUI Settings -> "Disable Sleep",
 # default off, applies after restart). Live-patch every cubevol instance in RAM
 # so the on-disk binary stays byte-identical -> passes SF3500 boot verification.

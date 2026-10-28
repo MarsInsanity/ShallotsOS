@@ -463,6 +463,16 @@ Frameskip:
 - [ ] Device test: PC Engine smooth by default; check whether PicoDrive
       (Mega Drive) shows the same needless skipping (also Auto)
 
+Volume indicator after a resumed game:
+
+- [x] Bug: after powering off in a game, the boot that resumes it showed the
+      stock volume popup (picoarch jumps into the game before FrogUI loads,
+      and only FrogUI started shallots_osd). Fixed: zhijack starts
+      shallots_osd at boot too (it exits by itself if the setting is off or
+      one already runs)
+- [ ] Device test: power off in a game, power on; volume keys show the
+      ShallotsOS popup in the resumed game
+
 
 ## Next
 
