@@ -429,6 +429,15 @@ GBA: gpSP (latest):
       GameSwitcher suspend (.st10 + .st10.resume); both held the frozen
       game. Moved .sav/.st9/.st10 to `backup/hamtaro-freeze` on the SD.
       For save-bug retests, move a game's .st9 and .st10* too
+- [x] Retest with the SRAM fix: still stuck after "Yep-P". With the Dynamic
+      Recompiler off it gets further (transition starts) but stalls halfway;
+      mGBA gets through. So a second gpSP bug, part dynarec, part not. The
+      frozen state (interpreter run) shows the main loop running (PC in the
+      sprite builder at 0x0800BAA8), WIN0 wipe via HBlank DMA0, sound on,
+      IE=0x2003, and the save never written: the game waits on something
+      before saving. No official BIOS on the card (built-in BIOS in use)
+- [ ] Find what the game waits on (trace build or official-BIOS test);
+      meanwhile workaround: get past the intro on mGBA, then switch to gpSP
 - [ ] Device test: Hamtaro on mGBA saves (confirms a gpSP-only bug)
 - [ ] Device test: speed vs gpSP
 
