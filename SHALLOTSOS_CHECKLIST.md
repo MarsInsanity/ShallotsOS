@@ -454,6 +454,14 @@ Update screen:
 - [ ] Device test: shows from the update *after* the one that installs it
       (the installed launcher starts it)
 
+Frameskip:
+
+- [x] PC Engine (Beetle PCE Fast): frameskip default Off (was Auto, which
+      skipped frames on brief timing hiccups the game didn't need help with;
+      ShallotsOS_picoarch 97bff5d). Saved per-game settings keep their value
+- [ ] Device test: PC Engine smooth by default; check whether PicoDrive
+      (Mega Drive) shows the same needless skipping (also Auto)
+
 
 ## Next
 
