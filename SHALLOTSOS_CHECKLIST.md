@@ -420,6 +420,8 @@ GBA: gpSP (latest):
       (SRAM_F_V counts as SRAM; a ROM whose strings say SRAM and no flash
       keeps SRAM), applied by `scripts/build_gpsp_latest.sh`, so only in
       "gpSP (latest)"; offer upstream after the device test
+- [x] Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40744861085
+      (ShallotsOS b95ba07, gpSP upstream 5819380 + SRAM patch)
 - [ ] Device test: Hamtaro on gpSP (latest), with its old .sav moved away
       and started from the list (not Resume: its .st9 is from the freeze)
 - [ ] Device test: Hamtaro on mGBA saves (confirms a gpSP-only bug)
