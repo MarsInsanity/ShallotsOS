@@ -424,6 +424,11 @@ GBA: gpSP (latest):
       (ShallotsOS b95ba07, gpSP upstream 5819380 + SRAM patch)
 - [ ] Device test: Hamtaro on gpSP (latest), with its old .sav moved away
       and started from the list (not Resume: its .st9 is from the freeze)
+- [x] First retest invalid: with "auto save & load" on, every launch (from
+      the list too) loads slot 99 (.st9), and quitting also leaves a
+      GameSwitcher suspend (.st10 + .st10.resume); both held the frozen
+      game. Moved .sav/.st9/.st10 to `backup/hamtaro-freeze` on the SD.
+      For save-bug retests, move a game's .st9 and .st10* too
 - [ ] Device test: Hamtaro on mGBA saves (confirms a gpSP-only bug)
 - [ ] Device test: speed vs gpSP
 
