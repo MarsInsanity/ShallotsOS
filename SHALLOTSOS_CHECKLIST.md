@@ -436,8 +436,22 @@ GBA: gpSP (latest):
       sprite builder at 0x0800BAA8), WIN0 wipe via HBlank DMA0, sound on,
       IE=0x2003, and the save never written: the game waits on something
       before saving. No official BIOS on the card (built-in BIOS in use)
-- [ ] Find what the game waits on (trace build or official-BIOS test);
-      meanwhile workaround: get past the intro on mGBA, then switch to gpSP
+- [x] Known bug: libretro/gpsp#198 (closed unfixed), same as mgba#2131
+      and #2442 ("stuck halfway through the circle transition"), fixed in
+      mGBA d071bff by moving HBlank to 1008 cycles into the line (224 long)
+      instead of 960/272. From the ROM and the frozen state: the circle
+      routine (HBlank callback 0x0800F0B0) only shrinks the circle when it
+      reads VCOUNT == 160, so it depends on exact HBlank/IRQ timing
+- [x] `patches/gpsp-hblank-timing.patch` (1008/224) and a temporary
+      `patches/gpsp-trace-hblank.patch` (active only with
+      `/mnt/sdcard/gpsp_trace.txt`; writes `logs/gpsp_trace.log` on exit:
+      HBlank, VCOUNT steps, IRQ entry/exit and VCOUNT reads for lines
+      157-162, interpreter only)
+- [ ] Device test: Hamtaro on gpSP (latest) with default settings (states
+      moved away first); if it still stalls, trace run with the Dynamic
+      Recompiler off. Remove the trace patch once done
+- [ ] Device test: other GBA games still look right with the new HBlank
+      timing (raster effects, e.g. a game with wavy or split screens)
 - [ ] Device test: Hamtaro on mGBA saves (confirms a gpSP-only bug)
 - [ ] Device test: speed vs gpSP
 

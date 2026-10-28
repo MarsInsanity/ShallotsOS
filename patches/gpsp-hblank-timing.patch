@@ -1,0 +1,36 @@
+diff --git a/main.c b/main.c
+index 09df6dd..ea7bd22 100644
+--- a/main.c
++++ b/main.c
+@@ -108,8 +108,8 @@ void init_main(void)
+ 
+   frame_counter = 0;
+   cpu_ticks = 0;
+-  execute_cycles = 960;
+-  video_count = 960;
++  execute_cycles = 1008;
++  video_count = 1008;
+ 
+ #ifdef HAVE_DYNAREC
+ #if defined(MMAP_JIT_CACHE)
+@@ -164,7 +164,10 @@ u32 function_cc update_gba(int remaining_cycles)
+       {
+         // Transition from hrefresh to hblank
+         dispstat |= 0x02;
+-        video_count += (272);    // hblank duration, 272 cycles
++        // HBlank (flag, IRQ and DMA) starts 1008 cycles into the line and
++        // lasts 224, as measured on hardware (mGBA d071bff). The old 960/272
++        // split made Hamtaro: Ham-Ham Heartbreak stall after "Yep-P".
++        video_count += 224;
+ 
+         // Check if we are drawing (0) or we are in vblank (1)
+         if ((dispstat & 0x01) == 0)
+@@ -192,7 +195,7 @@ u32 function_cc update_gba(int remaining_cycles)
+       else
+       {
+         // Transition from hblank to the next scan line (vdraw or vblank)
+-        video_count += 960;
++        video_count += 1008;
+         dispstat &= ~0x02;
+         vcount++;
+ 

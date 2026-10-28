@@ -1,0 +1,173 @@
+diff --git a/cpu.cc b/cpu.cc
+index ecb734f..00c3e59 100644
+--- a/cpu.cc
++++ b/cpu.cc
+@@ -620,6 +620,8 @@ static const u8 gba_header_logo[156] = {
+   {                                                                           \
+     if(reg[CPU_MODE] != MODE_USER && reg[CPU_MODE] != MODE_SYSTEM)            \
+     {                                                                         \
++      if (shallots_trace_on && reg[CPU_MODE] == MODE_IRQ)                     \
++        shallots_trace_event('X', reg[REG_PC], 0);                            \
+       reg[REG_CPSR] = REG_SPSR(reg[CPU_MODE]);                                \
+       extract_flags();                                                        \
+       set_cpu_mode(cpu_modes[reg[REG_CPSR] & 0xF]);                           \
+@@ -1538,6 +1540,9 @@ static u32 execute_arm_internal(u32 cycles, bool vram_only)
+ arm_loop:
+ 
+        collapse_flags();
++       if (shallots_trace_on && reg[REG_PC] == 0x00000018)
++         shallots_trace_event('I', REG_MODE(MODE_IRQ)[6],
++                              read_ioreg(REG_IE) & read_ioreg(REG_IF));
+        if (vram_only && (reg[REG_PC] >> 24) != 0x06)
+           return cycles_remaining > 0 ? (u32)cycles_remaining : update_gba(cycles_remaining);
+ 
+diff --git a/gba_memory.c b/gba_memory.c
+index 7556e64..e704e00 100644
+--- a/gba_memory.c
++++ b/gba_memory.c
+@@ -761,6 +761,8 @@ u32 function_cc read_io_register16(u32 address)
+     return 0;
+ 
+   u32 value = readaddress16(io_registers, offset & 0x3FF);
++  if (offset == 0x006 && shallots_trace_on)
++    shallots_trace_event('R', reg[REG_PC], 0);
+   switch (offset)
+   {
+     case 0x008:
+diff --git a/libretro/libretro.c b/libretro/libretro.c
+index ed2a7d2..d1fb7bf 100644
+--- a/libretro/libretro.c
++++ b/libretro/libretro.c
+@@ -1311,6 +1311,7 @@ bool retro_load_game(const struct retro_game_info* info)
+    else
+       rumble_cb = NULL;
+ 
++   shallots_trace_init();
+    reset_gba();
+ 
+    set_memory_descriptors();
+@@ -1326,6 +1327,7 @@ bool retro_load_game_special(unsigned game_type,
+ 
+ void retro_unload_game(void)
+ {
++   shallots_trace_dump();
+    if (libretro_ff_enabled)
+       set_fastforward_override(false);
+ 
+diff --git a/main.c b/main.c
+index ea7bd22..850c6c4 100644
+--- a/main.c
++++ b/main.c
+@@ -124,6 +124,74 @@ void init_main(void)
+ #endif
+ }
+ 
++typedef struct
++{
++  u32 frame;
++  u32 pc;
++  s32 video_count;
++  u16 vcount;
++  u16 dispstat;
++  u16 extra;
++  u8 kind;
++  u8 mode;
++} shallots_trace_ev;
++
++#define SHALLOTS_TRACE_EVENTS 32768
++static shallots_trace_ev shallots_trace_buf[SHALLOTS_TRACE_EVENTS];
++static u32 shallots_trace_pos;
++u32 shallots_trace_on = 0;
++
++void shallots_trace_init(void)
++{
++  FILE *f = fopen("/mnt/sdcard/gpsp_trace.txt", "rb");
++  shallots_trace_on = (f != NULL);
++  if (f)
++    fclose(f);
++  shallots_trace_pos = 0;
++}
++
++void shallots_trace_event(u32 kind, u32 pc, u32 extra)
++{
++  shallots_trace_ev *ev;
++  u32 vcount = read_ioreg(REG_VCOUNT);
++  if (vcount < 157 || vcount > 162)
++    return;
++  ev = &shallots_trace_buf[shallots_trace_pos++ % SHALLOTS_TRACE_EVENTS];
++  ev->frame = frame_counter;
++  ev->pc = pc;
++  ev->video_count = video_count;
++  ev->vcount = vcount;
++  ev->dispstat = read_ioreg(REG_DISPSTAT);
++  ev->extra = extra;
++  ev->kind = kind;
++  ev->mode = reg[CPU_MODE];
++}
++
++void shallots_trace_dump(void)
++{
++  u32 i, n, start;
++  FILE *f;
++  if (!shallots_trace_on || !shallots_trace_pos)
++    return;
++  f = fopen("/mnt/sdcard/logs/gpsp_trace.log", "w");
++  if (!f)
++    return;
++  n = shallots_trace_pos < SHALLOTS_TRACE_EVENTS ?
++      shallots_trace_pos : SHALLOTS_TRACE_EVENTS;
++  start = shallots_trace_pos - n;
++  fprintf(f, "# kind: H=hblank start V=vcount step I=irq entry X=irq exit "
++             "R=VCOUNT read; vc=cycles to next video event at last update\n");
++  for (i = 0; i < n; i++)
++  {
++    shallots_trace_ev *ev =
++      &shallots_trace_buf[(start + i) % SHALLOTS_TRACE_EVENTS];
++    fprintf(f, "f=%u %c v=%u pc=%08x mode=%u vc=%d ds=%04x x=%04x\n",
++            ev->frame, ev->kind, ev->vcount, ev->pc, ev->mode,
++            ev->video_count, ev->dispstat, ev->extra);
++  }
++  fclose(f);
++}
++
+ u32 function_cc update_gba(int remaining_cycles)
+ {
+   u32 changed_pc = 0;
+@@ -164,6 +232,8 @@ u32 function_cc update_gba(int remaining_cycles)
+       {
+         // Transition from hrefresh to hblank
+         dispstat |= 0x02;
++        if (shallots_trace_on)
++          shallots_trace_event('H', reg[REG_PC], 0);
+         // HBlank (flag, IRQ and DMA) starts 1008 cycles into the line and
+         // lasts 224, as measured on hardware (mGBA d071bff). The old 960/272
+         // split made Hamtaro: Ham-Ham Heartbreak stall after "Yep-P".
+@@ -258,6 +328,8 @@ u32 function_cc update_gba(int remaining_cycles)
+           dispstat &= ~0x04;
+ 
+         write_ioreg(REG_VCOUNT, vcount);
++        if (shallots_trace_on)
++          shallots_trace_event('V', reg[REG_PC], 0);
+       }
+       write_ioreg(REG_DISPSTAT, dispstat);
+     }
+diff --git a/main.h b/main.h
+index 51adb89..df2a38f 100644
+--- a/main.h
++++ b/main.h
+@@ -83,6 +83,15 @@ void rand_seed(u32 data);
+ #define cycles_to_run(c) ((c) & 0x7FFF)
+ #define completed_frame(c) ((c) & 0x80000000)
+ u32 function_cc update_gba(int remaining_cycles);
++
++/* ShallotsOS diagnostic trace (temporary, Hamtaro HBlank debugging): when
++   /mnt/sdcard/gpsp_trace.txt exists, events around the end of each frame
++   (VCOUNT 157-162) are kept in a ring and written to
++   /mnt/sdcard/logs/gpsp_trace.log when the game is closed. */
++extern u32 shallots_trace_on;
++void shallots_trace_init(void);
++void shallots_trace_event(u32 kind, u32 pc, u32 extra);
++void shallots_trace_dump(void);
+ void reset_gba(void);
+ 
+ void init_main(void);
