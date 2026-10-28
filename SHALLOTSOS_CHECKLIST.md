@@ -470,6 +470,7 @@ Volume indicator after a resumed game:
       and only FrogUI started shallots_osd). Fixed: zhijack starts
       shallots_osd at boot too (it exits by itself if the setting is off or
       one already runs)
+- [x] Build: run 40624604884 (ShallotsOS 73731b0)
 - [ ] Device test: power off in a game, power on; volume keys show the
       ShallotsOS popup in the resumed game
 
