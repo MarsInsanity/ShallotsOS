@@ -447,6 +447,8 @@ GBA: gpSP (latest):
       `/mnt/sdcard/gpsp_trace.txt`; writes `logs/gpsp_trace.log` on exit:
       HBlank, VCOUNT steps, IRQ entry/exit and VCOUNT reads for lines
       157-162, interpreter only)
+- [x] Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/40753500429
+      (ShallotsOS 450385a, gpSP upstream 5819380 + SRAM, HBlank, trace)
 - [ ] Device test: Hamtaro on gpSP (latest) with default settings (states
       moved away first); if it still stalls, trace run with the Dynamic
       Recompiler off. Remove the trace patch once done
