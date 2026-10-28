@@ -486,6 +486,7 @@ GBA crash (GTA Advance), found with the USB debug shell:
       kept); patched ROMs there too; /tmp only as a fallback
 - [x] zhijack: `rm -f /tmp/pa-*` after every game; update-screen files
       removed from /tmp after an update
+- [x] Build: run 40652006084 (ShallotsOS 69b81c3, picoarch f66766a)
 - [ ] Device test: GTA Advance (zipped) on gpSP; then other GBA games
       without restarting; `free` / `dmesg` in the USB shell
 
