@@ -1,0 +1,89 @@
+diff --git a/gba_memory.c b/gba_memory.c
+index 1e304ee..7556e64 100644
+--- a/gba_memory.c
++++ b/gba_memory.c
+@@ -412,6 +412,10 @@ u32 backup_type = BACKUP_UNKN;
+ static u32 backup_type_eeprom_guessed = 0;
+ /* Set once the game actually drives the EEPROM lines at 0x0D. */
+ static u32 eeprom_really_used = 0;
++/* Set when the ROM's own library string says SRAM (SRAM_V or SRAM_F_V). Such a
++   cart has no flash chip, so an SRAM byte of 0xAA written at 0x5555 is data,
++   not the start of a flash command, and must not switch the type to flash. */
++static u32 backup_type_sram_known = 0;
+ u32 backup_type_reset = BACKUP_UNKN;
+ u32 flash_mode = FLASH_BASE_MODE;
+ u32 flash_command_position = 0;
+@@ -452,6 +456,9 @@ u8 read_backup(u32 address)
+ {
+   u8 value = 0;
+ 
++  if(backup_type_sram_known)
++    return gamepak_backup[address];
++
+   if(backup_type == BACKUP_EEPROM)
+   {
+     if(!backup_type_eeprom_guessed || eeprom_really_used)
+@@ -1306,6 +1313,12 @@ void function_cc write_backup(u32 address, u32 value)
+ {
+   value &= 0xFF;
+ 
++  if(backup_type_sram_known)
++  {
++    gamepak_backup[address] = value;
++    return;
++  }
++
+   if(backup_type == BACKUP_EEPROM)
+   {
+     if(!backup_type_eeprom_guessed || eeprom_really_used)
+@@ -3005,6 +3018,7 @@ static u32 rom_scan_signatures_in_memory(void)
+ 
+   const char *sig_eeprom = "EEPROM_V";
+   const char *sig_sram = "SRAM_V";
++  const char *sig_sram_f = "SRAM_F_V";
+   const char *sig_flash1m = "FLASH1M_V";
+   const char *sig_flash512 = "FLASH512_V";
+   const char *sig_flash = "FLASH_V";
+@@ -3018,7 +3032,7 @@ static u32 rom_scan_signatures_in_memory(void)
+     for (i = 0; i < chunk_size - 10; i += 4)
+     {
+       if (chunk[i] == 'E' && !(found & ROM_SIG_EEPROM) && memcmp(&chunk[i], sig_eeprom, 8) == 0) found |= ROM_SIG_EEPROM;
+-      else if (chunk[i] == 'S' && !(found & ROM_SIG_SRAM) && memcmp(&chunk[i], sig_sram, 6) == 0) found |= ROM_SIG_SRAM;
++      else if (chunk[i] == 'S' && !(found & ROM_SIG_SRAM) && (memcmp(&chunk[i], sig_sram, 6) == 0 || memcmp(&chunk[i], sig_sram_f, 8) == 0)) found |= ROM_SIG_SRAM;
+       else if (chunk[i] == 'F' && !(found & ROM_SIG_FLASH1M) && memcmp(&chunk[i], sig_flash1m, 9) == 0) found |= ROM_SIG_FLASH1M;
+       else if (chunk[i] == 'F' && !(found & ROM_SIG_FLASH5)) {
+         if (memcmp(&chunk[i], sig_flash512, 10) == 0 || memcmp(&chunk[i], sig_flash, 7) == 0)
+@@ -3086,7 +3100,8 @@ static void normalize_blank_backup_for_detected_type(void)
+ static void detect_backup_subcircuit(const u8 *rom, u32 rom_size)
+ {
+   bool has_eeprom = rom_has_signature(rom, rom_size, "EEPROM_V");
+-  bool has_sram = rom_has_signature(rom, rom_size, "SRAM_V");
++  bool has_sram = rom_has_signature(rom, rom_size, "SRAM_V") ||
++                  rom_has_signature(rom, rom_size, "SRAM_F_V");
+   bool has_flash1m = rom_has_signature(rom, rom_size, "FLASH1M_V");
+   bool has_flash5 = rom_has_signature(rom, rom_size, "FLASH512_V") ||
+                     rom_has_signature(rom, rom_size, "FLASH_V");
+@@ -3116,6 +3131,15 @@ static void detect_backup_subcircuit(const u8 *rom, u32 rom_size)
+       (file_sigs & ROM_SIG_SRAM))
+   {
+     backup_type_reset = BACKUP_SRAM;
++    /* Only lock out flash detection when no flash library string is anywhere
++       in the ROM; the header scan above only looked at the first 1MB. */
++    if (!has_flash1m && !has_flash5)
++    {
++      if (has_sram)
++        file_sigs = rom_scan_signatures_in_memory();
++      if (!(file_sigs & (ROM_SIG_FLASH1M | ROM_SIG_FLASH5)))
++        backup_type_sram_known = 1;
++    }
+     return;
+   }
+ 
+@@ -3180,6 +3204,7 @@ u32 load_gamepak(const struct retro_game_info* info, const char *name,
+    backup_type_reset = BACKUP_UNKN;
+    backup_type_eeprom_guessed = 0;
+    eeprom_really_used = 0;
++   backup_type_sram_known = 0;
+    serial_mode = force_serial;
+ 
+    load_game_config_over(game_code);

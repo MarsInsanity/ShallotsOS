@@ -410,11 +410,19 @@ GBA: gpSP (latest):
       for GBA, next to the pinned gpSP; saves are shared (same ROM folder)
 - [x] Build: run 40590128968 (ShallotsOS bb9a7a7, gpSP upstream 5819380)
 - [x] Hamtaro: Ham-Ham Heartbreak freezes on gpSP after "Yep-P" (its first
-      save write). Likely cause: TreeFrogUI's gpSP (2db57b1) has upstream's
-      whole-ROM EEPROM signature sweep (#281) but not its fix (#287, in
-      gpSP (latest) 5819380): a stale EEPROM_V string makes gpSP discard
-      the game's SRAM/flash writes, so the save never completes
+      save write), on both gpSP builds. First theory (stale EEPROM_V string,
+      upstream #281/#287) ruled out over the USB shell: the ROM (AH3E) has
+      no EEPROM_V, only `SRAM_F_V103`
+- [x] Actual gaps in upstream gpSP (5819380): detection only knows `SRAM_V`,
+      so SRAM_F_V games stay "unknown", and any SRAM write of 0xAA at 0x5555
+      switches the type to flash, after which SRAM writes are dropped (the
+      game's save never verifies). Fix: `patches/gpsp-sram-library-string.patch`
+      (SRAM_F_V counts as SRAM; a ROM whose strings say SRAM and no flash
+      keeps SRAM), applied by `scripts/build_gpsp_latest.sh`, so only in
+      "gpSP (latest)"; offer upstream after the device test
 - [ ] Device test: Hamtaro on gpSP (latest), with its old .sav moved away
+      and started from the list (not Resume: its .st9 is from the freeze)
+- [ ] Device test: Hamtaro on mGBA saves (confirms a gpSP-only bug)
 - [ ] Device test: speed vs gpSP
 
 Upstream watch:

@@ -22,6 +22,7 @@ on:
       - 'scripts/build_gpsp_latest.sh'
       - 'tools/make_update_splash.py'
       - 'patches/gpsp-upstream-sf3000.patch'
+      - 'patches/gpsp-sram-library-string.patch'
       - 'hijack/**'
       - 'scripts/shallots_package.sh'
       - 'docs/INSTALL-ShallotsOS.md'
