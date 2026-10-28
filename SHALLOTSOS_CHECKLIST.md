@@ -431,6 +431,7 @@ Box art from scrapers:
       in `media/images`, `media/box2dfront`, `media/boxart`, `media/covers`,
       `media/thumbnails`, `media/screenshots`, `media/mix`; these folders also
       refresh the missing-art cache
+- [x] Build: run 40615639100 (ShallotsOS b29eda9)
 - [ ] Device test: scraped `media/images` show with `media/mix` deleted
 
 Update screen:
@@ -442,6 +443,7 @@ Update screen:
       `/tmp/tfupdate.progress` (unpacking 0-40, checking 40-50, installing
       50-97, done 100); zhijack starts it before the updater and stops it
       after; skipped on rotated panels (SF3500-class)
+- [x] Build: run 40616753438 (ShallotsOS dd1b9c8; also has the box-art fix)
 - [ ] Device test: shows from the update *after* the one that installs it
       (the installed launcher starts it)
 
