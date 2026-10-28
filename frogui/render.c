@@ -524,7 +524,11 @@ static uint64_t artwork_hash(const char *s) {
 static uint64_t artwork_folder_signature(const char *game_path) {
   /* The gamelists too: a new or rescraped one can bring new pictures. */
   static const char *folders[] = {".res", "Imgs", "images", "Images",
-                                  "gamelist.xml", "miyoogamelist.xml", NULL};
+                                  "gamelist.xml", "miyoogamelist.xml",
+                                  "media/images", "media/box2dfront",
+                                  "media/boxart", "media/covers",
+                                  "media/thumbnails", "media/screenshots",
+                                  "media/mix", NULL};
   const char *slash = game_path ? strrchr(game_path, '/') : NULL;
   if (!slash)
     return 0;
@@ -596,6 +600,9 @@ static void artwork_miss_add(uint64_t game_hash, uint64_t folder_sig,
 int load_game_artwork(const char *game_path, ArtworkKind kind,
                       Thumbnail *thumb) {
   static const char *folders[] = {".res", "Imgs", "images", "Images", NULL};
+  static const char *media_folders[] = {
+      "media/images",     "media/box2dfront",  "media/boxart", "media/covers",
+      "media/thumbnails", "media/screenshots", "media/mix",    NULL};
   static const char *box_suffixes[] = {"", NULL};
   static const char *title_suffixes[] = {"-title",       "_title",
                                          ".title",       "-titlescreen",
@@ -642,6 +649,16 @@ int load_game_artwork(const char *game_path, ArtworkKind kind,
                              sizeof base))
         continue;
       if (load_thumbnail(base, thumb))
+        return 1;
+    }
+  }
+  /* Scraper folders (Skraper, ES-DE), named after the ROM: used when the
+   * gamelist has no picture or names one that is gone (a deleted mix). */
+  if (kind == ARTWORK_BOXART) {
+    for (int f = 0; media_folders[f]; f++) {
+      if (artwork_base_path(game_path, media_folders[f], "", base,
+                            sizeof base) &&
+          load_thumbnail(base, thumb))
         return 1;
     }
   }

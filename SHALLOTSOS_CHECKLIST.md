@@ -424,6 +424,15 @@ Upstream watch:
 - [ ] The monthly schedule starts once the workflow is on `main` (GitHub runs
       schedules from the default branch); until then it runs on pushes to it
 
+Box art from scrapers:
+
+- [x] When the gamelist's `<image>` / `<thumbnail>` file is missing (e.g. a
+      deleted `media/mix`), the menu now also looks for `<rom name>.png/.jpg`
+      in `media/images`, `media/box2dfront`, `media/boxart`, `media/covers`,
+      `media/thumbnails`, `media/screenshots`, `media/mix`; these folders also
+      refresh the missing-art cache
+- [ ] Device test: scraped `media/images` show with `media/mix` deleted
+
 
 ## Next
 
