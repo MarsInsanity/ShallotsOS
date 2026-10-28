@@ -459,6 +459,7 @@ Frameskip:
 - [x] PC Engine (Beetle PCE Fast): frameskip default Off (was Auto, which
       skipped frames on brief timing hiccups the game didn't need help with;
       ShallotsOS_picoarch 97bff5d). Saved per-game settings keep their value
+- [x] Build: run 40622822371 (picoarch 97bff5d)
 - [ ] Device test: PC Engine smooth by default; check whether PicoDrive
       (Mega Drive) shows the same needless skipping (also Auto)
 
