@@ -24,6 +24,13 @@ log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S' 2>/dev/null) $*" >> "$LOG"
 }
 
+# ShallotsOS: percent done (0-100) for the "Updating" screen zhijack.sh shows
+# (shallots_osd --splash). Unpacking 0-40, checking 40-50, installing 50-98.
+PROGRESS=${TFUPDATE_PROGRESS:-/tmp/tfupdate.progress}
+progress() {
+    echo "$1" > "$PROGRESS.tmp" 2>/dev/null && mv -f "$PROGRESS.tmp" "$PROGRESS" 2>/dev/null
+}
+
 fail() {
     log "ERROR: $*"
     rm -rf "$STAGE"
@@ -43,6 +50,9 @@ extract_package() {
 
 install_tree() {
     SOURCE=$1
+    # Optional: report progress from $2 to $3 percent while copying.
+    P_FROM=${2:-}
+    P_TO=${3:-}
     [ -d "$SOURCE" ] || return 0
 
     find "$SOURCE" -type d > "$STAGE/directories.list" || return 1
@@ -53,7 +63,13 @@ install_tree() {
     done < "$STAGE/directories.list"
 
     find "$SOURCE" -type f > "$STAGE/files.list" || return 1
+    P_TOTAL=$(wc -l < "$STAGE/files.list")
+    P_N=0
     while IFS= read -r SRC; do
+        P_N=$((P_N + 1))
+        if [ -n "$P_FROM" ] && [ "$P_TOTAL" -gt 0 ] && [ $((P_N % 20)) = 0 ]; then
+            progress $((P_FROM + (P_TO - P_FROM) * P_N / P_TOTAL))
+        fi
         REL=${SRC#"$SOURCE"/}
         [ "$REL" = delete.txt ] && continue
         DST="$SDROOT/$REL"
@@ -88,9 +104,28 @@ mkdir -p "$WORK_DIR" || exit 1
 rm -rf "$STAGE"
 mkdir -p "$STAGE" || fail "cannot create staging directory"
 log "Applying $(basename "$PACKAGE") for $DEVICE from $(dirname "$PACKAGE")"
+progress 0
 
-extract_package >> "$LOG" 2>&1 \
-    || fail "archive extraction failed; package kept for retry"
+# Unpack in the background and count the files written so far against the
+# archive's file count (its central directory: quick to list).
+X_TOTAL=$( (unzip -l "$PACKAGE" 2>/dev/null || /bin/busybox unzip -l "$PACKAGE" 2>/dev/null) | awk 'END { print $2 }')
+case "$X_TOTAL" in ''|*[!0-9]*) X_TOTAL=0 ;; esac
+X_OUT="$WORK_DIR/extract.out"
+extract_package > "$X_OUT" 2>&1 &
+X_PID=$!
+while kill -0 "$X_PID" 2>/dev/null; do
+    if [ "$X_TOTAL" -gt 0 ]; then
+        X_N=$(grep -c 'inflating:\|extracting:' "$X_OUT" 2>/dev/null)
+        [ -n "$X_N" ] && progress $((40 * X_N / X_TOTAL))
+    fi
+    sleep 1
+done
+wait "$X_PID"
+X_RC=$?
+cat "$X_OUT" >> "$LOG" 2>/dev/null
+rm -f "$X_OUT"
+[ "$X_RC" = 0 ] || fail "archive extraction failed; package kept for retry"
+progress 40
 
 BUNDLE="$STAGE/treefrog-update"
 [ -f "$BUNDLE/manifest.txt" ] || fail "manifest.txt missing"
@@ -102,6 +137,7 @@ BUNDLE="$STAGE/treefrog-update"
 
 (cd "$BUNDLE" && sha256sum -c SHA256SUMS) >> "$LOG" 2>&1 \
     || fail "checksum verification failed; package kept for retry"
+progress 50
 
 VERSION=$(sed -n 's/^version=//p' "$BUNDLE/manifest.txt")
 BASE_VERSION=$(sed -n 's/^base_version=//p' "$BUNDLE/manifest.txt")
@@ -157,7 +193,7 @@ done
 # authoritative and replace installed configs after the backup above. Device
 # files are applied last so the launcher is the final boot-critical change.
 remove_replaced_root_doc_variants || fail "cannot migrate root documentation names"
-install_tree "$BUNDLE/payload" || fail "installing universal payload failed"
+install_tree "$BUNDLE/payload" 50 97 || fail "installing universal payload failed"
 install_tree "$BUNDLE/device/$DEVICE" || fail "installing device payload failed"
 
 delete_list() {
@@ -188,6 +224,7 @@ sync
 # Deletion is the commit point: failed/interrupted updates retain the package
 # and converge by applying it again on the next successful boot.
 rm -f "$PACKAGE" || fail "update installed but package deletion failed"
+progress 100
 rm -rf "$STAGE"
 sync
 log "SUCCESS: TreeFrogUI $VERSION installed; package removed"

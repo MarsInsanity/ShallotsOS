@@ -433,6 +433,18 @@ Box art from scrapers:
       refresh the missing-art cache
 - [ ] Device test: scraped `media/images` show with `media/mix` deleted
 
+Update screen:
+
+- [x] "Updating ShallotsOS" screen while update.zip installs: theme
+      background, Exo 2 text (`tools/make_update_splash.py`, rendered in the
+      overlay build as `cubegm/update_splash.bmp`), live progress bar and
+      percentage drawn by `shallots_osd --splash` on fb1; `tfupdate.sh` writes
+      `/tmp/tfupdate.progress` (unpacking 0-40, checking 40-50, installing
+      50-97, done 100); zhijack starts it before the updater and stops it
+      after; skipped on rotated panels (SF3500-class)
+- [ ] Device test: shows from the update *after* the one that installs it
+      (the installed launcher starts it)
+
 
 ## Next
 

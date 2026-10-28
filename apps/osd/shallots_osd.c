@@ -22,6 +22,7 @@
  * USB mode) when Settings > ShallotsOS Volume Indicator is on.
  *
  *   shallots_osd            run as the daemon
+ *   shallots_osd --splash <bmp>   the update screen (see run_splash)
  *   shallots_osd --preview  (host build) draw each popup into preview-*.ppm
  */
 #define _GNU_SOURCE
@@ -401,13 +402,12 @@ static void popup_show(int kind, int value, int msec) {
  * to every process. Uncompressed 24/32-bit BMP, centred, black around it. */
 #define POWEROFF_BMP SD "/cubegm/cubepoweroff.bmp"
 
-static void show_poweroff(void) {
-	if (!fb1_open())
-		return;
+/* Black fb1, with an uncompressed 24/32-bit BMP centred on it. */
+static void blit_bmp(const char *path) {
 	for (int y = 0; y < fb1.h; y++)
 		for (int x = 0; x < fb1.w; x++)
 			((uint32_t *)(fb1.mem + (size_t)y * fb1.line))[x] = 0xFF000000u;
-	FILE *f = fopen(POWEROFF_BMP, "rb");
+	FILE *f = fopen(path, "rb");
 	unsigned char h[54];
 	if (f && fread(h, 1, sizeof h, f) == sizeof h && h[0] == 'B' && h[1] == 'M') {
 		uint32_t off = h[10] | h[11] << 8 | h[12] << 16 | (uint32_t)h[13] << 24;
@@ -444,6 +444,12 @@ static void show_poweroff(void) {
 	}
 	if (f)
 		fclose(f);
+}
+
+static void show_poweroff(void) {
+	if (!fb1_open())
+		return;
+	blit_bmp(POWEROFF_BMP);
 	ioctl(fb1.fd, FBIOBLANK, FB_BLANK_UNBLANK);
 }
 
@@ -451,6 +457,77 @@ static volatile sig_atomic_t g_term;
 static void on_term(int sig) {
 	(void)sig;
 	g_term = 1;
+}
+
+/* ---- Update screen -------------------------------------------------------- */
+
+/* shallots_osd --splash <bmp>: the "Updating ShallotsOS" screen (made by
+ * tools/make_update_splash.py) while update.zip installs, with a progress bar
+ * and percentage from the updater (/tmp/tfupdate.progress, 0-100). Started
+ * and stopped (SIGTERM) by zhijack.sh around tfupdate.sh; unrotated panels. */
+#ifndef SPLASH_PROGRESS
+#define SPLASH_PROGRESS "/tmp/tfupdate.progress"
+#endif
+#define SPLASH_BAR_W 360
+#define SPLASH_BAR_H 16
+#define SPLASH_BAR_Y 16     /* below the panel's centre, as the image leaves it */
+#define SPLASH_BAND_Y 10    /* the redrawn band: bar and percentage */
+#define SPLASH_BAND_H 56
+
+static int read_progress(void) {
+	FILE *f = fopen(SPLASH_PROGRESS, "r");
+	int v = -1;
+	if (f) {
+		if (fscanf(f, "%d", &v) != 1)
+			v = -1;
+		fclose(f);
+	}
+	return v < 0 ? -1 : v > 100 ? 100 : v;
+}
+
+static int run_splash(const char *bmp) {
+	struct sigaction sa;
+	memset(&sa, 0, sizeof sa);
+	sa.sa_handler = on_term;
+	sigaction(SIGTERM, &sa, NULL);
+	sigaction(SIGINT, &sa, NULL);
+	if (chdir("/") != 0 || !fb1_open())
+		return 1;
+	load_colours();
+	blit_bmp(bmp);
+	ioctl(fb1.fd, FBIOBLANK, FB_BLANK_UNBLANK);
+
+	int stride = fb1.line / 4, cx = fb1.w / 2, top = fb1.h / 2 + SPLASH_BAND_Y;
+	uint32_t *row0 = (uint32_t *)(fb1.mem + (size_t)top * fb1.line);
+	uint32_t *band = malloc((size_t)SPLASH_BAND_H * stride * 4);
+	if (band)
+		memcpy(band, row0, (size_t)SPLASH_BAND_H * stride * 4);
+	Canvas c = {(uint32_t *)fb1.mem, fb1.w, fb1.h, stride};
+	uint32_t track = mix(c_card | 0xFF000000u, c_text, 40);
+	uint32_t fill = c_fill | 0xFF000000u, text = c_text | 0xFF000000u;
+	int shown = -2;
+	while (!g_term) {
+		int pct = read_progress();
+		if (pct != shown && band) {
+			shown = pct;
+			memcpy(row0, band, (size_t)SPLASH_BAND_H * stride * 4);
+			int x = cx - SPLASH_BAR_W / 2, y = fb1.h / 2 + SPLASH_BAR_Y;
+			fill_round(&c, x, y, SPLASH_BAR_W, SPLASH_BAR_H, SPLASH_BAR_H / 2, track);
+			if (pct > 0) {
+				int w = SPLASH_BAR_W * pct / 100;
+				fill_round(&c, x, y, w < SPLASH_BAR_H ? SPLASH_BAR_H : w, SPLASH_BAR_H,
+				           SPLASH_BAR_H / 2, fill);
+			}
+			if (pct >= 0)
+				draw_number(&c, cx - number_width(pct) / 2, y + SPLASH_BAR_H + 10, pct, text);
+		}
+		usleep(150000);
+	}
+	/* Hand fb1 back clear (transparent), as cubevol keeps it. */
+	for (int y = 0; y < fb1.h; y++)
+		memset(fb1.mem + (size_t)y * fb1.line, 0, (size_t)fb1.w * 4);
+	free(band);
+	return 0;
 }
 
 static void popup_tick(void) {
@@ -1028,7 +1105,9 @@ static int already_running(void) {
 	return pid > 0 && pid != getpid() && proc_comm_is(pid, "shallots_osd");
 }
 
-int main(void) {
+int main(int argc, char **argv) {
+	if (argc == 3 && strcmp(argv[1], "--splash") == 0)
+		return run_splash(argv[2]);
 	driver_check();
 	if (already_running() || !osd_enabled())
 		return 0;

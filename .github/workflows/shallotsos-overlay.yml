@@ -20,6 +20,7 @@ on:
       - 'apps/usb_mode/**'
       - 'scripts/build_usb_serial_modules.sh'
       - 'scripts/build_gpsp_latest.sh'
+      - 'tools/make_update_splash.py'
       - 'patches/gpsp-upstream-sf3000.patch'
       - 'hijack/**'
       - 'scripts/shallots_package.sh'
@@ -304,6 +305,9 @@ jobs:
           fi
           # Boot logo for 640x480 panels (R36SX, R36HD, GB350).
           cp sdcard/cubegm/xgame-logo.bmp "$out/cubegm/"
+          # The "Updating ShallotsOS" screen shown while update.zip installs.
+          sudo apt-get install -y -qq python3-pil >/dev/null
+          python3 tools/make_update_splash.py "$out/cubegm/update_splash.bmp"
           cp -a assets/onion/Themes/. "$out/Themes/"
           cp -a assets/onion/Themes/ShallotsOS/skin assets/onion/Themes/ShallotsOS/icons \
                 assets/onion/Themes/ShallotsOS/config.json "$out/frogui/onion/"
@@ -327,6 +331,7 @@ jobs:
             cubegm/picoarch, picoarch_hi     emulator frontend and in-game menu
             cubegm/video_player              music and video player
             cubegm/shallots_osd              ShallotsOS volume/brightness popups
+            cubegm/update_splash.bmp         the "Updating ShallotsOS" screen
             cubegm/usb_debug.sh, modules/    USB debug shell (Settings > System >
                                              USB Debug Shell; experimental)
             cubegm/usb_mode.sh               USB mode, handing the port over from it

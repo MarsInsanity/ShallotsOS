@@ -51,8 +51,26 @@ sync
 if [ -f /mnt/sdcard/cubegm/tfupdate.sh ]; then
     cp /mnt/sdcard/cubegm/tfupdate.sh /tmp/tfupdate.sh 2>/dev/null
     if [ -f /tmp/tfupdate.sh ]; then
+        # ShallotsOS: an "Updating ShallotsOS" screen with a progress bar on
+        # the fb1 overlay (unrotated panels), from /tmp copies: the update
+        # replaces both files.
+        SPLASH_PID=
+        if [ -f /mnt/sdcard/update.zip ] || [ -f /media/hdd/update.zip ]; then
+            rm -f /tmp/tfupdate.progress
+            if [ "@ROT@" = 0 ] && [ -f /mnt/sdcard/cubegm/update_splash.bmp ] && \
+               cp /mnt/sdcard/cubegm/shallots_osd /tmp/shallots_splash 2>/dev/null && \
+               cp /mnt/sdcard/cubegm/update_splash.bmp /tmp/update_splash.bmp 2>/dev/null; then
+                chmod 755 /tmp/shallots_splash
+                /tmp/shallots_splash --splash /tmp/update_splash.bmp >/dev/null 2>&1 &
+                SPLASH_PID=$!
+            fi
+        fi
         sh /tmp/tfupdate.sh @DEV_LABEL@
         UPDATE_RC=$?
+        if [ -n "$SPLASH_PID" ]; then
+            kill "$SPLASH_PID" 2>/dev/null
+            wait "$SPLASH_PID" 2>/dev/null
+        fi
         if [ "$UPDATE_RC" = 10 ]; then
             log_event "offline update installed; restarting launcher"
             rm -rf /tmp/zhijack.lock
