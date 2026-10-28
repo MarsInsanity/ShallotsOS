@@ -496,6 +496,12 @@ GBA crash (GTA Advance), found with the USB debug shell:
 - [ ] Still to check: a longer GTA session; other GBA games afterwards
       without restarting; `free` during play; speed
 
+Handoff to a session on the user's PC:
+
+- [x] `HANDOFF.md` (project, repos, rules, device facts, open work) and
+      `tools/shallots_serial.py` (runs commands over the USB debug shell and
+      prints their output; pyserial; tested against a local shell)
+
 
 ## Next
 
