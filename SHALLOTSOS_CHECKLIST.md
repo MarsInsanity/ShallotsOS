@@ -409,8 +409,13 @@ GBA: gpSP (latest):
       master) as `gpsp_latest_libretro.so`, "gpSP (latest)" in Y > Emulator
       for GBA, next to the pinned gpSP; saves are shared (same ROM folder)
 - [x] Build: run 40590128968 (ShallotsOS bb9a7a7, gpSP upstream 5819380)
-- [ ] Device test: speed vs gpSP; Hamtaro: Ham-Ham Heartbreak and GTA
-      Advance (symptoms on the old gpSP still to be described)
+- [x] Hamtaro: Ham-Ham Heartbreak freezes on gpSP after "Yep-P" (its first
+      save write). Likely cause: TreeFrogUI's gpSP (2db57b1) has upstream's
+      whole-ROM EEPROM signature sweep (#281) but not its fix (#287, in
+      gpSP (latest) 5819380): a stale EEPROM_V string makes gpSP discard
+      the game's SRAM/flash writes, so the save never completes
+- [ ] Device test: Hamtaro on gpSP (latest), with its old .sav moved away
+- [ ] Device test: speed vs gpSP
 
 Upstream watch:
 
