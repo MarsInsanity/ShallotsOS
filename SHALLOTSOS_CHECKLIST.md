@@ -444,6 +444,10 @@ Update screen:
       50-97, done 100); zhijack starts it before the updater and stops it
       after; skipped on rotated panels (SF3500-class)
 - [x] Build: run 40616753438 (ShallotsOS dd1b9c8; also has the box-art fix)
+- [x] Device test 1: the screen flashed for a second, then the stock layer
+      (battery icon top right) covered it. Fixed: the screen is repainted
+      every 100 ms from RAM (and fb1 unblanked every second), and cubevol is
+      paused (SIGSTOP/SIGCONT) while the update runs
 - [ ] Device test: shows from the update *after* the one that installs it
       (the installed launcher starts it)
 

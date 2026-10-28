@@ -54,15 +54,21 @@ if [ -f /mnt/sdcard/cubegm/tfupdate.sh ]; then
         # ShallotsOS: an "Updating ShallotsOS" screen with a progress bar on
         # the fb1 overlay (unrotated panels), from /tmp copies: the update
         # replaces both files.
+        # cubevol is paused meanwhile: it repaints its battery icon (and
+        # more) on fb1 over the screen; nothing needs its buttons now.
         SPLASH_PID=
+        SPLASH_CV=
         if [ -f /mnt/sdcard/update.zip ] || [ -f /media/hdd/update.zip ]; then
             rm -f /tmp/tfupdate.progress
             if [ "@ROT@" = 0 ] && [ -f /mnt/sdcard/cubegm/update_splash.bmp ] && \
                cp /mnt/sdcard/cubegm/shallots_osd /tmp/shallots_splash 2>/dev/null && \
                cp /mnt/sdcard/cubegm/update_splash.bmp /tmp/update_splash.bmp 2>/dev/null; then
                 chmod 755 /tmp/shallots_splash
+                SPLASH_CV=$(pidof cubevol 2>/dev/null)
+                [ -n "$SPLASH_CV" ] && kill -STOP $SPLASH_CV 2>/dev/null
                 /tmp/shallots_splash --splash /tmp/update_splash.bmp >/dev/null 2>&1 &
                 SPLASH_PID=$!
+                log_event "update screen started (pid $SPLASH_PID); cubevol paused: ${SPLASH_CV:-not running}"
             fi
         fi
         sh /tmp/tfupdate.sh @DEV_LABEL@
@@ -71,6 +77,7 @@ if [ -f /mnt/sdcard/cubegm/tfupdate.sh ]; then
             kill "$SPLASH_PID" 2>/dev/null
             wait "$SPLASH_PID" 2>/dev/null
         fi
+        [ -n "$SPLASH_CV" ] && kill -CONT $SPLASH_CV 2>/dev/null
         if [ "$UPDATE_RC" = 10 ]; then
             log_event "offline update installed; restarting launcher"
             rm -rf /tmp/zhijack.lock

@@ -497,20 +497,30 @@ static int run_splash(const char *bmp) {
 	blit_bmp(bmp);
 	ioctl(fb1.fd, FBIOBLANK, FB_BLANK_UNBLANK);
 
-	int stride = fb1.line / 4, cx = fb1.w / 2, top = fb1.h / 2 + SPLASH_BAND_Y;
-	uint32_t *row0 = (uint32_t *)(fb1.mem + (size_t)top * fb1.line);
-	uint32_t *band = malloc((size_t)SPLASH_BAND_H * stride * 4);
+	/* The screen is composed in RAM and copied to fb1 on every tick: other
+	 * programs (cubevol's battery icon, the stock menu) may draw on fb1 too,
+	 * and a one-off drawing is soon covered. */
+	size_t size = (size_t)fb1.h * fb1.line;
+	uint8_t *frame = malloc(size);
+	if (!frame)
+		return 1;
+	memcpy(frame, fb1.mem, size);
+	int stride = fb1.line / 4, cx = fb1.w / 2;
+	size_t band_off = (size_t)(fb1.h / 2 + SPLASH_BAND_Y) * fb1.line;
+	size_t band_len = (size_t)SPLASH_BAND_H * fb1.line;
+	uint8_t *band = malloc(band_len);
 	if (band)
-		memcpy(band, row0, (size_t)SPLASH_BAND_H * stride * 4);
-	Canvas c = {(uint32_t *)fb1.mem, fb1.w, fb1.h, stride};
+		memcpy(band, frame + band_off, band_len);
+	Canvas c = {(uint32_t *)frame, fb1.w, fb1.h, stride};
 	uint32_t track = mix(c_card | 0xFF000000u, c_text, 40);
 	uint32_t fill = c_fill | 0xFF000000u, text = c_text | 0xFF000000u;
 	int shown = -2;
+	long long unblanked = now_ms();
 	while (!g_term) {
 		int pct = read_progress();
 		if (pct != shown && band) {
 			shown = pct;
-			memcpy(row0, band, (size_t)SPLASH_BAND_H * stride * 4);
+			memcpy(frame + band_off, band, band_len);
 			int x = cx - SPLASH_BAR_W / 2, y = fb1.h / 2 + SPLASH_BAR_Y;
 			fill_round(&c, x, y, SPLASH_BAR_W, SPLASH_BAR_H, SPLASH_BAR_H / 2, track);
 			if (pct > 0) {
@@ -521,12 +531,18 @@ static int run_splash(const char *bmp) {
 			if (pct >= 0)
 				draw_number(&c, cx - number_width(pct) / 2, y + SPLASH_BAR_H + 10, pct, text);
 		}
-		usleep(150000);
+		memcpy(fb1.mem, frame, size);
+		if (now_ms() - unblanked >= 1000) {
+			unblanked = now_ms();
+			ioctl(fb1.fd, FBIOBLANK, FB_BLANK_UNBLANK);
+		}
+		usleep(100000);
 	}
 	/* Hand fb1 back clear (transparent), as cubevol keeps it. */
 	for (int y = 0; y < fb1.h; y++)
 		memset(fb1.mem + (size_t)y * fb1.line, 0, (size_t)fb1.w * 4);
 	free(band);
+	free(frame);
 	return 0;
 }
 
