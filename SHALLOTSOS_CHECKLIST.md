@@ -487,8 +487,9 @@ GBA crash (GTA Advance), found with the USB debug shell:
 - [x] zhijack: `rm -f /tmp/pa-*` after every game; update-screen files
       removed from /tmp after an update
 - [x] Build: run 40652006084 (ShallotsOS 69b81c3, picoarch f66766a)
-- [ ] Device test: GTA Advance (zipped) on gpSP; then other GBA games
-      without restarting; `free` / `dmesg` in the USB shell
+- [x] Device test: GTA Advance now loads and reaches gameplay on gpSP
+- [ ] Still to check: a longer GTA session; other GBA games afterwards
+      without restarting; `free` during play; speed
 
 
 ## Next
