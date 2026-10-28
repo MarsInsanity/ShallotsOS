@@ -448,6 +448,9 @@ Update screen:
       (battery icon top right) covered it. Fixed: the screen is repainted
       every 100 ms from RAM (and fb1 unblanked every second), and cubevol is
       paused (SIGSTOP/SIGCONT) while the update runs
+- [x] Device test 2 (run 73's screen): only the bar's band stayed visible,
+      the rest covered by the stock layer, confirming the cause
+- [x] Build with the fix: run 40620333300 (ShallotsOS 0f2b104)
 - [ ] Device test: shows from the update *after* the one that installs it
       (the installed launcher starts it)
 
