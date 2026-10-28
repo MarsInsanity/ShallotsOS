@@ -474,6 +474,21 @@ Volume indicator after a resumed game:
 - [ ] Device test: power off in a game, power on; volume keys show the
       ShallotsOS popup in the resumed game
 
+GBA crash (GTA Advance), found with the USB debug shell:
+
+- [x] Cause: out of memory (dmesg: oom-killer kills picoarch_hi). The
+      console has ~43 MB RAM and /tmp is ramfs; picoarch unpacked zipped
+      ROMs to /tmp (RAM, unevictable) next to the core's own copy, and a
+      killed game left it there until reboot (unevictable 21.5 -> 29.7 MB
+      between two crashes), so every later game ran out of memory too
+- [x] picoarch: zipped ROMs unpack to `/mnt/sdcard/picoarch/.unzipped`
+      (one kept and reused while the zip is unchanged; saves beside it are
+      kept); patched ROMs there too; /tmp only as a fallback
+- [x] zhijack: `rm -f /tmp/pa-*` after every game; update-screen files
+      removed from /tmp after an update
+- [ ] Device test: GTA Advance (zipped) on gpSP; then other GBA games
+      without restarting; `free` / `dmesg` in the USB shell
+
 
 ## Next
 

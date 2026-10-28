@@ -78,6 +78,7 @@ if [ -f /mnt/sdcard/cubegm/tfupdate.sh ]; then
             wait "$SPLASH_PID" 2>/dev/null
         fi
         [ -n "$SPLASH_CV" ] && kill -CONT $SPLASH_CV 2>/dev/null
+        rm -f /tmp/shallots_splash /tmp/update_splash.bmp /tmp/tfupdate.progress   # RAM
         if [ "$UPDATE_RC" = 10 ]; then
             log_event "offline update installed; restarting launcher"
             rm -rf /tmp/zhijack.lock
@@ -366,6 +367,10 @@ while true; do
                 log_event "game frontend returned a FrogUI launch request; handling it without another UI start"
             fi
             log_event "core child exited pid=$GAME_PID rc=$GRC core=$CORE_PATH rom=$ROM_PATH"
+            # /tmp is RAM here (ramfs). A frontend that crashed or was killed
+            # for lack of memory leaves its unpacked/patched ROM behind, and it
+            # would hold that RAM until reboot, starving every later game.
+            rm -f /tmp/pa-* 2>/dev/null
             mkdir -p /mnt/sdcard/cubegm/logs
             cp /tmp/treefrog_ui.log /mnt/sdcard/cubegm/logs/last_game.log 2>/dev/null
         fi
