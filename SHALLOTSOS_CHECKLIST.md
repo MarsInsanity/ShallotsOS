@@ -569,6 +569,7 @@ Script apps (SpruceOS-style) and shallots_ui:
       picoarch/ without .unzipped, saves/, PCSX4ALL); tested on the host
       against a fake card; guide `docs/apps.md` (on the card as
       `App/MAKING-APPS.md`)
+- [x] Build: run 41183379872 (ShallotsOS c03380e), shallots_ui built for MIPS
 - [ ] Device test: Save Backup in the Apps tab with its icon; menus,
       confirm, progress and keyboard draw and react to the buttons; back
       in the Apps tab afterwards with nothing left on screen
