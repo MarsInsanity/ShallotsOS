@@ -542,6 +542,17 @@ Handoff to a session on the user's PC:
       `tools/shallots_serial.py` (runs commands over the USB debug shell and
       prints their output; pyserial; tested against a local shell)
 
+Daily TreeFrogUI merge (scheduled task, 6:45 am Pacific):
+
+- [x] Scheduled task "Daily TreeFrogUI merge into ShallotsOS": fresh session
+      each day merges TreeFrogUI (+ FrogUI copy), TreeFrogUI_picoarch r36sx,
+      TreeFrogUI_pcsx4all and TreeFrogUI_ebook_reader into the ShallotsOS
+      branches, validates, waits for the overlay build, logs here
+- [ ] It was created without connectors: its sessions may lack the GitHub
+      tools (CI checks, starting the workflow) and repo push access. The user
+      can add the GitHub connector/repositories to it in claude.ai (routines)
+      or have it re-created from a session that holds them
+
 
 ## Next
 
