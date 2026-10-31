@@ -1,0 +1,6 @@
+{
+    "label": "Save Backup",
+    "icon": "icon.png",
+    "launch": "launch.sh",
+    "description": "Back up, restore and delete copies of your game saves"
+}

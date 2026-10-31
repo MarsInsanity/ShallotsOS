@@ -3258,6 +3258,111 @@ static int is_app_folder_name(const char *name) {
                     !strcasecmp(name, "ebooks"));
 }
 
+/* ---- Script apps ----------------------------------------------------------
+ * Users' own apps, in SpruceOS's layout: App/<folder>/config.json with
+ * "label", "icon", "launch" (launch.sh by default), "description" and
+ * optionally "hidden": true. The launcher runs the script from its folder
+ * with cubegm/ on PATH, so it can draw screens with shallots_ui. Listed in
+ * the Apps tab after the built-in apps, as entries named "@app:<folder>". */
+#define USER_APPS_DIR SDCARD_BASE "/App"
+#define USER_APP_PREFIX "@app:"
+#define USER_APP_MAX 96
+typedef struct { char dir[160]; char label[96]; char icon[512]; char launch[512]; } UserApp;
+static UserApp user_apps[USER_APP_MAX];
+static int user_app_count;
+
+/* The string value of "key" in a small JSON object (\" \\ \/ \n escapes). */
+static bool json_string(const char *json, const char *key, char *out, size_t size) {
+    char pat[64];
+    snprintf(pat, sizeof pat, "\"%s\"", key);
+    const char *p = strstr(json, pat);
+    if (!p) return false;
+    p += strlen(pat);
+    while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') p++;
+    if (*p++ != ':') return false;
+    while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') p++;
+    if (*p++ != '"') return false;
+    size_t n = 0;
+    while (*p && *p != '"' && n + 1 < size) {
+        char c = *p++;
+        if (c == '\\' && *p) {
+            c = *p++;
+            if (c == 'n') c = ' ';
+        }
+        out[n++] = c;
+    }
+    out[n] = '\0';
+    return true;
+}
+
+/* Whether "key" is the JSON literal true. */
+static bool json_true(const char *json, const char *key) {
+    char pat[64];
+    snprintf(pat, sizeof pat, "\"%s\"", key);
+    const char *p = strstr(json, pat);
+    if (!p) return false;
+    p += strlen(pat);
+    while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') p++;
+    if (*p++ != ':') return false;
+    while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n') p++;
+    return !strncmp(p, "true", 4);
+}
+
+/* App paths: relative to the app's folder, or SpruceOS's absolute
+ * /mnt/SDCARD/... (the card is /mnt/sdcard here). */
+static void user_app_path(const char *dir, const char *v, char *out, size_t size) {
+    if (!strncmp(v, "/mnt/SDCARD/", 12))
+        snprintf(out, size, SDCARD_BASE "/%s", v + 12);
+    else if (v[0] == '/')
+        snprintf(out, size, "%s", v);
+    else
+        snprintf(out, size, "%s/%s/%s", USER_APPS_DIR, dir, v);
+}
+
+static int user_app_cmp(const void *a, const void *b) {
+    return strcasecmp(((const UserApp *)a)->label, ((const UserApp *)b)->label);
+}
+
+static void user_apps_scan(void) {
+    user_app_count = 0;
+    DIR *d = opendir(USER_APPS_DIR);
+    if (!d) return;
+    struct dirent *e;
+    while ((e = readdir(d)) && user_app_count < USER_APP_MAX) {
+        if (e->d_name[0] == '.' || strlen(e->d_name) >= sizeof user_apps[0].dir) continue;
+        UserApp *a = &user_apps[user_app_count];
+        char path[MAX_PATH_LEN], json[8192] = "", v[512];
+        snprintf(path, sizeof path, "%s/%s/config.json", USER_APPS_DIR, e->d_name);
+        FILE *f = fopen(path, "r");
+        if (f) {
+            size_t n = fread(json, 1, sizeof json - 1, f);
+            json[n] = '\0';
+            fclose(f);
+        }
+        if (json_true(json, "hidden")) continue;
+        snprintf(a->dir, sizeof a->dir, "%s", e->d_name);
+        if (!json_string(json, "label", a->label, sizeof a->label) || !a->label[0])
+            snprintf(a->label, sizeof a->label, "%s", e->d_name);
+        user_app_path(e->d_name, json_string(json, "launch", v, sizeof v) && v[0] ? v : "launch.sh",
+                      a->launch, sizeof a->launch);
+        if (access(a->launch, F_OK) != 0) continue;   /* not an app */
+        user_app_path(e->d_name, json_string(json, "icon", v, sizeof v) && v[0] ? v : "icon.png",
+                      a->icon, sizeof a->icon);
+        if (access(a->icon, R_OK) != 0) a->icon[0] = '\0';
+        user_app_count++;
+    }
+    closedir(d);
+    qsort(user_apps, (size_t)user_app_count, sizeof user_apps[0], user_app_cmp);
+}
+
+static const UserApp *user_app_by_key(const char *key) {
+    if (!key || strncmp(key, USER_APP_PREFIX, strlen(USER_APP_PREFIX))) return NULL;
+    key += strlen(USER_APP_PREFIX);
+    for (int i = 0; i < user_app_count; i++)
+        if (!strcmp(user_apps[i].dir, key)) return &user_apps[i];
+    return NULL;
+}
+
 static void scan_apps_tab(void) {
     strncpy(current_path, ROMS_PATH, MAX_PATH_LEN - 1);
     current_path[MAX_PATH_LEN - 1] = '\0';
@@ -3290,6 +3395,19 @@ static void scan_apps_tab(void) {
         entries[entry_count].is_dir = 1;
         entry_count++;
     }
+    user_apps_scan();
+    for (int i = 0; i < user_app_count; i++) {
+        if (entry_count >= entry_capacity) {
+            entry_capacity = entry_capacity ? entry_capacity * 2 : INITIAL_ENTRIES_CAPACITY;
+            DirEntry *grown = realloc(entries, (size_t)entry_capacity * sizeof(*entries));
+            if (!grown) break;
+            entries = grown;
+        }
+        snprintf(entries[entry_count].name, sizeof(entries[entry_count].name), "%s%s",
+                 USER_APP_PREFIX, user_apps[i].dir);
+        entries[entry_count].is_dir = 1;
+        entry_count++;
+    }
     viewing_apps = true;
     viewing_activity = false;
     apps_browsing = false;
@@ -3303,6 +3421,8 @@ static void scan_apps_tab(void) {
 }
 
 static const char *app_label(const char *key) {
+    const UserApp *ua = user_app_by_key(key);
+    if (ua) return ua->label;
     for (size_t i = 0; i < sizeof(app_defs) / sizeof(app_defs[0]); i++)
         if (strcasecmp(key, app_defs[i].key) == 0)
             return tr_or(app_defs[i].label_key, app_defs[i].label_en);
@@ -3470,6 +3590,9 @@ static void write_picoarch_skin(void) {
     /* OnionOS themes: picoarch's menu uses the theme's font (mixed case). */
     const char *font = onion_theme_active() ? onion_theme_menu_font() : NULL;
     if (font) fprintf(s, "font=%s\n", font);
+    /* For shallots_ui (script apps): the theme's background, upside down. */
+    const char *bg = onion_theme_background_file();
+    if (bg) fprintf(s, "background=%s\nbackground_rotated=1\n", bg);
     fclose(s);
 }
 
@@ -3581,7 +3704,8 @@ static void request_standalone_launch(const char *bin_path, const char *rom_path
     /* Media playback is an app, not a game: keep MP3/video launches out of
      * Recents so that list remains useful for actual games. */
     if (strcmp(bin_path, ROCKBOX_BIN) != 0 && strcmp(bin_path, VIDEO_BIN) != 0 &&
-        strcmp(bin_path, FROGSHELL_CORE) != 0) {
+        strcmp(bin_path, FROGSHELL_CORE) != 0 &&
+        strncmp(bin_path, USER_APPS_DIR "/", strlen(USER_APPS_DIR) + 1) != 0) {
         dbg("standalone_launch: calling recent_games_add");
         recent_games_add(bin_path, game_name, rom_path);
     } else {
@@ -5594,7 +5718,13 @@ static void handle_input(void) {
                 for (int ai = 0; ai < (int)(sizeof(app_defs) / sizeof(app_defs[0])); ai++)
                     if (strcmp(entries[selected_index].name, app_defs[ai].key) == 0) { app_index = ai; break; }
             }
-            if (app_index >= 0 && !strcmp(app_defs[app_index].key, "activity")) {
+            const UserApp *ua = selected_index < entry_count ? user_app_by_key(entries[selected_index].name) : NULL;
+            if (ua) {
+                if (access(ua->launch, F_OK) == 0)
+                    request_standalone_launch(ua->launch, USER_APPS_DIR);
+                else
+                    ui_toast_show(tr_or("toast.app_missing", "This app's launch script is missing"));
+            } else if (app_index >= 0 && !strcmp(app_defs[app_index].key, "activity")) {
                 ui_transition_start(1);
                 enter_activity_view();
             } else if (app_index >= 0 && !strcmp(app_defs[app_index].key, "themes")) {
@@ -6697,7 +6827,9 @@ static void render_onion_browser(void) {
         const char *shown = entries[idx].name;
         if (viewing_apps && entries[idx].is_dir) {
             shown = app_label(entries[idx].name);
-            const char *icon = onion_theme_app_icon(entries[idx].name);
+            const UserApp *ua = user_app_by_key(entries[idx].name);
+            const char *icon = ua ? (ua->icon[0] ? ua->icon : NULL)
+                                  : onion_theme_app_icon(entries[idx].name);
             if (icon) {
                 snprintf(icons[i], sizeof icons[i], "%s", icon);
                 items[i].icon_path = icons[i];

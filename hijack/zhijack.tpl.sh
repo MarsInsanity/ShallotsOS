@@ -292,7 +292,14 @@ while true; do
             sleep 0.3
             log_event "--- iter $ITER: standalone [$BIN_PATH] ---"
             log_event "standalone stat: $(ls -l "$BIN_PATH" 2>/dev/null)"
-            if [ -n "$ARG_PATH" ]; then
+            if [ "${BIN_PATH#/mnt/sdcard/App/}" != "$BIN_PATH" ]; then
+                # ShallotsOS script app (App/<name>/launch.sh): runs in its own
+                # folder, with cubegm/ on PATH for shallots_ui (its screens).
+                ( cd "${BIN_PATH%/*}" && PATH="/mnt/sdcard/cubegm:$PATH" \
+                    SHALLOTS_APP_DIR="${BIN_PATH%/*}" exec /bin/sh "$BIN_PATH" ) \
+                    >> /tmp/treefrog_ui.log 2>&1 &
+                STANDALONE_PID=$!
+            elif [ -n "$ARG_PATH" ]; then
                 case "$BIN_PATH" in
                     *.sh) /bin/sh "$BIN_PATH" "$ARG_PATH" >> /tmp/treefrog_ui.log 2>&1 & STANDALONE_PID=$! ;;
                     *)    "$BIN_PATH" "$ARG_PATH" >> /tmp/treefrog_ui.log 2>&1 & STANDALONE_PID=$! ;;
@@ -320,6 +327,10 @@ while true; do
                 log_event "standalone frontend returned a FrogUI launch request; handling it without another UI start"
             fi
             log_event "standalone child exited pid=$STANDALONE_PID rc=$STANDALONE_RC"
+            # A script app's last shallots_ui screen stays on the overlay: clear it.
+            if [ "${BIN_PATH#/mnt/sdcard/App/}" != "$BIN_PATH" ] && [ -f /mnt/sdcard/cubegm/shallots_ui ]; then
+                /mnt/sdcard/cubegm/shallots_ui clear >/dev/null 2>&1
+            fi
             cp /tmp/treefrog_ui.log /mnt/sdcard/cubegm/logs/last_standalone.log 2>/dev/null
             sleep 0.2
             continue

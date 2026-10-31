@@ -102,6 +102,7 @@ void onion_render_keyboard(uint16_t *fb, const char *title, const char *text,
  * The legend (extra/gs-legend) is drawn when show_legend is set. */
 /* The theme's title font file (NULL if none), for picoarch's in-game menu. */
 const char *onion_theme_menu_font(void);
+const char *onion_theme_background_file(void);
 /* A short message above the hint bar. */
 void onion_render_toast(uint16_t *fb, const char *text);
 /* Yes/no prompt (lines split on '\n') over a dimmed screen. */

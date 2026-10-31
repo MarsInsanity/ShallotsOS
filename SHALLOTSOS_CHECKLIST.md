@@ -553,6 +553,26 @@ Daily TreeFrogUI merge (scheduled task, 6:45 am Pacific):
       can add the GitHub connector/repositories to it in claude.ai (routines)
       or have it re-created from a session that holds them
 
+Script apps (SpruceOS-style) and shallots_ui:
+
+- [x] Apps tab lists user apps from `App/<folder>/config.json` (label,
+      icon, launch, description, hidden; SpruceOS layout and its
+      `/mnt/SDCARD/...` paths), after the built-in apps, sorted by label;
+      launching runs the script from its folder with cubegm/ on PATH; not
+      added to Recents; the launcher clears the screen when it ends
+- [x] `cubegm/shallots_ui` (apps/ui/shallots_ui.c): message, progress,
+      confirm, menu, keyboard, notify, clear; theme colours, font and
+      background (FrogUI now writes `background=` to skin.txt), repaints
+      while waiting, buttons from joy_key; exit 3 on rotated panels.
+      Previewed and tested with a host build
+- [x] Example app `App/Save Backup` (back up / restore / delete saves:
+      picoarch/ without .unzipped, saves/, PCSX4ALL); tested on the host
+      against a fake card; guide `docs/apps.md` (on the card as
+      `App/MAKING-APPS.md`)
+- [ ] Device test: Save Backup in the Apps tab with its icon; menus,
+      confirm, progress and keyboard draw and react to the buttons; back
+      in the Apps tab afterwards with nothing left on screen
+
 
 ## Next
 

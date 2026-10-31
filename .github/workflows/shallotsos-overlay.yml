@@ -16,6 +16,8 @@ on:
       - 'apps/video_player/**'
       - 'apps/osd/**'
       - 'apps/setup/**'
+      - 'apps/ui/**'
+      - 'assets/apps/**'
       - 'apps/usb_debug/**'
       - 'apps/usb_mode/**'
       - 'scripts/build_usb_serial_modules.sh'
@@ -266,6 +268,17 @@ jobs:
             -o "$RUNNER_TEMP/shallots_setup" apps/setup/shallots_setup.c
           file "$RUNNER_TEMP/shallots_setup"
 
+      # Screens for script apps (App/<name>/launch.sh): message, menu,
+      # confirm, keyboard, progress, toast in the active theme.
+      - name: Build shallots_ui
+        run: |
+          set -euo pipefail
+          sdk="$HOME/sf3000-work/sf3000toolchain/mipsel-buildroot-linux-gnu_sdk-buildroot"
+          "$sdk/opt/ext-toolchain/bin/mips-mti-linux-gnu-gcc" -EL -mips32r2 -mtune=74kc -mhard-float \
+            --sysroot="$sdk/mipsel-buildroot-linux-gnu/sysroot" -O2 -s -Iapps/ui -Ifrogui \
+            -o "$RUNNER_TEMP/shallots_ui" apps/ui/shallots_ui.c -lm
+          file "$RUNNER_TEMP/shallots_ui"
+
       # USB debug shell: the CDC ACM serial gadget modules for the stock
       # 4.4.186-release kernel. Experimental: a failure leaves them out.
       - name: Build the USB serial modules
@@ -292,6 +305,11 @@ jobs:
           cp "$HOME/sf3000-work/picoarch/picoarch" "$HOME/sf3000-work/picoarch/picoarch_hi" "$out/cubegm/"
           cp "$RUNNER_TEMP/video_player" "$out/cubegm/"
           cp "$RUNNER_TEMP/shallots_osd" "$out/cubegm/"
+          # Script apps: the screen helper and the example app (App/ on the card).
+          cp "$RUNNER_TEMP/shallots_ui" "$out/cubegm/"
+          mkdir -p "$out/App"
+          cp -a assets/apps/. "$out/App/"
+          cp docs/apps.md "$out/App/MAKING-APPS.md"
           if [ -n "${GPSP_SHA:-}" ] && [ -f "$RUNNER_TEMP/gpsp_latest_libretro.so" ]; then
             cp "$RUNNER_TEMP/gpsp_latest_libretro.so" "$out/cubegm/cores/"
           fi
@@ -335,6 +353,8 @@ jobs:
             cubegm/video_player              music and video player
             cubegm/shallots_osd              ShallotsOS volume/brightness popups
             cubegm/update_splash.bmp         the "Updating ShallotsOS" screen
+            cubegm/shallots_ui               screens for script apps
+            App/                             script apps (Apps tab); App/MAKING-APPS.md
             cubegm/usb_debug.sh, modules/    USB debug shell (Settings > System >
                                              USB Debug Shell; experimental)
             cubegm/usb_mode.sh               USB mode, handing the port over from it

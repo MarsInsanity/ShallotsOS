@@ -960,6 +960,15 @@ static void resolve_fonts(void) {
                         !strncasecmp(battery, "Exo2", 4);
 }
 
+/* The theme's background image (stored upside down, Miyoo style), for
+ * helpers that draw their own screens (skin.txt). */
+const char *onion_theme_background_file(void) {
+  static char path[ONION_PATH_MAX];
+  if (!onion_theme_active() || !skin_path_ex("background", path, sizeof path, 1))
+    return NULL;
+  return path;
+}
+
 /* The theme's title font file, for picoarch's in-game menu (skin.txt). */
 const char *onion_theme_menu_font(void) {
   const char *p = font_paths[FONT_TITLE];
