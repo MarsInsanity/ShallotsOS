@@ -754,6 +754,13 @@ Daily TreeFrogUI merge, 2026-11-01:
 - [ ] NOT merged (this session could only push to ShallotsOS): picoarch r36sx
       cbeb463 "Raise SF3000 audio prefill for load spikes" (SF3000 only);
       ebook_reader: 3 commits (PDF zoom and pan, up to 10x, 281630d).
+      Asked to merge them afterwards: the session's git proxy refused the
+      push (ShallotsOS_picoarch / _ebook_reader are not in its sources; add
+      them with push access). picoarch merges cleanly (it also flips the
+      audio default to stereo and reworks audio in plat_sdl.c). ebook_reader
+      conflicts in reader.c: upstream adds PDF zoom/pan plus a "Pg x/y 1.5x"
+      text in its old status bar (draw_status), which our reader replaced with
+      the new footer/menu UI, so the zoom display has to be ported by hand
       pcsx4all: nothing new
 - [ ] Device test: Settings -> Date/Time emulation rows (set clock, bump);
       Settings sections open/collapse; Apps tab shows FroggyReader;
