@@ -750,6 +750,7 @@ Daily TreeFrogUI merge, 2026-11-01:
   (12 hunks: kept the OnionOS theme/settings rows, added the clock rows and
   RTC section, upstream's multi-entry box-art cache and sorting, FroggyReader
   entry; FrogUI diff taken from the common ancestor of e3a5b94 and 9b332aa, since 9b332aa is not a descendant of e3a5b94 and a plain diff would undo its font and translation fixes)
+- [x] Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/41299578029 (green, ShallotsOS 02c82bd). The first try (run 41299150677) failed in FrogUI because the pin was diffed against the wrong base
 - [ ] NOT merged (this session could only push to ShallotsOS): picoarch r36sx
       cbeb463 "Raise SF3000 audio prefill for load spikes" (SF3000 only);
       ebook_reader: 3 commits (PDF zoom and pan, up to 10x, 281630d).
