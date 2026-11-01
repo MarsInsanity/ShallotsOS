@@ -736,6 +736,29 @@ Script apps (SpruceOS-style) and shallots_ui:
       first
 
 
+Daily TreeFrogUI merge, 2026-11-01:
+
+- [x] Merged TreeFrogUI v1.9.0_b (upstream main f04edff, 433 commits since
+      e893db4) and the FrogUI copy (e3a5b94 -> 9b332aa, frogui/UPSTREAM)
+- Notable upstream: simulated clock (Settings -> Date/Time emulation, saved
+  to cubegm/time_save.txt, restored at boot by the launcher), FroggyReader
+  EPUB app, ScummVM support, ebook PDF zoom up to 10x docs, save-files
+  guide, faster box-art cache and friendly-name sorting in FrogUI
+- Conflicts resolved: README (kept ShallotsOS wording, added FroggyReader,
+  save-files and ScummVM lines); frogui/ directory vs TreeFrogUI's
+  submodule (kept our copy); gbc.png icon (kept ours); frogui_libretro.c
+  (13 hunks: kept the OnionOS theme/settings rows, added the clock rows and
+  RTC section, upstream's multi-entry box-art cache and sorting, FroggyReader
+  entry; dropped the removed banner_reload_after_idle call)
+- [ ] NOT merged (this session could only push to ShallotsOS): picoarch r36sx
+      cbeb463 "Raise SF3000 audio prefill for load spikes" (SF3000 only);
+      ebook_reader: 3 commits (PDF zoom and pan, up to 10x, 281630d).
+      pcsx4all: nothing new
+- [ ] Device test: Settings -> Date/Time emulation rows (set clock, bump);
+      Settings sections open/collapse; Apps tab shows FroggyReader;
+      box art while scrolling a big list
+
+
 - [ ] GameSwitcher hints and theme picker previews
 - [ ] Search tile on the home screen
 - [ ] Boot screen
