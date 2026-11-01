@@ -747,9 +747,9 @@ Daily TreeFrogUI merge, 2026-11-01:
 - Conflicts resolved: README (kept ShallotsOS wording, added FroggyReader,
   save-files and ScummVM lines); frogui/ directory vs TreeFrogUI's
   submodule (kept our copy); gbc.png icon (kept ours); frogui_libretro.c
-  (13 hunks: kept the OnionOS theme/settings rows, added the clock rows and
+  (12 hunks: kept the OnionOS theme/settings rows, added the clock rows and
   RTC section, upstream's multi-entry box-art cache and sorting, FroggyReader
-  entry; dropped the removed banner_reload_after_idle call)
+  entry; FrogUI diff taken from the common ancestor of e3a5b94 and 9b332aa, since 9b332aa is not a descendant of e3a5b94 and a plain diff would undo its font and translation fixes)
 - [ ] NOT merged (this session could only push to ShallotsOS): picoarch r36sx
       cbeb463 "Raise SF3000 audio prefill for load spikes" (SF3000 only);
       ebook_reader: 3 commits (PDF zoom and pan, up to 10x, 281630d).
