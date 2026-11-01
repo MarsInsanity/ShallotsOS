@@ -44,6 +44,43 @@ log_event() {
 log_event "=== zhijack boot [@DEV_LABEL@] pid=$$ ==="
 sync
 
+# Simulate a battery-backed clock on devices without an RTC. FrogUI updates
+# this file when the user sets the clock or explicitly syncs from USB.
+TIME_FILE_REG=/mnt/sdcard/cubegm/time_save.txt
+if [ -f "$TIME_FILE_REG" ]; then
+    LAST_SAVED_CLK=$(cat "$TIME_FILE_REG" 2>/dev/null)
+    date -s "$LAST_SAVED_CLK" 2>/dev/null
+    log_event "Fake RTC restored from SD: $LAST_SAVED_CLK"
+else
+    INIT_CLK_BASE="2026-10-10 12:00:00"
+    printf '%s\n' "$INIT_CLK_BASE" > "$TIME_FILE_REG"
+    date -s "$INIT_CLK_BASE" 2>/dev/null
+    log_event "Fake RTC initialized to baseline: $INIT_CLK_BASE"
+    sync
+fi
+
+# Advance the saved clock once per launcher boot. FrogUI stores this preference
+# in its existing settings file; malformed or missing values mean no bump.
+RTC_BUMP_MIN=$(sed -n 's/^rtc_bump_minutes=//p' /mnt/sdcard/frogui/settings.txt 2>/dev/null | head -n 1)
+case "$RTC_BUMP_MIN" in ''|*[!0-9]*) RTC_BUMP_MIN=0 ;; esac
+[ "$RTC_BUMP_MIN" -le 1440 ] || RTC_BUMP_MIN=1440
+if [ "$RTC_BUMP_MIN" -gt 0 ]; then
+    RTC_EPOCH=$(date -d "$LAST_SAVED_CLK" +%s 2>/dev/null || echo 0)
+    case "$RTC_EPOCH" in ''|*[!0-9]*) RTC_EPOCH=0 ;; esac
+    if [ "$RTC_EPOCH" -gt 0 ]; then
+        RTC_TARGET=$((RTC_EPOCH + RTC_BUMP_MIN * 60))
+        if date -s "@$RTC_TARGET" >/dev/null 2>&1; then
+            date '+%Y-%m-%d %H:%M:%S' 2>/dev/null > "$TIME_FILE_REG"
+            log_event "Fake RTC bumped $RTC_BUMP_MIN minutes on boot"
+            sync
+        else
+            log_event "Fake RTC boot bump failed"
+        fi
+    else
+        log_event "Fake RTC boot bump skipped; saved timestamp is invalid"
+    fi
+fi
+
 # Offline updates: users drop the official update.zip into the SD-card root.
 # Run a /tmp copy so the updater can atomically replace its own
 # installed file. Status 10 means success: restart through the newly installed
@@ -235,6 +272,7 @@ ITER=0
 LAUNCH_PENDING=0
 while true; do
     ITER=$((ITER+1))
+
     if [ "$LAUNCH_PENDING" = 1 ] && [ -s "$LAUNCH" ]; then
         log_event "queued launch request at UI-loop start iter=$ITER: $(sed -n '1,3p' "$LAUNCH" | tr '\n' '|')"
     else
@@ -261,6 +299,8 @@ while true; do
         done
         wait "$UI_PID"
         RC=$?
+        date "+%Y-%m-%d %H:%M:%S" 2>/dev/null > "$TIME_FILE_REG"
+        sync
         if [ "$RC" != 0 ]; then
             mkdir -p /mnt/sdcard/cubegm/logs
             cp /tmp/treefrog_ui.log /mnt/sdcard/cubegm/logs/last_picoarch_crash.log
@@ -332,6 +372,8 @@ while true; do
                 /mnt/sdcard/cubegm/shallots_ui clear >/dev/null 2>&1
             fi
             cp /tmp/treefrog_ui.log /mnt/sdcard/cubegm/logs/last_standalone.log 2>/dev/null
+            date "+%Y-%m-%d %H:%M:%S" 2>/dev/null > "$TIME_FILE_REG"
+            sync
             sleep 0.2
             continue
         fi
@@ -373,6 +415,8 @@ while true; do
             done
             wait "$GAME_PID"
             GRC=$?
+            date "+%Y-%m-%d %H:%M:%S" 2>/dev/null > "$TIME_FILE_REG"
+            sync
             if [ -s "$LAUNCH" ]; then
                 LAUNCH_PENDING=1
                 log_event "game frontend returned a FrogUI launch request; handling it without another UI start"

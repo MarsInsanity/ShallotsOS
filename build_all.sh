@@ -138,6 +138,9 @@ _b() {
     echo "WARNING: .so not found for $name"
 }
 
+echo "-- ScummVM make (MIPS Linux libretro) --"
+WORK_ROOT="$HOME/sf3000-work" bash ./scripts/build_scummvm.sh
+
 # ── tzubertowski forks ────────────────────────────────────────────────────────
 echo "-- fceumm make --"
 _b fceumm            fceumm                    "-f Makefile.libretro"

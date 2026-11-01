@@ -113,6 +113,7 @@ clone qpsx                                  https://github.com/angree/sf2000-qps
 # FroggyKVM's sf3000 target is maintained locally for TreeFrogUI; the upstream
 # sf2000 target remains the bare-metal core_87000000 build.
 clone FroggyKVM             git@github.com:Synaps33/FroggyKVM.git
+clone FroggyScummvm          git@github.com:Synaps33/FroggyScummvm.git
 clone OpenBOR              git@github.com:tzubertowski/TreeFrogUI_openbor.git feature/libretro-sf3000-legacy
 
 # Experimental Data Frog SF3000 PPSSPP port. The repository currently carries

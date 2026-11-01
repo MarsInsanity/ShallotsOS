@@ -36,6 +36,7 @@ A free, custom game-menu (frontend) for a range of MIPS-based Hichip handhelds -
 - 🎨 **[How to customise it](theme.md)** - themes, fonts, game art / box art / thumbnails, backgrounds
 - 🖼️ **[Get box art in three clicks](https://github.com/tzubertowski/mini-scraper-cfw/releases)** - download Mini Scraper, choose your SD card, then press **Add artwork**
 - ⬇️ **[Download the latest version](https://github.com/tzubertowski/treefrog-ui/releases)**
+- 🗂️ **[Changelog](CHANGELOG.md)** - permanent project history
 - 💬 **[Report a bug / give feedback](https://docs.google.com/forms/d/e/1FAIpQLSfM-y2_UnERrjScqkSfkRSEfBPJ79rDwDo3GwuYWXxpkFTp4Q/viewform?usp=header)**
 
 ---
@@ -65,7 +66,7 @@ See [cores.md](cores.md) for the full folder→core mapping table.
 - **Game switcher** - Optional OnionOS-style recents carousel: big box art, or a screenshot of where you left off (every game is auto-screenshotted on exit), resumes the game. Turn it on in Settings (Game Switcher), it replaces the recents list.
 - **Start in Recents** - Optional: boot straight into your recents (list or switcher) every time, in Settings.
 - **Play-time stats** - Tracks how long you play each game, shown in the browser.
-- **Ebook reader** - Read **EPUB / MOBI / PDF / CBZ / FB2** on the go (MuPDF-powered): put files in `Books/` at the card root (or `roms/Ebook/`), adjustable text size + font (custom TTFs supported), progress saved per book. See the [ebook guide](docs/cores/ebook.md).
+- **Ebook reader** - Read **EPUB / MOBI / PDF / CBZ / FB2** on the go (MuPDF-powered): put files in `Books/` at the card root (or `roms/Ebook/`), adjustable text size + font (custom TTFs supported), progress saved per book. See the [ebook guide](docs/cores/ebook.md). [FroggyReader](docs/cores/froggyreader.md) is an EPUB-only alternative in Apps. See where [saves and save states](docs/cores/save-files.md) are stored.
 - **Video player** - Drop ordinary **MP4 / MKV / AVI / MOV / WMV** files into `Videos/` at the card root (or `roms/videos/`). Playback uses the firmware hardware decoder; its MinUI-style controls inherit your active theme colors and follow each device's native panel orientation. No conversion required.
 - **Simple music player** - Put **MP3 / M4A / AAC / WAV / FLAC / OGG / Opus** files in a folder under `Music/` at the card root (or `roms/music/`). If both have files, `roms/music` shows up as a folder inside the Music app (the same goes for Videos, Books and Images). Each folder acts as a playlist with alphabetical auto-advance, X/Y previous/next, sequential/loop/random modes, embedded ID3v1/ID3v2 metadata and album covers, and a themed interface. Rockbox remains available for advanced library features.
 - **Image viewer** - Browse **JPG / PNG / BMP / GIF / WebP / TIFF** files from `Images/` at the card root (or `roms/images/`), with Fit/Fill, reliable 1x–4x JPEG/PNG zoom, D-pad panning, and the same themed controls as the music and video players.
@@ -199,6 +200,7 @@ A few systems need more than "drop the ROM in the folder" - either extra compani
 | Rockbox music player (`rockbox`) | Standalone app, themes | 📖 [docs/cores/rockbox.md](docs/cores/rockbox.md) |
 | Commodore Amiga (`amiga600`) | Needs your own Kickstart ROM | 📖 [docs/cores/amiga.md](docs/cores/amiga.md) |
 | Wolfenstein 3D (`wolfenstein3d`) | Needs the game data **and** the engine's own resource pack | 📖 [docs/cores/wolf3d.md](docs/cores/wolf3d.md) |
+| ScummVM (`scummvm`) | Needs original game data in `roms/scummvm/<game>/` and a `.scummvm` hook containing its game ID | 📖 [docs/cores/scummvm.md](docs/cores/scummvm.md) |
 | Doom / Heretic / Hexen (`doom`) | Supply a legally obtained IWAD (`doom1.wad`, `heretic1.wad`, `hexen.wad`, etc.) | Put the IWAD in `roms/doom/` |
 | Quake II (`quake2`) | Game data goes in a required `baseq2/` subfolder | 📖 [docs/cores/quake2.md](docs/cores/quake2.md) |
 | Diablo 1 (`diablo`) | Requires the legally owned `DIABDAT.MPQ` game data file | 📖 [docs/cores/diablo.md](docs/cores/diablo.md) |
@@ -212,6 +214,11 @@ A few systems need more than "drop the ROM in the folder" - either extra compani
 Make it look how you want. Full step-by-step in the 📦 **[Customisation Guide](theme.md)**. The quick version:
 
 **OnionOS Theme** - Settings → Appearance → **OnionOS Theme**. Drop OnionOS theme folders or `.zip` files into `Themes/` on the SD card; the OnionOS layout and theme replace the options below until you choose **off**. Details in [OnionOS themes](theme.md#onionos-themes).
+
+**Date and time** - use **Settings → DATE/TIME (EMULATION)** to set the clock,
+sync it from a USB drive, or add a fixed minute bump at each boot. These
+handhelds have no battery-backed RTC, so they cannot track elapsed time while
+powered off. See the [Date and Time guide](docs/date-time.md).
 
 **Theme** - in TreeFrogUI: Settings → Theme, press Left/Right. There are 30 built-in colour themes. **Style** offers the standard Vertical list, an animated Horizontal carousel, or an Onion-style System View with a paged console-icon grid. **Icon Pack** changes System View artwork without changing its background or colours. **Friendly System Names** expands folder codes such as `ps` and `gba` in every style.
 
@@ -273,6 +280,7 @@ frogui/main.png          ← main systems list
 frogui/recents.png       ← recent games
 frogui/favourites.png    ← favorites
 frogui/FC.png            ← the FC (NES) folder (name must match the roms folder)
+frogui/scummvm.jpg       ← ScummVM system background
 ```
 Use the native panel size for the cleanest result: **640×480** on R36SX, R36 HD and GB350; **854×480** on the SF3000 family. Per-system backgrounds stretch to the panel. Use dark, muted images so menu text stays readable.
 
@@ -511,7 +519,8 @@ Donations go straight toward buying the next device to port to.
 - **[MartStartIV](https://github.com/MartStartIV)** — USB OTG storage work, testing, and the Spanish translation. [YouTube](https://www.youtube.com/@MartStartIV)
 - **[Maheshivara](https://github.com/Maheshivara)** — Brazilian Portuguese translation.
 - **@Q_ta** — Japanese translation.
-- **[@ozkaoz](https://github.com/ozkaoz)** — R36SX physical FN-button input support in [TreeFrogUI_picoarch#1](https://github.com/tzubertowski/TreeFrogUI_picoarch/pull/1).
+- **[Synaps33 (Sajnaps)](https://github.com/Synaps33)** — ports, device adaptations, and the [FroggyReader](https://github.com/Synaps33/FroggyReader) EPUB core, including [FroggyScummvm](https://github.com/Synaps33/FroggyScummvm), [FroggyDuke](https://github.com/Synaps33/FroggyDuke), [FroggySpacePinbal](https://github.com/Synaps33/FroggySpacePinbal), and [FroggyTuxRacer](https://github.com/Synaps33/FroggyTuxRacer).
+- **[@ozkaoz](https://github.com/ozkaoz)** — R36SX physical FN-button input support ([TreeFrogUI_picoarch#1](https://github.com/tzubertowski/TreeFrogUI_picoarch/pull/1)) and FrogUI audio fixes ([TreeFrogUI#55](https://github.com/tzubertowski/TreeFrogUI/pull/55)).
 
 ## Credits
 
@@ -520,7 +529,7 @@ Donations go straight toward buying the next device to port to.
 - **angree** - Amiga (UAE4ALL) and Atari ST (castaway) ports for SF-series handhelds
 - **goph-R** - [SF3000-RE](https://github.com/goph-R/SF3000-RE) reverse engineering project and boot logo specs
 - **SjslTech** - [YouTube](https://www.youtube.com/@SjslTech) - R36SX testing & contributions
-- **[Synaps33](https://github.com/Synaps33)** - original [FroggyPE](https://github.com/Synaps33/FroggyPE), [FroggyCraft](https://github.com/Synaps33/FroggyCraft), [FroggyKVM](https://github.com/Synaps33/FroggyKVM), [FroggyDuke](https://github.com/Synaps33/FroggyDuke), and [FroggyClaw](https://github.com/Synaps33/FroggyClaw) cores
+- **[Synaps33](https://github.com/Synaps33)** - original [FroggyPE](https://github.com/Synaps33/FroggyPE), [FroggyCraft](https://github.com/Synaps33/FroggyCraft), [FroggyKVM](https://github.com/Synaps33/FroggyKVM), [FroggyDuke](https://github.com/Synaps33/FroggyDuke), [FroggyClaw](https://github.com/Synaps33/FroggyClaw), [FroggySpacePinbal](https://github.com/Synaps33/FroggySpacePinbal), [FroggyTale](https://github.com/Synaps33/FroggyTale), [FroggyMania](https://github.com/Synaps33/FroggyMania), [FroggyScummvm](https://github.com/Synaps33/FroggyScummvm), and [FroggyTuxRacer](https://github.com/Synaps33/FroggyTuxRacer) projects
 - **[diasurgical](https://github.com/diasurgical)** and the [DevilutionX contributors](https://github.com/diasurgical/DevilutionX/graphs/contributors) - original Diablo 1 engine and open-source port
 - All libretro core authors
 

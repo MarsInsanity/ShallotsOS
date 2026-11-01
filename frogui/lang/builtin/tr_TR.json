@@ -63,6 +63,10 @@
   "settings.quick_resume": "Hızlı devam et",
   "settings.autosave_autoload": "Otomatik kaydet/Yükle",
   "settings.system": "SİSTEM",
+  "settings.rtc_emulation": "TARİH/SAAT (EMÜLASYON)",
+  "settings.rtc_time": "Tarih ve saati ayarla",
+  "settings.rtc_sync_usb": "Saati USB’den eşitle",
+  "settings.rtc_bump": "Her yeniden başlatmada saat ekle (dk)",
   "settings.volume": "Ses düzeyi",
   "settings.file_cache": "Dosya önbelleği",
   "settings.rebuild_file_cache": "Dosya önbelleğini yeniden oluştur",
@@ -280,5 +284,8 @@
   "system.video": "Videolar",
   "system.images": "Görseller",
   "system.photos": "Görseller",
-  "system.classicube": "ClassiCube / Minecraft"
+  "settings.requires_background_images": "Arka plan görselleri gerekli",
+  "settings.requires_system_view": "Sistem görünümü gerekli",
+  "system.classicube": "ClassiCube",
+  "system.scummvm": "ScummVM"
 }

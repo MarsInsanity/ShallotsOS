@@ -4,6 +4,19 @@
 
 ## Repository and branch workflow
 
+- **TreeFrogUI:** `/home/tomaszz/sf3000-work/sf3000_treefrogui`; integration
+  branch is `main`.
+- **FrogUI source:** `/home/tomaszz/sf3000-work/FrogUI`; the device build's
+  integration branch is `r36sx`. The nested `frogui/` path here is only a
+  pinned submodule checkout: never do source work on its detached HEAD. Make
+  FrogUI changes in the canonical checkout, preserve its tested aliases,
+  artwork fallbacks, translations, and pill animation, then update this repo's
+  submodule pin from the integrated FrogUI commit.
+- **PicoArch:** `/home/tomaszz/sf3000-work/picoarch`; integration branch is
+  `r36sx`. Its `main` is legacy and must not be used as an integration target.
+- These branch names are repo-specific. Never infer that every repo uses a
+  branch named `main`; check this map before switching or merging.
+
 - The canonical checkout is `/home/tomaszz/sf3000-work/sf3000_treefrogui`. Keep
   active TreeFrogUI work in this folder on `main`.
 - Do not create source clones, worktrees, or per-release repository copies under
@@ -59,6 +72,8 @@
 
 ## Commit hygiene
 
+- When merging external contributions, keep the README's Contributors and
+  Credits sections current, and keep Ports Collection source-fork links current.
 - Squash follow-up commits that correct the same change before pushing when practical; keep the final history focused instead of stacking incremental fix-ups.
 
 ## Privileged SD-card operations

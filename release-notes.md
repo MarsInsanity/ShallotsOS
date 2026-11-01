@@ -1,16 +1,20 @@
-# TreeFrogUI v1.8.0_q prerelease
+# TreeFrogUI v1.9.0_b
 
-## Changes since v1.8.0_p
+## What's new
 
-- **FrogUI:** Restored the mainline core, including working **Games → Ports** browsing and launchers, friendly names for Java Games (`j2me`), Picante8 (`picante8`), and Ports (`ports`), and the animated selected-item pill. The `zsnes` folder selects Snes9x-Z and reuses SNES artwork and background. Startup stays black while enabled background art loads; disabling backgrounds shows the theme color immediately.
-- **FrogUI performance and memory:** Restored the fast three-frame background and carousel transitions, Recents startup default, and idle-deferred banner loading. Font files are memory-mapped instead of reserving three 24 MiB buffers, reducing the built core's static memory by about 75 MiB. All twelve built-in locale files now contain the same translation keys.
-- **PicoArch:** Retains the corrected submenu pill alignment and smoother, slower option-label scrolling from v1.8.0_p.
+- **Set the clock in Settings:** DATE/TIME (EMULATION) now lets you set the date and time with the D-pad or sync from a USB drive on demand. The section is above SYSTEM and collapsed by default.
+- **Adjust time at boot:** Choose a per-reboot minute bump, from 0 to 1440 minutes in 5-minute steps, to estimate time elapsed while the handheld was off.
+- **Hardware limitation:** Supported handhelds do not have RTC hardware, so they cannot track real elapsed time while powered off. The saved clock and optional boot bump are an emulation; use manual setting or USB sync for an accurate time. Credit and thanks to [MartStartIV](https://github.com/MartStartIV) for the simulated RTC foundation in [PR #77](https://github.com/tzubertowski/TreeFrogUI/pull/77) and its required time file in [PR #78](https://github.com/tzubertowski/TreeFrogUI/pull/78); this release adds the configurable per-boot time bump separately.
+- **Documentation:** Added a date/time guide to the README and website, including the USB file format and clock limitations.
+- **EPUB reader:** Added FroggyReader as an EPUB-only alternative under Apps. It opens its book library directly and renders a 640×480 interface with higher-resolution text.
+- **PDF zoom:** The standalone Ebook reader supports PDF zoom up to 10× with X/Y and D-pad panning while zoomed in.
 
-## Other changes included since the v1.0.15 stable base
+## Contributor credit
 
-- Added Snes9x-Z as a slower, compatibility-oriented alternative SNES core, plus Picante8, experimental Duke Nukem 3D, ClassiCube, Minecraft PE, Captain Claw, Diablo 1, Java Games, Nintendo DS and experimental QPSX support. Added OpenLara and VVVVVV under **Games → Ports**, with setup guides for user-supplied game data; ports have a separate release collection.
-- Added support profiles and install guidance for R36SX/R36 HD variants, SF3000, SF3000 HD, SF3000HD without HDMI, SF3100, SF3500 and GB350.
-- Added FrogUI menu-frame screenshots, Nunito, improved translations and Arabic text rendering, shared volume and battery indicators, and PICO-8 system alternatives.
-- Improved game handoff, PicoArch audio startup and underrun handling, Java saves and game exit, ebook progress and page turning, and offline update recovery.
+Thanks to [Luis Gabriel da Costa Silva (@Maheshivara)](https://github.com/Maheshivara) for [Ports Collection PR #12](https://github.com/tzubertowski/TreeFrogUI_PortsCollection/pull/12), which automates README updates and checks on pushes to `main`.
 
-For a fresh installation, use the full archive and matching `install_first/<device>/` files. To update an existing installation, copy `update.zip` to the SD-card root and reboot. Back up your card first.
+Thanks to [Synaps33](https://github.com/Synaps33) for [FroggyTuxRacer](https://github.com/Synaps33/FroggyTuxRacer), the Tux Racer port added to the Ports Collection in [PR #14](https://github.com/tzubertowski/TreeFrogUI_PortsCollection/pull/14).
+
+Thanks to [Sajnaps (Synaps33)](https://github.com/Synaps33) for creating the [FroggyReader Libretro core](https://github.com/Synaps33/FroggyReader), which powers the new EPUB reader app.
+
+For a fresh installation, use the full archive and matching `install_first/<device>/` files. To update an existing installation, copy `update.zip` to the SD-card root and reboot.

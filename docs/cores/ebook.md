@@ -22,7 +22,7 @@ your device has, so it works the same on R36SX / SF3000 / SF3500 / GB350.
 |--------|-------|
 | **EPUB** | reflowable - honours the book's own layout by default; font/size adjustable |
 | **MOBI** | reflowable (Kindle format) |
-| **PDF**  | fixed layout, rendered page-by-page |
+| **PDF**  | fixed layout, rendered page-by-page; zoom and pan supported |
 | **FB2**  | reflowable |
 | **CBZ**  | comic archives (zipped images) |
 | **XPS**  | fixed layout |
@@ -38,6 +38,10 @@ your device has, so it works the same on R36SX / SF3000 / SF3500 / GB350.
 | **R2** / **L2** | jump forward / back 10% |
 | **SELECT** | open / close the menu |
 | **SELECT + START** | quit (progress is saved) |
+
+For PDFs, **X / Y** zoom in / out (1x to 10x). At zoom above 1x, use the
+D-pad to pan; **L1 / R1** or **B / A** still turn pages. X/Y and pan controls
+do not affect other formats.
 
 **Menu** (open with **SELECT**): **UP / DOWN** move between rows.
 - On **`Text size`** and **`Font`** rows, **LEFT / RIGHT** change the value. The
@@ -72,7 +76,7 @@ formats (they can't override a PDF's embedded fonts).
 
 ## Notes
 
-- **PDF text size** is fixed by the document (PDFs don't reflow); the page is
-  scaled to the screen. Use EPUB/MOBI for adjustable text.
+- **PDF text size** is fixed by the document (PDFs don't reflow); use X/Y to
+  zoom and the D-pad to pan. Use EPUB/MOBI for adjustable text.
 - **Big books** take a second to re-lay-out when you change size or font - that's
   the "Reflowing..." step, and it only happens once when you leave the menu.

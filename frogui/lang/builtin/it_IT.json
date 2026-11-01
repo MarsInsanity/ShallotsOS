@@ -63,6 +63,10 @@
   "settings.quick_resume": "Ripresa rapida",
   "settings.autosave_autoload": "Salvataggio/Caricamento automatico",
   "settings.system": "SISTEMA",
+  "settings.rtc_emulation": "DATA/ORA (EMULAZIONE)",
+  "settings.rtc_time": "Imposta data e ora",
+  "settings.rtc_sync_usb": "Sincronizza ora da USB",
+  "settings.rtc_bump": "Avanzamento a ogni riavvio (min)",
   "settings.volume": "Volume",
   "settings.file_cache": "Cache dei file",
   "settings.rebuild_file_cache": "Ricostruisci cache dei file",
@@ -280,5 +284,8 @@
   "system.videos": "Video",
   "system.video": "Video",
   "system.images": "Immagini",
-  "system.photos": "Immagini"
+  "system.photos": "Immagini",
+  "settings.requires_background_images": "Richiede immagini di sfondo",
+  "settings.requires_system_view": "Richiede la vista sistemi",
+  "system.scummvm": "ScummVM"
 }

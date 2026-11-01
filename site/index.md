@@ -32,6 +32,7 @@ title: Minimalistic emulation frontend for SF3000-like handhelds
     <a href="{{ '/guides/folders/' | relative_url }}"><strong>Games, folders &amp; systems</strong><span>Find the right folder for each console.</span></a>
     <a href="{{ '/guides/theming/' | relative_url }}"><strong>Change the look</strong><span>Pick colours, backgrounds and fonts.</span></a>
     <a href="{{ '/guides/ports/' | relative_url }}"><strong>Install game ports</strong><span>Add optional ports such as standalone games.</span></a>
+    <a href="{{ '/guides/date-time/' | relative_url }}"><strong>Set date and time</strong><span>Use the emulated clock and account for time while powered off.</span></a>
   </div>
   <p class="guide-extras">Also: <a href="{{ '/guides/bios/' | relative_url }}">BIOS file list</a> · <a href="{{ '/guides/shortcuts/' | relative_url }}">in-game controls</a></p>
 </section>

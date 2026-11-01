@@ -63,6 +63,10 @@
   "settings.quick_resume": "استئناف سريع",
   "settings.autosave_autoload": "حفظ تلقائي / تحميل تلقائي",
   "settings.system": "النظام",
+  "settings.rtc_emulation": "التاريخ/الوقت (محاكاة)",
+  "settings.rtc_time": "ضبط التاريخ والوقت",
+  "settings.rtc_sync_usb": "مزامنة الوقت من USB",
+  "settings.rtc_bump": "تقديم الساعة عند كل إعادة تشغيل (دقيقة)",
   "settings.volume": "مستوى الصوت",
   "settings.file_cache": "ذاكرة التخزين المؤقت للملفات",
   "settings.rebuild_file_cache": "إعادة بناء ذاكرة التخزين المؤقت للملفات",
@@ -280,5 +284,8 @@
   "system.videos": "الفيديوهات",
   "system.video": "الفيديوهات",
   "system.images": "الصور",
-  "system.photos": "الصور"
+  "system.photos": "الصور",
+  "settings.requires_background_images": "يتطلب صور الخلفية",
+  "settings.requires_system_view": "يتطلب عرض الأنظمة",
+  "system.scummvm": "ScummVM"
 }

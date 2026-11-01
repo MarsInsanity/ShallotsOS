@@ -33,9 +33,9 @@ permissions:
 env:
   # This archive is built and tested locally. CI only verifies, packages, and
   # publishes it; changing any of these values is a deliberate release action.
-  LOCAL_BUNDLE_TAG: local-build-v1.8.0-r
-  LOCAL_BUNDLE_ASSET: TreeFrogUI-local-build-v1.8.0-r.tar.gz
-  LOCAL_BUNDLE_SHA256: 1f8eb9b23e212c3ce2538983d4d045d6ae15e2ec0043ce7820e632bcd2d5a701
+  LOCAL_BUNDLE_TAG: local-build-v1.9.0-b
+  LOCAL_BUNDLE_ASSET: TreeFrogUI-local-build-v1.9.0-b.tar.gz
+  LOCAL_BUNDLE_SHA256: c9d908cb6aa64cf1ba8534803f8f527f4c1c881f0e4b1685237326deb4b757a5
   CORE_BUILD_REPO: tzubertowski/TreeFrogUI-core-builds
   # update.zip is always cumulative from the last major stable baseline.
   # Change this deliberately when the product moves to a new major baseline;
@@ -155,6 +155,10 @@ jobs:
             cubegm/picoarch cubegm/picoarch_hi
             cubegm/port_check.sh
             cubegm/cores/frogui_libretro.so cubegm/cores/tyrquake_libretro.so
+            cubegm/cores/scummvm_libretro.so frogui/licenses/ScummVM.GPL-3.0
+            cubegm/cores/froggyreader_libretro.so
+            roms/epub/Library.epub
+            frogui/system-icons/scummvm.png
             cubegm/cores/snes9x-Z_libretro.so frogui/licenses/Snes9x-Z.LICENSE
             cubegm/cores/pokket_libretro.so frogui/licenses/Pokket.LICENSE
             frogui/licenses/Pokket-core.MIT
@@ -162,6 +166,10 @@ jobs:
             frogui/theme-packs/Art_Book_NextUI/pokket.jpg
             frogui/theme-packs/Art_Book_Next/pokket.jpg
             frogui/theme-packs/Nao_Black/pokket.jpg
+            frogui/scummvm.jpg
+            frogui/theme-packs/Art_Book_NextUI/scummvm.jpg
+            frogui/theme-packs/Art_Book_Next/scummvm.jpg
+            frogui/theme-packs/Nao_Black/scummvm.jpg
             cubegm/ebook cubegm/dsperate/dsperate
             cubegm/cores/openbor_libretro.so
             cubegm/lib/libSDL-1.2.so.0 cubegm/lib/libpng12.so.0
@@ -173,7 +181,17 @@ jobs:
           [[ -d "$current/roms/nds" ]] || { echo 'Missing required ROM folder: roms/nds' >&2; exit 1; }
           [[ -d "$current/roms/snesz" ]] || { echo 'Missing required ROM folder: roms/snesz' >&2; exit 1; }
           [[ -d "$current/roms/pokket" ]] || { echo 'Missing required ROM folder: roms/pokket' >&2; exit 1; }
+          [[ -d "$current/roms/scummvm" ]] || { echo 'Missing required ROM folder: roms/scummvm' >&2; exit 1; }
+          [[ -d "$current/roms/epub/books" ]] || { echo 'Missing FroggyReader EPUB folder' >&2; exit 1; }
+          [[ -f "$current/roms/epub/Library.epub" ]] || { echo 'Missing FroggyReader library launcher' >&2; exit 1; }
+          for art_dir in frogui frogui/theme-packs/Art_Book_Next frogui/theme-packs/Art_Book_NextUI frogui/theme-packs/Nao_Black; do
+            for system in neogeo geolith sega md gpgx dos pico286; do
+              [[ -s "$current/$art_dir/$system.jpg" ]] || { echo "Missing $system art: $art_dir/$system.jpg" >&2; exit 1; }
+            done
+          done
           [[ -f "$current/docs/cores/pokket.md" ]] || { echo 'Missing Pokket setup guide' >&2; exit 1; }
+          [[ -f "$current/docs/cores/scummvm.md" ]] || { echo 'Missing ScummVM setup guide' >&2; exit 1; }
+          [[ -f "$current/docs/cores/froggyreader.md" ]] || { echo 'Missing FroggyReader guide' >&2; exit 1; }
           for system in pico8 fake08 retro8; do
             [[ -d "$current/roms/$system" ]] || { echo "Missing required ROM folder: roms/$system" >&2; exit 1; }
           done

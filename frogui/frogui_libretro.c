@@ -87,6 +87,8 @@ static bool port_migration_current_ok;
 #define LGPT_BIN     SDCARD_BASE "/cubegm/lgpt"
 #define ROCKBOX_BIN  SDCARD_BASE "/cubegm/rockbox.sh"  /* wrapper sets HOME+SDL env */
 #define EBOOK_BIN    SDCARD_BASE "/cubegm/ebook"        /* MuPDF ebook reader (epub/mobi/pdf) */
+#define FROGGYREADER_CORE CORES_PATH "/froggyreader_libretro.so"
+#define FROGGYREADER_LIBRARY SDCARD_BASE "/roms/epub/Library.epub"
 #define VIDEO_BIN    SDCARD_BASE "/cubegm/video_player" /* hardware-decoded video player */
 #define IMAGE_BIN    SDCARD_BASE "/cubegm/image_viewer" /* hardware-decoded image viewer */
 #define PPSSPP_BIN   SDCARD_BASE "/cubegm/ppsspp"       /* optional standalone SF3000 port */
@@ -193,6 +195,7 @@ static const ConsoleMapping console_mappings[] = {
     {"Quake",  CORES_PATH "/tyrquake_libretro.so"},
     {"quake2", CORES_PATH "/vitaquake2_libretro.so"},
     {"scummvm", CORES_PATH "/scummvm_libretro.so"},
+    {"epub", FROGGYREADER_CORE},                         /* EPUB-only alternative reader */
     {"outrun", CORES_PATH "/cannonball_libretro.so"},
     {"wolf3d", CORES_PATH "/ecwolf_libretro.so"},
     {"prboom", CORES_PATH "/prboom_libretro.so"},
@@ -440,6 +443,7 @@ static void build_core_choices(void) {
 /* Libretro callbacks */
 static retro_video_refresh_t     video_cb     = NULL;
 static retro_environment_t       environ_cb   = NULL;
+static retro_log_printf_t        log_cb       = NULL;
 static retro_audio_sample_t      audio_cb     = NULL;
 static retro_audio_sample_batch_t audio_batch_cb = NULL;
 static retro_input_poll_t        input_poll_cb = NULL;
@@ -523,7 +527,7 @@ static void ui_toast_show(const char *text);
 static void ui_transition_start(int direction);
 static const char *onion_home_label(int kind);
 static void system_labels_refresh(void);
-#define SYSTEM_CAROUSEL_FRAMES 3
+#define SYSTEM_CAROUSEL_FRAMES 12
 static int system_carousel_frame = SYSTEM_CAROUSEL_FRAMES + 1;
 static float system_carousel_start_offset = 0.0f;
 static float system_carousel_visible_offset = 0.0f;
@@ -775,6 +779,7 @@ int frogui_battery_pct(void) {
  * Two options: theme + font. */
 #define SETTINGS_DIR  "/mnt/sdcard/frogui"
 #define SETTINGS_FILE SETTINGS_DIR "/settings.txt"
+#define RTC_TIME_FILE SDCARD_BASE "/cubegm/time_save.txt"
 
 /* Fonts are discovered at runtime by scanning the font directories for
  * .ttf/.otf files. font_files[] holds the on-disk filename (persisted in
@@ -1159,6 +1164,10 @@ static bool switcher_active(void) {
 }
 static int settings_load_recents = 0;   /* start FrogUI in the recents view: 0=off, 1=on */
 static int settings_show_recents = 1;   /* OnionOS home: Recents tile (Onion's "Show recents") */
+enum { RTC_YEAR, RTC_MONTH, RTC_DAY, RTC_HOUR, RTC_MINUTE, RTC_FIELD_COUNT };
+static bool settings_rtc_edit_active = false;
+static int settings_rtc_edit_field = RTC_YEAR;
+static struct tm settings_rtc_edit_time;
 enum { ROM_SOURCE_SD, ROM_SOURCE_OTG, ROM_SOURCE_COUNT };
 static int settings_rom_source = ROM_SOURCE_SD;
 static const char *rom_source_names[ROM_SOURCE_COUNT] = {"SD", "OTG"};
@@ -1169,6 +1178,7 @@ static const int sleep_poweroff_secs[] = {10, 30, 60, 120, 300, 600, 900, 1800};
 #define SLEEP_POWEROFF_N ((int)(sizeof sleep_poweroff_secs / sizeof sleep_poweroff_secs[0]))
 static int settings_disable_sleep = 1;  /* "ShallotsOS Sleep": on = cubevol's sleep is live-patched out (zhijack, at boot) and picoarch sleeps itself (backlight off, powers off after Sleep Power-Off); off = the firmware's sleep. Key kept as disable_sleep for upgrade compat. */
 static int settings_volume = 100;       /* global output volume 0..100 → cubegm/sndgain.txt */
+static int settings_rtc_bump_minutes = 0;
 static const char *filter_names[] = {"nearest", "bilinear"};
 static const char *onoff_names[] = {"off", "on"};
 static const char *style_names[STYLE_COUNT] = {"Vertical", "Horizontal", "System View"};
@@ -1183,7 +1193,7 @@ static const char *style_keys[STYLE_COUNT] = {"vertical", "horizontal", "system"
  * and FONT are special (dynamic option lists); ACTION opens the remap wizard. */
 typedef enum { RT_HEADER, RT_INFO, RT_TOGGLE, RT_RANGE, RT_THEME, RT_STYLE, RT_FONT, RT_WALLPAPER,
                RT_WALLFIT, RT_THEME_PACK, RT_ICON_PACK, RT_ROM_SOURCE, RT_OTG_STATUS,
-               RT_CACHE_REBUILD, RT_ACTION, RT_LANGUAGE, RT_ONION_THEME } SRowType;
+               RT_CACHE_REBUILD, RT_ACTION, RT_LANGUAGE, RT_ONION_THEME, RT_RTC_TIME, RT_RTC_SYNC } SRowType;
 typedef struct {
     SRowType type;
     const char *label;
@@ -1196,6 +1206,7 @@ static const SRow settings_rows[] = {
     { RT_HEADER, "settings.general" }, { RT_LANGUAGE, "settings.language", &settings_language }, { RT_RANGE, "settings.brightness", &settings_brightness, 0, 100, SETTINGS_BRIGHTNESS_STEP }, { RT_RANGE, "settings.volume", &settings_volume, 0, 100, 5 }, { RT_TOGGLE, "settings.animations", &settings_anim }, { RT_TOGGLE, "settings.menu_sounds", &settings_menu_sounds }, { RT_TOGGLE, "settings.hide_extensions", &settings_hide_extensions }, { RT_TOGGLE, "settings.gamelist_names", &settings_gamelist_names }, { RT_TOGGLE, "settings.hide_empty_folders", &settings_hide_empty },
     { RT_HEADER, "settings.library" }, { RT_ROM_SOURCE, "settings.rom_source" }, { RT_OTG_STATUS, "settings.otg_storage" }, { RT_TOGGLE, "settings.game_switcher", &settings_game_switcher }, { RT_RANGE, "settings.game_keys", &settings_game_keys, 0, 2, 1 }, { RT_TOGGLE, "settings.start_in_recents", &settings_load_recents }, { RT_TOGGLE, "settings.show_recents", &settings_show_recents },
     { RT_HEADER, "settings.gameplay" }, { RT_TOGGLE, "settings.power_resume", &settings_power_resume }, { RT_TOGGLE, "settings.quick_resume", &settings_quick_resume }, { RT_TOGGLE, "settings.autosave_autoload", &settings_autosave_autoload }, { RT_TOGGLE, "settings.custom_aspect_ratios", &settings_custom_aspect_ratios },
+    { RT_HEADER, "settings.rtc_emulation" }, { RT_RTC_TIME, "settings.rtc_time" }, { RT_RTC_SYNC, "settings.rtc_sync_usb" }, { RT_RANGE, "settings.rtc_bump", &settings_rtc_bump_minutes, 0, 1440, 5 },
     { RT_HEADER, "settings.system" }, { RT_TOGGLE, "settings.file_cache", &settings_file_cache }, { RT_CACHE_REBUILD, "settings.rebuild_file_cache" }, { RT_TOGGLE, "settings.disable_sleep", &settings_disable_sleep }, { RT_RANGE, "settings.sleep_poweroff", &settings_sleep_poweroff, 0, 7, 1 }, { RT_TOGGLE, "settings.usb_debug", &settings_usb_debug }, { RT_ACTION, "settings.button_mapping" }, { RT_INFO, "settings.version" },
 };
 #define SETTINGS_ROW_N ((int)(sizeof(settings_rows) / sizeof(settings_rows[0])))
@@ -1228,9 +1239,9 @@ static bool settings_row_enabled(const SRow *r) {
  * LEFT/RIGHT (or A) collapses/expands their section — same interaction as the
  * SELECT picker's ">> Cores" / ">> EXTENSIONS". The visible-row list below
  * is rebuilt whenever a section flips. */
-static const char *settings_section_names[] = { "settings.appearance", "settings.general", "settings.library", "settings.gameplay", "settings.system", NULL };
-#define SETTINGS_SECTION_N 5
-static bool settings_section_open[SETTINGS_SECTION_N] = { true, true, true, true, true };
+static const char *settings_section_names[] = { "settings.appearance", "settings.general", "settings.library", "settings.gameplay", "settings.system", "settings.rtc_emulation", NULL };
+#define SETTINGS_SECTION_N 6
+static bool settings_section_open[SETTINGS_SECTION_N] = { true, true, true, true, false, false };
 
 /* Map a settings_rows[] header index -> section id (index into
  * settings_section_names), or -1 when the row is not a known header. */
@@ -1244,8 +1255,8 @@ static int settings_section_of(int i) {
 
 /* ---- Collapsed-state persistence (review feedback) -----------------------
  * Each category's collapsed/expanded state is stored in the regular
- * settings file as one compact line ("sections=01011", one digit per
- * section, 0=collapsed 1=expanded). Default when absent: all expanded.
+ * settings file as one compact line with one digit per section
+ * (0=collapsed, 1=expanded). Defaults are defined in settings_section_open.
  * Saved immediately when the user toggles a section, so the layout comes
  * back exactly as it was left across reboots and updates. */
 static void settings_sections_save(void) {
@@ -1261,10 +1272,10 @@ static void settings_sections_save(void) {
     buf[len] = '\0';
 
     char newline[32];
-    snprintf(newline, sizeof newline, "sections=%d%d%d%d%d",
+    snprintf(newline, sizeof newline, "sections=%d%d%d%d%d%d",
              settings_section_open[0] ? 1 : 0, settings_section_open[1] ? 1 : 0,
              settings_section_open[2] ? 1 : 0, settings_section_open[3] ? 1 : 0,
-             settings_section_open[4] ? 1 : 0);
+             settings_section_open[4] ? 1 : 0, settings_section_open[5] ? 1 : 0);
 
     FILE *out = fopen(SETTINGS_FILE, "w");
     if (!out) return;
@@ -1581,6 +1592,10 @@ static void settings_load_file(void) {
             settings_brightness = atoi(val);
         } else if (strcmp(line, "volume") == 0) {
             settings_volume = atoi(val);
+        } else if (strcmp(line, "rtc_bump_minutes") == 0) {
+            settings_rtc_bump_minutes = atoi(val);
+            if (settings_rtc_bump_minutes < 0) settings_rtc_bump_minutes = 0;
+            if (settings_rtc_bump_minutes > 1440) settings_rtc_bump_minutes = 1440;
         } else if (strcmp(line, "filter") == 0) {
             for (int i = 0; i < FILTER_COUNT; i++)
                 if (strcmp(filter_names[i], val) == 0) { settings_filter_idx = i; break; }
@@ -1727,6 +1742,7 @@ static void settings_save_file(void) {
             icon_pack_files[settings_icon_pack_idx] : "default");
     fprintf(f, "brightness=%d\n", settings_brightness);
     fprintf(f, "volume=%d\n", settings_volume);
+    fprintf(f, "rtc_bump_minutes=%d\n", settings_rtc_bump_minutes);
     fprintf(f, "filter=%s\n", filter_names[settings_filter_idx]);
     fprintf(f, "power_resume=%s\n", onoff_names[settings_power_resume]);
     fprintf(f, "auto_resume=%s\n", onoff_names[settings_quick_resume]);
@@ -1760,10 +1776,10 @@ static void settings_save_file(void) {
     fprintf(f, "rom_source=%s\n", rom_source_names[settings_rom_source]);
     fprintf(f, "disable_sleep=%s\n", onoff_names[settings_disable_sleep]);
     fprintf(f, "sleep_poweroff=%d\n", sleep_poweroff_secs[settings_sleep_poweroff]);
-    fprintf(f, "sections=%d%d%d%d%d\n",
+    fprintf(f, "sections=%d%d%d%d%d%d\n",
             settings_section_open[0] ? 1 : 0, settings_section_open[1] ? 1 : 0,
             settings_section_open[2] ? 1 : 0, settings_section_open[3] ? 1 : 0,
-            settings_section_open[4] ? 1 : 0);
+            settings_section_open[4] ? 1 : 0, settings_section_open[5] ? 1 : 0);
     fflush(f);
     fsync(fileno(f));
     fclose(f);
@@ -1885,6 +1901,7 @@ static SystemLabel system_labels[] = {
     {"pokket", "PocketStation"},
     {"ps1", "PlayStation"}, {"ps1r", "PlayStation - ReARMed"}, {"qpsx", "PlayStation - QPSX"},
     {"psp", "PlayStation Portable"}, {"nds", "Nintendo DS"},
+    {"scummvm", "ScummVM"},
     {"arcade", "Arcade"}, {"m2k", "Arcade - MAME 2000"}, {"cps1", "Arcade - Capcom CPS-1"},
     {"cps2", "Arcade - Capcom CPS-2"}, {"cps3", "Arcade - Capcom CPS-3"},
     {"c64", "Commodore 64"}, {"c64sc", "Commodore 64"},
@@ -1963,7 +1980,11 @@ static void load_banner_for_view(const char *path, bool is_recents, bool is_favo
         char wp[512];
         snprintf(wp, sizeof wp, "/mnt/sdcard/frogui/wallpapers/%s",
                  wallpaper_files[settings_wallpaper_idx]);
-        if (access(wp, R_OK) == 0) { banner_load_fit(wp, settings_wallpaper_fit, COLOR_BG); return; }
+        if (access(wp, R_OK) == 0) {
+            banner_load_fit(wp, settings_wallpaper_fit, COLOR_BG);
+            if (log_cb) log_cb(RETRO_LOG_INFO, "FrogUI background: wallpaper override=%s\n", wp);
+            return;
+        }
     }
     char img[512];
     char banner_dir[512];
@@ -2005,62 +2026,62 @@ static void load_banner_for_view(const char *path, bool is_recents, bool is_favo
         if (strcasecmp(name, "fake08") == 0 || strcasecmp(name, "retro8") == 0 ||
             strcasecmp(name, "picante8") == 0)
             name = "pico8";
-        /* Theme packs historically used m2k/gb names. Keep those assets
-         * working for the canonical arcade and Game Boy Color folders too. */
-        const char *names[] = {
-            name,
-            strcasecmp(name, "arcade") == 0 ? "m2k" : NULL,
-            strcasecmp(name, "gbc") == 0 ? "gb" : NULL,
-            /* Java Games has no dedicated artwork; use the active theme's
-             * composed main banner so stripes/framing remain intact. */
-            strcasecmp(name, "j2me") == 0 ? "main" : NULL,
-            /* Keep useful fallbacks for installs predating the bundled art. */
-            strcasecmp(name, "classicube") == 0 ? "main" : NULL,
-            strcasecmp(name, "mcpe") == 0 ? "classicube" : NULL,
-            strcasecmp(name, "qpsx") == 0 ? "ps1" : NULL, NULL };
-        for (int n = 0; names[n]; n++)
-            for (int i = 0; exts[i]; i++) {
-                snprintf(img, sizeof(img), "%s/%s.%s", banner_dir, names[n], exts[i]);
-                if (access(img, R_OK) == 0) { banner_load_fit(img, settings_wallpaper_fit, COLOR_BG); return; }
-            }
-        /* Fallback: try main.png for any view that has no folder-specific image */
-        for (int i = 0; exts[i]; i++) {
-            snprintf(img, sizeof(img), "%s/main.%s", banner_dir, exts[i]);
-            if (access(img, R_OK) == 0) { banner_load_fit(img, settings_wallpaper_fit, COLOR_BG); return; }
+        /* Folder aliases share art; packs may omit an alias or a system image. */
+        const char *names[8];
+        int name_count = 0;
+        names[name_count++] = name;
+        if (strcasecmp(name, "arcade") == 0) names[name_count++] = "m2k";
+        if (strcasecmp(name, "gbc") == 0) names[name_count++] = "gb";
+        if (strcasecmp(name, "neogeo") == 0) names[name_count++] = "geolith";
+        else if (strcasecmp(name, "geolith") == 0) names[name_count++] = "neogeo";
+        if (strcasecmp(name, "md") == 0) {
+            names[name_count++] = "sega";
+            names[name_count++] = "gpgx";
+        } else if (strcasecmp(name, "sega") == 0 || strcasecmp(name, "gpgx") == 0) {
+            names[name_count++] = "sega";
+            names[name_count++] = "md";
         }
+        if (strcasecmp(name, "dos") == 0) names[name_count++] = "pico286";
+        else if (strcasecmp(name, "pico286") == 0) names[name_count++] = "dos";
+        if (strcasecmp(name, "j2me") == 0 || strcasecmp(name, "classicube") == 0)
+            names[name_count++] = "main";
+        if (strcasecmp(name, "mcpe") == 0) names[name_count++] = "classicube";
+        if (strcasecmp(name, "qpsx") == 0) names[name_count++] = "ps1";
+
+        const char *dirs[] = { banner_dir,
+            settings_theme_pack_idx > 0 && settings_theme_pack_idx < theme_pack_count
+                ? BANNER_DIR : NULL,
+            NULL };
+        for (int d = 0; dirs[d]; d++)
+            for (int n = 0; n < name_count; n++)
+                for (int i = 0; exts[i]; i++) {
+                    snprintf(img, sizeof(img), "%s/%s.%s", dirs[d], names[n], exts[i]);
+                    if (access(img, R_OK) == 0) {
+                        banner_load_fit(img, settings_wallpaper_fit, COLOR_BG);
+                        char trace[700];
+                        snprintf(trace, sizeof trace, "FrogUI background: folder=%s pack=%s image=%s",
+                                 name, settings_theme_pack_idx > 0 && settings_theme_pack_idx < theme_pack_count
+                                     ? theme_pack_files[settings_theme_pack_idx] : "default", img);
+                        dbg(trace);
+                        if (log_cb) log_cb(RETRO_LOG_INFO, "%s\n", trace);
+                        return;
+                    }
+                }
+        for (int d = 0; dirs[d]; d++)
+            for (int i = 0; exts[i]; i++) {
+                snprintf(img, sizeof(img), "%s/main.%s", dirs[d], exts[i]);
+                if (access(img, R_OK) == 0) {
+                    banner_load_fit(img, settings_wallpaper_fit, COLOR_BG);
+                    char trace[700];
+                    snprintf(trace, sizeof trace, "FrogUI background: folder=%s missing; fallback=%s", name, img);
+                    dbg(trace);
+                    if (log_cb) log_cb(RETRO_LOG_WARN, "%s\n", trace);
+                    return;
+                }
+            }
+        if (log_cb) log_cb(RETRO_LOG_WARN, "FrogUI background: no image for folder=%s\n", name);
     }
     banner_clear();
-}
-
-static bool banner_reload_after_idle(const char *path, bool is_recents,
-                                     bool is_favourites) {
-    static char pending_path[MAX_PATH_LEN] = "";
-    static bool pending_recents, pending_favourites;
-    static int pending_bg = -1, pending_wp = -1, pending_fit = -1;
-    static int pending_pack = -1, pending_dim = -1;
-    static long long pending_since;
-    long long now = monotonic_ms();
-    bool changed = strcmp(path, pending_path) != 0 ||
-                   is_recents != pending_recents ||
-                   is_favourites != pending_favourites ||
-                   settings_backgrounds != pending_bg ||
-                   settings_wallpaper_idx != pending_wp ||
-                   settings_wallpaper_fit != pending_fit ||
-                   settings_theme_pack_idx != pending_pack ||
-                   settings_background_dim != pending_dim;
-    if (changed) {
-        snprintf(pending_path, sizeof(pending_path), "%s", path);
-        pending_recents = is_recents;
-        pending_favourites = is_favourites;
-        pending_bg = settings_backgrounds;
-        pending_wp = settings_wallpaper_idx;
-        pending_fit = settings_wallpaper_fit;
-        pending_pack = settings_theme_pack_idx;
-        pending_dim = settings_background_dim;
-        pending_since = now;
-        return false;
-    }
-    return now - pending_since >= 160;
 }
 
 static int is_banner_image(const char *name) {
@@ -2137,12 +2158,14 @@ static int direntry_cmp(const void *a, const void *b) {
 }
 
 static const char *system_display_name(const char *folder);
-static int direntry_display_cmp(const void *a, const void *b) {
+static int system_direntry_cmp(const void *a, const void *b) {
     const DirEntry *x = a, *y = b;
     if (x->is_dir != y->is_dir) return y->is_dir - x->is_dir;
-    char nx[128];
-    snprintf(nx, sizeof nx, "%s", system_display_name(x->name));   /* may share a buffer */
-    return strcasecmp(nx, system_display_name(y->name));
+    if (x->is_dir) {
+        int by_label = strcasecmp(system_display_name(x->name), system_display_name(y->name));
+        if (by_label) return by_label;
+    }
+    return strcasecmp(x->name, y->name);
 }
 
 static int folder_has_games(const char *path, int depth) {
@@ -2512,10 +2535,10 @@ static void scan_directory(const char *path) {
         }
         entry_count = write;
     }
-    /* The Games list in display-name order, like Recalbox (Game Boy before
-     * Sega Game Gear), when the friendly names are shown. */
+    /* Re-sort cached and fresh root listings alike; cache order stays based on
+     * folder names so toggling friendly labels never needs cache invalidation. */
     if (at_root && settings_friendly_names && entry_count > 1)
-        qsort(entries, entry_count, sizeof(DirEntry), direntry_display_cmp);
+        qsort(entries, entry_count, sizeof(DirEntry), system_direntry_cmp);
     /* Favourites remains part of the Games library. Recents and Settings are
      * real top-level tabs and must never appear as fake system folders. */
     if (strcmp(path, ROMS_PATH) == 0) {
@@ -2839,21 +2862,63 @@ static void render_game_switcher(uint16_t *framebuffer) {
 /* Box-art side panel (Onion/muOS-style): right portion of the list view shows
  * the selected game's box art + name. Opaque card is drawn first so any
  * overflowing list-row text on the left is painted over. */
-/* Cache the decoded thumbnail; only re-decode when the selected game changes.
- * The old code ran stbi_load (PNG/JPG decode) EVERY frame -> scrolling crawled. */
 static const Thumbnail *boxart_cached(const char *full_path) {
-    static char cached_path[1024] = "";
-    static Thumbnail ctb; static int chas = 0;
-    if (strcmp(full_path, cached_path) != 0) {
-        if (chas) { free_thumbnail(&ctb); chas = 0; }
-        if (load_game_artwork(full_path, ARTWORK_BOXART, &ctb) && ctb.data) chas = 1;
-        /* Scrapers often provide a title screen rather than box art. */
-        if (!chas && load_game_artwork(full_path, ARTWORK_TITLE_SCREEN, &ctb) && ctb.data)
-            chas = 1;
-        strncpy(cached_path, full_path, sizeof cached_path - 1);
-        cached_path[sizeof cached_path - 1] = 0;
+    /* Keep a few decoded thumbnails instead of only the last one, including
+     * negative results, so scrolling does not re-probe the SD card. */
+    enum { BOXART_CACHE_N = 4 };
+    typedef struct {
+        char path[1024];
+        Thumbnail thumb;
+        uint8_t *alpha;
+        unsigned age;
+        int valid;
+    } BoxartCacheEntry;
+    static BoxartCacheEntry cache[BOXART_CACHE_N];
+    static unsigned age;
+    BoxartCacheEntry *entry = NULL;
+    for (int i = 0; i < BOXART_CACHE_N; i++) {
+        if (cache[i].valid && strcmp(cache[i].path, full_path) == 0) {
+            entry = &cache[i];
+            break;
+        }
     }
-    return chas ? &ctb : NULL;
+    if (!entry) {
+        entry = &cache[0];
+        for (int i = 1; i < BOXART_CACHE_N; i++) {
+            if (!cache[i].valid || cache[i].age < entry->age)
+                entry = &cache[i];
+        }
+        free(entry->thumb.data);
+        free(entry->alpha);
+        memset(entry, 0, sizeof *entry);
+        strncpy(entry->path, full_path, sizeof entry->path - 1);
+        entry->path[sizeof entry->path - 1] = '\0';
+        Thumbnail decoded = {0};
+        int found = load_game_artwork(full_path, ARTWORK_BOXART, &decoded);
+        /* Scrapers often provide a title screen rather than box art. */
+        if (!found)
+            found = load_game_artwork(full_path, ARTWORK_TITLE_SCREEN, &decoded);
+        if (found && decoded.data && decoded.width > 0 && decoded.height > 0) {
+            size_t pixels = (size_t)decoded.width * (size_t)decoded.height;
+            entry->thumb.data = malloc(pixels * sizeof(uint16_t));
+            if (decoded.alpha) entry->alpha = malloc(pixels);
+            if (entry->thumb.data && (!decoded.alpha || entry->alpha)) {
+                memcpy(entry->thumb.data, decoded.data, pixels * sizeof(uint16_t));
+                if (decoded.alpha) memcpy(entry->alpha, decoded.alpha, pixels);
+                entry->thumb.width = decoded.width;
+                entry->thumb.height = decoded.height;
+                entry->thumb.alpha = entry->alpha;
+            } else {
+                free(entry->thumb.data);
+                free(entry->alpha);
+                entry->thumb.data = NULL;
+                entry->alpha = NULL;
+            }
+        }
+        entry->valid = 1;
+    }
+    entry->age = ++age;
+    return entry->thumb.data ? &entry->thumb : NULL;
 }
 
 static void render_boxart_panel(uint16_t *fb, const char *full_path, const char *name) {
@@ -3146,6 +3211,7 @@ static const AppEntry app_defs[] = {
     {"frogshell", "app.frogshell", "FrogShell", NULL, NULL, FROGSHELL_CORE},
     {"usbmode", "app.usb_mode", "USB mode", NULL, NULL, USB_MODE_BIN},
     {"ebook", "app.ebook_reader", "Books", "Ebook", "ebooks", NULL},
+    {"froggyreader", NULL, "FroggyReader (EPUB)", "epub/books", NULL, NULL},
     {"images", "app.image_viewer", "Image Viewer", "images", "photos", NULL},
     {"videos", "app.videos", "Videos", "videos", "video", NULL},
     {"music", "app.music_mp3", "Music / MP3", "music", "audio", NULL},
@@ -3255,7 +3321,7 @@ static int is_app_folder_name(const char *name) {
                     !strcasecmp(name, "audio") || !strcasecmp(name, "videos") ||
                     !strcasecmp(name, "video") || !strcasecmp(name, "images") ||
                     !strcasecmp(name, "photos") || !strcasecmp(name, "ebook") ||
-                    !strcasecmp(name, "ebooks"));
+                    !strcasecmp(name, "ebooks") || !strcasecmp(name, "epub"));
 }
 
 /* ---- Script apps ----------------------------------------------------------
@@ -3425,7 +3491,9 @@ static const char *app_label(const char *key) {
     if (ua) return ua->label;
     for (size_t i = 0; i < sizeof(app_defs) / sizeof(app_defs[0]); i++)
         if (strcasecmp(key, app_defs[i].key) == 0)
-            return tr_or(app_defs[i].label_key, app_defs[i].label_en);
+            return app_defs[i].label_key
+                 ? tr_or(app_defs[i].label_key, app_defs[i].label_en)
+                 : app_defs[i].label_en;
     return key;
 }
 
@@ -3826,9 +3894,9 @@ static void search_walk(const char *dir, int depth) {
         if (e->d_name[0] == '.') continue;
         char p[MAX_PATH_LEN];
         snprintf(p, sizeof(p), "%s/%s", dir, e->d_name);
-        struct stat st;
-        if (stat(p, &st) != 0) continue;
-        if (S_ISDIR(st.st_mode)) {
+        int isdir = dirent_is_dir(dir, e);
+        if (isdir < 0) continue;
+        if (isdir) {
             if (!is_psp_folder(e->d_name) && !is_artwork_folder_name(e->d_name) && depth < 3)
                 search_walk(p, depth + 1);
         } else if (str_icontains(e->d_name, search_query) ||
@@ -4442,6 +4510,125 @@ static void handle_remap_wizard(void) {
     }
 }
 
+static int rtc_days_in_month(int year, int month) {
+    static const int days[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    if (month < 1 || month > 12) return 31;
+    if (month == 2 && ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0)) return 29;
+    return days[month - 1];
+}
+
+static int rtc_parse_timestamp(const char *text, struct tm *out) {
+    int year, month, day, hour, minute, second;
+    char extra;
+    if (!text || strlen(text) != 19 ||
+        sscanf(text, "%4d-%2d-%2d %2d:%2d:%2d%c",
+               &year, &month, &day, &hour, &minute, &second, &extra) != 6 ||
+        year < 2000 || year > 2099 || month < 1 || month > 12 ||
+        day < 1 || day > rtc_days_in_month(year, month) ||
+        hour < 0 || hour > 23 || minute < 0 || minute > 59 ||
+        second < 0 || second > 59)
+        return 0;
+    memset(out, 0, sizeof(*out));
+    out->tm_year = year - 1900;
+    out->tm_mon = month - 1;
+    out->tm_mday = day;
+    out->tm_hour = hour;
+    out->tm_min = minute;
+    out->tm_sec = second;
+    out->tm_isdst = -1;
+    return 1;
+}
+
+static int rtc_apply_time(const struct tm *value) {
+    char timestamp[32], command[96];
+    if (!strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", value)) return 0;
+    /* timestamp is numeric and formatted above, so it is safe in this command. */
+    snprintf(command, sizeof(command), "date -s '%s' >/dev/null 2>&1", timestamp);
+    if (system(command) != 0) return 0;
+    FILE *f = fopen(RTC_TIME_FILE, "w");
+    if (!f) return 0;
+    int ok = fprintf(f, "%s\n", timestamp) > 0;
+    if (fclose(f) != 0) ok = 0;
+    sync();
+    return ok;
+}
+
+static void rtc_begin_edit(void) {
+    time_t now = time(NULL);
+    struct tm *current = localtime(&now);
+    if (current) settings_rtc_edit_time = *current;
+    else memset(&settings_rtc_edit_time, 0, sizeof(settings_rtc_edit_time));
+    if (settings_rtc_edit_time.tm_year + 1900 < 2000)
+        settings_rtc_edit_time.tm_year = 100;
+    if (settings_rtc_edit_time.tm_year + 1900 > 2099)
+        settings_rtc_edit_time.tm_year = 199;
+    if (settings_rtc_edit_time.tm_mon < 0 || settings_rtc_edit_time.tm_mon > 11)
+        settings_rtc_edit_time.tm_mon = 0;
+    if (settings_rtc_edit_time.tm_mday < 1 ||
+        settings_rtc_edit_time.tm_mday > rtc_days_in_month(settings_rtc_edit_time.tm_year + 1900,
+                                                           settings_rtc_edit_time.tm_mon + 1))
+        settings_rtc_edit_time.tm_mday = 1;
+    settings_rtc_edit_time.tm_sec = 0;
+    settings_rtc_edit_time.tm_isdst = -1;
+    settings_rtc_edit_field = RTC_YEAR;
+    settings_rtc_edit_active = true;
+}
+
+static void rtc_adjust_edit(int delta) {
+    struct tm *t = &settings_rtc_edit_time;
+    int year = t->tm_year + 1900;
+    switch (settings_rtc_edit_field) {
+    case RTC_YEAR:
+        year += delta;
+        if (year < 2000) year = 2000;
+        if (year > 2099) year = 2099;
+        t->tm_year = year - 1900;
+        if (t->tm_mday > rtc_days_in_month(year, t->tm_mon + 1))
+            t->tm_mday = rtc_days_in_month(year, t->tm_mon + 1);
+        break;
+    case RTC_MONTH:
+        t->tm_mon += delta;
+        if (t->tm_mon < 0) {
+            if (year > 2000) { t->tm_mon = 11; t->tm_year--; }
+            else t->tm_mon = 0;
+        } else if (t->tm_mon > 11) {
+            if (year < 2099) { t->tm_mon = 0; t->tm_year++; }
+            else t->tm_mon = 11;
+        }
+        if (t->tm_mday > rtc_days_in_month(t->tm_year + 1900, t->tm_mon + 1))
+            t->tm_mday = rtc_days_in_month(t->tm_year + 1900, t->tm_mon + 1);
+        break;
+    case RTC_DAY: {
+        int maxday = rtc_days_in_month(year, t->tm_mon + 1);
+        t->tm_mday += delta;
+        if (t->tm_mday < 1) t->tm_mday = maxday;
+        if (t->tm_mday > maxday) t->tm_mday = 1;
+        break;
+    }
+    case RTC_HOUR:
+        t->tm_hour = (t->tm_hour + delta + 24) % 24;
+        break;
+    case RTC_MINUTE:
+        t->tm_min = (t->tm_min + delta + 60) % 60;
+        break;
+    }
+}
+
+static void rtc_sync_from_usb(void) {
+    FILE *f = fopen("/media/hdd/time_save.txt", "r");
+    char text[64];
+    struct tm value;
+    if (!f) { ui_toast_show("No USB time_save.txt found"); return; }
+    if (!fgets(text, sizeof(text), f)) text[0] = '\0';
+    fclose(f);
+    text[strcspn(text, "\r\n")] = '\0';
+    if (!rtc_parse_timestamp(text, &value)) {
+        ui_toast_show("Invalid USB date/time");
+        return;
+    }
+    ui_toast_show(rtc_apply_time(&value) ? "Time synced from USB" : "Could not set clock");
+}
+
 static void handle_settings_menu(void) {
     extern const int theme_count;
     /* Settings used to use edge-only presses while the browser used the
@@ -4451,6 +4638,21 @@ static void handle_settings_menu(void) {
     bool down  = input_repeat(FROG_BTN_DOWN);
     bool left  = input_repeat(FROG_BTN_LEFT);
     bool right = input_repeat(FROG_BTN_RIGHT);
+
+    if (settings_rtc_edit_active) {
+        if (left) settings_rtc_edit_field = (settings_rtc_edit_field + RTC_FIELD_COUNT - 1) % RTC_FIELD_COUNT;
+        if (right) settings_rtc_edit_field = (settings_rtc_edit_field + 1) % RTC_FIELD_COUNT;
+        if (up) rtc_adjust_edit(1);
+        if (down) rtc_adjust_edit(-1);
+        if (input_was_pressed(FROG_BTN_A)) {
+            ui_toast_show(rtc_apply_time(&settings_rtc_edit_time)
+                          ? "Date and time saved" : "Could not set clock");
+            settings_rtc_edit_active = false;
+        } else if (input_was_pressed(FROG_BTN_B)) {
+            settings_rtc_edit_active = false;
+        }
+        return;
+    }
 
     settings_build_vis_rows();
     /* Keep the cursor on a visible row (rows hidden by a collapsed section
@@ -4579,6 +4781,17 @@ static void handle_settings_menu(void) {
         settings_menu_active = false;
         save_games_tab_entries();
         ui_toast_show("File cache rebuilt");
+        return;
+    }
+    if (input_was_pressed(FROG_BTN_A) &&
+        settings_rows[settings_menu_idx].type == RT_RTC_TIME) {
+        rtc_begin_edit();
+        ui_toast_show("Left/Right select; Up/Down adjust; A save; B cancel");
+        return;
+    }
+    if (input_was_pressed(FROG_BTN_A) &&
+        settings_rows[settings_menu_idx].type == RT_RTC_SYNC) {
+        rtc_sync_from_usb();
         return;
     }
     if (input_was_pressed(FROG_BTN_A) && settings_rows[settings_menu_idx].type == RT_ACTION) {
@@ -5741,6 +5954,8 @@ static void handle_input(void) {
                      * confirms the modal. */
                     usb_mode_prev_raw = input_get_raw_state();
                 }
+            } else if (app_index >= 0 && !strcmp(app_defs[app_index].key, "froggyreader")) {
+                request_game_launch(FROGGYREADER_CORE, FROGGYREADER_LIBRARY);
             } else if (app_index >= 0 && app_defs[app_index].bin && access(app_defs[app_index].bin, X_OK) == 0) {
                 if (!strcmp(app_defs[app_index].bin, FROGSHELL_CORE))
                     request_game_launch(FROGSHELL_CORE, FROGSHELL_CORE);
@@ -5948,6 +6163,9 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
 
 void retro_set_environment(retro_environment_t cb) {
     environ_cb = cb;
+    struct retro_log_callback logging;
+    log_cb = cb && cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging) ? logging.log : NULL;
+    if (!cb) return;
     bool no_game = true;
     cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &no_game);
     enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
@@ -6385,6 +6603,31 @@ static int settings_row_value(const SRow *r, char *value, size_t size) {
     case RT_OTG_STATUS:
         snprintf(value, size, "%s", tr(otg_roms_available() ? "value.connected" : "value.not_connected"));
         return ONION_ROW_INFO;
+    case RT_RTC_TIME: {
+        struct tm clock_value;
+        if (settings_rtc_edit_active) clock_value = settings_rtc_edit_time;
+        else {
+            time_t now = time(NULL);
+            struct tm *current = localtime(&now);
+            if (current) clock_value = *current;
+            else memset(&clock_value, 0, sizeof(clock_value));
+        }
+        int fields[RTC_FIELD_COUNT] = {
+            clock_value.tm_year + 1900, clock_value.tm_mon + 1,
+            clock_value.tm_mday, clock_value.tm_hour, clock_value.tm_min
+        };
+        char parts[RTC_FIELD_COUNT][12];
+        for (int f = 0; f < RTC_FIELD_COUNT; f++) {
+            if (settings_rtc_edit_active && f == settings_rtc_edit_field) {
+                if (f == RTC_YEAR) snprintf(parts[f], sizeof(parts[f]), "[%04d]", fields[f]);
+                else snprintf(parts[f], sizeof(parts[f]), "[%02d]", fields[f]);
+            } else if (f == RTC_YEAR) snprintf(parts[f], sizeof(parts[f]), "%04d", fields[f]);
+            else snprintf(parts[f], sizeof(parts[f]), "%02d", fields[f]);
+        }
+        snprintf(value, size, "%s-%s-%s %s:%s", parts[RTC_YEAR], parts[RTC_MONTH],
+                 parts[RTC_DAY], parts[RTC_HOUR], parts[RTC_MINUTE]);
+        return ONION_ROW_VALUE;
+    }
     case RT_TOGGLE:
         snprintf(value, size, "%s", tr(*r->val ? "value.on" : "value.off"));
         return ONION_ROW_TOGGLE;
@@ -6403,6 +6646,10 @@ static int settings_row_value(const SRow *r, char *value, size_t size) {
             static const char *const fallback[3] = {"FN", "Hold SEL/START",
                                                     "SEL+START"};
             snprintf(value, size, "%s", tr_or(keys[*r->val], fallback[*r->val]));
+            return ONION_ROW_VALUE;
+        }
+        if (r->val == &settings_rtc_bump_minutes) {
+            snprintf(value, size, "%d min", *r->val);
             return ONION_ROW_VALUE;
         }
         snprintf(value, size, r->val == &settings_font_size ? "%d px" : "%d%%", *r->val);
@@ -7069,11 +7316,12 @@ void retro_run(void) {
             pill_animation_reset(&menu_pill_animation, target_y);
             menu_pill_initialized = true;
         } else if (old_selected != selected_index || old_scroll != scroll_offset) {
-            int from_y = pill_animation_active(&menu_pill_animation)
+            bool catching_up = pill_animation_active(&menu_pill_animation);
+            int from_y = catching_up
                        ? menu_pill_animation.current_y
                        : menu_row_y(old_selected, old_scroll);
             pill_animation_start(&menu_pill_animation, from_y, target_y,
-                                 settings_anim ? MENU_PILL_FRAMES : 0);
+                                 settings_anim ? (catching_up ? 1 : MENU_PILL_FRAMES) : 0);
         }
     }
     if (old_selected != selected_index || old_settings_row != settings_menu_idx ||
@@ -7156,7 +7404,6 @@ void retro_run(void) {
     static int  banner_last_wpfit = -1; /* reload when the wallpaper fit mode changes */
     static int  banner_last_pack = -1;  /* reload when the background pack changes */
     static int  banner_last_dim = -1;   /* reload when background dim changes */
-    bool banner_updated = false;
     {
         if (settings_backgrounds != prefetch_last_bg ||
             settings_wallpaper_idx != prefetch_last_wp ||
@@ -7225,13 +7472,11 @@ void retro_run(void) {
              * the banner is rebuilt if Onion mode is switched off later. */
             banner_last_bg = -1;
             banner_last_path[0] = '\0';
-        } else if (need_reload && !switcher_active() &&
-                   banner_reload_after_idle(banner_path, viewing_recents, viewing_favourites)) {
+        } else if (need_reload && !switcher_active()) {
             /* GameSwitcher paints its own full panel. Leave the Games banner
              * and its cache keys untouched while Recents is open, so returning
              * to Games does not decode the same background from SD again. */
             load_banner_for_view(banner_path, viewing_recents, viewing_favourites);
-            banner_updated = true;
             if (startup_bg_override) {
                 theme_set_bg_override(0, 0);
                 startup_bg_override = false;
@@ -7277,6 +7522,16 @@ void retro_run(void) {
         sig = sig*33u + (unsigned)settings_menu_active;
         if (settings_menu_active) {
             sig = sig*33u + (unsigned)settings_menu_idx;
+            sig = sig*33u + (unsigned)(time(NULL) / 60);
+            sig = sig*33u + (unsigned)settings_rtc_edit_active;
+            if (settings_rtc_edit_active) {
+                sig = sig*33u + (unsigned)settings_rtc_edit_field;
+                sig = sig*33u + (unsigned)settings_rtc_edit_time.tm_year;
+                sig = sig*33u + (unsigned)settings_rtc_edit_time.tm_mon;
+                sig = sig*33u + (unsigned)settings_rtc_edit_time.tm_mday;
+                sig = sig*33u + (unsigned)settings_rtc_edit_time.tm_hour;
+                sig = sig*33u + (unsigned)settings_rtc_edit_time.tm_min;
+            }
             /* Collapsed/expanded section state: pressing A on a header changes
              * NO row value and NO cursor index ??? without these bits in the
              * signature the screen would wait for the next cursor move. */
@@ -7302,7 +7557,7 @@ void retro_run(void) {
             sig = sig*33u + (unsigned)(viewing_home ? 64 + home_selected : 0);
             for (const char *p = current_path; *p; p++) sig = sig*33u + (unsigned char)*p;
         }
-        redraw = first || sig != last_sig || banner_updated || banner_is_animating() ||
+        redraw = first || sig != last_sig || banner_is_animating() ||
                  system_carousel_is_animating() ||
                  pill_animation_active(&menu_pill_animation) ||
                  activity_marquee_active() ||

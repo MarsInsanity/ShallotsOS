@@ -1,9 +1,9 @@
 # TreeFrogUI Ports Collection
 
-Ports are optional and distributed separately from the TreeFrogUI release.
-Install them with the [TreeFrogUI Installer](https://github.com/tzubertowski/TreeFrogUI-installer/releases)
-using its **Install ports** option, or download an archive from the
-[Ports Collection releases](https://github.com/tzubertowski/TreeFrogUI_PortsCollection/releases/latest)
+Ports are optional and released separately from TreeFrogUI. Install them with
+the [TreeFrogUI Installer](https://github.com/tzubertowski/TreeFrogUI-installer/releases)
+using its **Install ports** option, or download the latest archive from the
+[Ports Collection release page](https://github.com/tzubertowski/TreeFrogUI_PortsCollection/releases/latest)
 and extract it to the SD card root.
 
 Each port installs its launcher at `roms/ports/<name>.sh` and keeps its
