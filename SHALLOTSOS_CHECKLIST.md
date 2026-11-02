@@ -767,6 +767,27 @@ Daily TreeFrogUI merge, 2026-11-01:
       box art while scrolling a big list
 
 
+Daily TreeFrogUI merge, 2026-11-02:
+
+- [x] Merged TreeFrogUI v1.9.0_c prerelease (upstream main 7ea114b, 3 commits
+      since f04edff) and the FrogUI copy (9b332aa -> 4978824, frogui/UPSTREAM)
+- Notable upstream: holding a direction repeats smoothly through the core
+  picker with the highlight kept aligned; long System View names scroll;
+  R36SX selected aspect ratio kept on the hardware scaler; no idle redraw
+  crash on the next page of core options (picoarch side, see below)
+- Conflicts: frogui_libretro.c, one hunk in the draw dispatch (upstream
+  passes selected_pill_y to render_core_picker; kept our gm_active
+  game-menu branch next to it). frogui/ stays our copy, not the submodule
+- [ ] NOT merged (this session could not push to ShallotsOS_picoarch /
+      _ebook_reader; only ShallotsOS is in its GitHub scope and there is no
+      add_repo tool): picoarch r36sx now 4 commits ahead of our last merge
+      f77a0d5: cbeb463 (SF3000 audio prefill), 7e0621f + 175858a (R36SX
+      aspect ratio on hardware scaler), 2ab990d (core options Next page idle
+      redraw crash). ebook_reader: still 281630d (PDF zoom, needs a manual
+      port into our reader UI, see 2026-11-01). pcsx4all: nothing new
+      (a980f62). Please add those repos with push access to run the merge.
+- [ ] Device test: core picker (hold up/down), System View long names
+
 - [ ] GameSwitcher hints and theme picker previews
 - [ ] Search tile on the home screen
 - [ ] Boot screen

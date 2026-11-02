@@ -478,9 +478,12 @@ static long activity_runs[128];
 static time_t activity_last[128];
 static int activity_has_dates = 0;
 static int activity_count = 0;
-static char activity_marquee_key[MAX_PATH_LEN];
-static int activity_marquee_offset;
-static unsigned activity_marquee_tick;
+static char selected_marquee_key[MAX_PATH_LEN];
+static int selected_marquee_offset;
+static unsigned selected_marquee_tick;
+static char system_marquee_key[96];
+static int system_marquee_offset, system_marquee_direction = 1;
+static long long system_marquee_last_ms, system_marquee_pause_until_ms;
 static char apps_root_path[MAX_PATH_LEN] = "";
 /* The media app being browsed and its main folder; its other folders with
  * files (say roms/music next to /Music) are listed there as extra folders. */
@@ -3120,11 +3123,11 @@ static int activity_title_width(void) {
     return bar_x - PADDING - UI_S(8);
 }
 
-static void activity_draw_title(uint16_t *fb, const char *text, int x, int y,
-                                int max_width, int selected) {
+static void draw_scrolling_text(uint16_t *fb, const char *text, int x, int y,
+                                int max_width, uint16_t color, int selected) {
     int full_width = font_measure_text(text);
     if (full_width <= max_width) {
-        font_draw_text(fb, SCREEN_WIDTH, SCREEN_HEIGHT, x, y, text, COLOR_TEXT);
+        font_draw_text(fb, SCREEN_WIDTH, SCREEN_HEIGHT, x, y, text, color);
         return;
     }
 
@@ -3140,19 +3143,19 @@ static void activity_draw_title(uint16_t *fb, const char *text, int x, int y,
             clipped[n - 2] = '.';
             clipped[n - 3] = '.';
         }
-        font_draw_text(fb, SCREEN_WIDTH, SCREEN_HEIGHT, x, y, clipped, COLOR_TEXT);
+        font_draw_text(fb, SCREEN_WIDTH, SCREEN_HEIGHT, x, y, clipped, color);
         return;
     }
 
-    if (strcmp(activity_marquee_key, text) != 0) {
-        snprintf(activity_marquee_key, sizeof activity_marquee_key, "%s", text);
-        activity_marquee_offset = 0;
-        activity_marquee_tick = 0;
+    if (strcmp(selected_marquee_key, text) != 0) {
+        snprintf(selected_marquee_key, sizeof selected_marquee_key, "%s", text);
+        selected_marquee_offset = 0;
+        selected_marquee_tick = 0;
     }
     char marquee[2 * 96 + 4];
     snprintf(marquee, sizeof marquee, "%s   %s", text, text);
     int cycle = (int)strlen(text) + 3;
-    int start = activity_marquee_offset % cycle;
+    int start = selected_marquee_offset % cycle;
     char window[96];
     int out = 0;
     for (int i = 0; out < (int)sizeof window - 1 && marquee[start + i]; i++) {
@@ -3163,11 +3166,16 @@ static void activity_draw_title(uint16_t *fb, const char *text, int x, int y,
             break;
         }
     }
-    font_draw_text(fb, SCREEN_WIDTH, SCREEN_HEIGHT, x, y, window, COLOR_TEXT);
-    if (++activity_marquee_tick >= 6) {
-        activity_marquee_tick = 0;
-        activity_marquee_offset = (activity_marquee_offset + 1) % cycle;
+    font_draw_text(fb, SCREEN_WIDTH, SCREEN_HEIGHT, x, y, window, color);
+    if (++selected_marquee_tick >= 6) {
+        selected_marquee_tick = 0;
+        selected_marquee_offset = (selected_marquee_offset + 1) % cycle;
     }
+}
+
+static void activity_draw_title(uint16_t *fb, const char *text, int x, int y,
+                                int max_width, int selected) {
+    draw_scrolling_text(fb, text, x, y, max_width, COLOR_TEXT, selected);
 }
 
 static void render_activity_page(uint16_t *fb) {
@@ -4191,10 +4199,10 @@ static void picker_cursor_to(int type) {
 static void handle_core_picker(void) {
     picker_rows_build();
     int total = picker_rows_n;
-    if (input_was_pressed(FROG_BTN_UP)) {
+    if (input_repeat(FROG_BTN_UP)) {
         core_picker_idx = (core_picker_idx - 1 + total) % total;
     }
-    if (input_was_pressed(FROG_BTN_DOWN)) {
+    if (input_repeat(FROG_BTN_DOWN)) {
         core_picker_idx = (core_picker_idx + 1) % total;
     }
     if (input_was_pressed(FROG_BTN_LEFT)) {
@@ -4874,6 +4882,13 @@ static int menu_row_y(int index, int offset) {
     return START_Y + row * ITEM_HEIGHT;
 }
 
+static int core_picker_row_y(int index, int offset) {
+    int row = index - offset;
+    if (row < 0) row = 0;
+    if (row >= PICKER_ROWS) row = PICKER_ROWS - 1;
+    return START_Y + ITEM_HEIGHT + row * ITEM_HEIGHT;
+}
+
 static int menu_pill_draw_y(void) {
     return pill_animation_step(&menu_pill_animation);
 }
@@ -5040,6 +5055,75 @@ static void fit_system_label(const char *source, char *dest, size_t size, int ma
         keep--;
         snprintf(dest, size, "%.*s...", (int)keep, source);
     }
+}
+
+static int split_system_label(const char *source, char *first, size_t first_size,
+                              char *second, size_t second_size, int max_width) {
+    snprintf(first, first_size, "%s", source);
+    second[0] = '\0';
+    if (font_measure_text(first) <= max_width) return 1;
+
+    const char *best = NULL;
+    int best_width_delta = SCREEN_WIDTH;
+    for (const char *space = strchr(source, ' '); space; space = strchr(space + 1, ' ')) {
+        char left[96], right[96];
+        size_t left_len = (size_t)(space - source);
+        snprintf(left, sizeof left, "%.*s", (int)left_len, source);
+        snprintf(right, sizeof right, "%s", space + 1);
+        int left_width = font_measure_text(left), right_width = font_measure_text(right);
+        if (left_width <= max_width && right_width <= max_width) {
+            int delta = left_width > right_width ? left_width - right_width : right_width - left_width;
+            if (delta < best_width_delta) {
+                best = space;
+                best_width_delta = delta;
+            }
+        }
+    }
+    if (!best) {
+        return 0;
+    }
+    snprintf(first, first_size, "%.*s", (int)(best - source), source);
+    snprintf(second, second_size, "%s", best + 1);
+    return 2;
+}
+
+static void draw_system_label_marquee(uint16_t *fb, const char *text, int x,
+                                      int y, int w, int h, uint16_t color) {
+    long long now = monotonic_ms();
+    if (strcmp(system_marquee_key, text) != 0) {
+        snprintf(system_marquee_key, sizeof system_marquee_key, "%s", text);
+        system_marquee_offset = 0;
+        system_marquee_direction = 1;
+        system_marquee_last_ms = now;
+        system_marquee_pause_until_ms = 0;
+    }
+    int max_offset = font_measure_text(text) - w;
+    font_draw_text_clipped(fb, SCREEN_WIDTH, SCREEN_HEIGHT,
+                           x - system_marquee_offset, y, text, color,
+                           x, y - UI_S(3), w, h);
+    if (now < system_marquee_pause_until_ms) return;
+
+    int step = (int)((now - system_marquee_last_ms) * 35 / 1000);
+    if (step <= 0) return;
+    system_marquee_last_ms += (long long)step * 1000 / 35;
+    system_marquee_offset += system_marquee_direction * step;
+    if (system_marquee_offset >= max_offset) {
+        system_marquee_offset = max_offset;
+        system_marquee_direction = -1;
+        system_marquee_pause_until_ms = now + 500;
+    } else if (system_marquee_offset <= 0) {
+        system_marquee_offset = 0;
+        system_marquee_direction = 1;
+        system_marquee_pause_until_ms = now + 500;
+    }
+}
+
+static int system_grid_marquee_active(void) {
+    if (!icon_system_view() || selected_index < 0 || selected_index >= entry_count)
+        return 0;
+    int cell_w = (SCREEN_WIDTH - PADDING * 2 - UI_S(8) * 3) / 4;
+    return font_measure_text(system_display_name(entries[selected_index].name)) >
+           cell_w - UI_S(12);
 }
 
 static void render_system_carousel(uint16_t *fb) {
@@ -5319,10 +5403,20 @@ static void render_system_grid(uint16_t *fb) {
             render_rounded_rect(fb, x, y, cell_w, cell_h, UI_S(10), tile_bg);
 
         const char *shown = system_display_name(entries[idx].name);
-        char label[96];
-        fit_system_label(shown, label, sizeof label, cell_w - UI_S(12));
-        int label_w = font_measure_text(label);
+        char label[96], label_second[96];
+        int max_label_w = cell_w - UI_S(12);
+        int label_lines = active && font_measure_text(shown) > max_label_w
+                        ? 0
+                        : split_system_label(shown, label, sizeof label,
+                                             label_second, sizeof label_second,
+                                             max_label_w);
+        if (!active && label_lines == 0) {
+            fit_system_label(shown, label, sizeof label, max_label_w);
+            label_lines = 1;
+        }
+        int label_line_h = font_get_size() + 4;
         int label_y = y + cell_h - ITEM_HEIGHT + UI_S(5);
+        if (label_lines == 2) label_y -= label_line_h / 2;
         if (icon) {
             system_icon_draw(fb, icon, x + UI_S(12), y + UI_S(10),
                              cell_w - UI_S(24), cell_h - ITEM_HEIGHT - UI_S(8));
@@ -5338,9 +5432,25 @@ static void render_system_grid(uint16_t *fb) {
                            x + (cell_w - iw) / 2, y + cell_h / 2 - UI_S(8),
                            initials, active ? tile_text : COLOR_TEXT);
         }
-        font_draw_text(fb, SCREEN_WIDTH, SCREEN_HEIGHT,
-                       x + (cell_w - label_w) / 2, label_y, label,
-                       active ? tile_text : COLOR_TEXT);
+        int label_w = 0;
+        if (label_lines == 0) {
+            int clip_x = x + UI_S(6);
+            int clip_w = cell_w - UI_S(12);
+            int clip_h = ITEM_HEIGHT - UI_S(5);
+            draw_system_label_marquee(fb, shown, clip_x, label_y, clip_w,
+                                      clip_h, active ? tile_text : COLOR_TEXT);
+        } else {
+            label_w = font_measure_text(label);
+            font_draw_text(fb, SCREEN_WIDTH, SCREEN_HEIGHT,
+                           x + (cell_w - label_w) / 2, label_y, label,
+                           active ? tile_text : COLOR_TEXT);
+        }
+        if (label_lines == 2) {
+            label_w = font_measure_text(label_second);
+            font_draw_text(fb, SCREEN_WIDTH, SCREEN_HEIGHT,
+                           x + (cell_w - label_w) / 2, label_y + label_line_h,
+                           label_second, active ? tile_text : COLOR_TEXT);
+        }
     }
 
     char count[32];
@@ -6764,7 +6874,7 @@ static void render_remap_wizard(void) {
     font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, PADDING, y, tr("remap.skip"), COLOR_TEXT);
 }
 
-static void render_core_picker(void) {
+static void render_core_picker(int selected_pill_y) {
     if (banner_is_loaded())
         banner_render(framebuffer);
     else
@@ -6828,12 +6938,12 @@ static void render_core_picker(void) {
         if (r->type == PR_CORE_HDR || r->type == PR_EXT_HDR) {
             /* headers: accent color; pillbox when the cursor is on them */
             if (idx == core_picker_idx)
-                render_text_pillbox(framebuffer, PADDING, ry, line, COLOR_SELECT_BG, COLOR_SELECT_TEXT, 7, 0);
+                render_menu_row(framebuffer, line, 0, 1, 0, ry, selected_pill_y);
             else
                 font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, PADDING, ry,
                                line, COLOR_SELECT_BG);
         } else if (idx == core_picker_idx) {
-                render_text_pillbox(framebuffer, PADDING, ry, line, COLOR_SELECT_BG, COLOR_SELECT_TEXT, 7, 0);
+            render_menu_row(framebuffer, line, 0, 1, 0, ry, selected_pill_y);
         } else {
             font_draw_text(framebuffer, SCREEN_WIDTH, SCREEN_HEIGHT, PADDING, ry, line, COLOR_TEXT);
         }
@@ -7310,6 +7420,9 @@ void retro_run(void) {
     int old_scroll = scroll_offset;
     int old_settings_row = settings_menu_idx;
     bool old_settings_active = settings_menu_active;
+    bool old_core_picker_active = core_picker_active;
+    int old_core_picker_idx = core_picker_idx;
+    int old_core_picker_scroll = core_picker_scroll;
     bool old_recents = viewing_recents, old_favourites = viewing_favourites;
     bool old_home = viewing_home;
     int old_home_selected = home_selected;
@@ -7333,6 +7446,7 @@ void retro_run(void) {
         viewing_switcher = false;
     onion_sync_list_rows();
     bool same_menu = old_settings_active == settings_menu_active &&
+                     old_core_picker_active == core_picker_active &&
                      old_recents == viewing_recents &&
                      old_favourites == viewing_favourites &&
                      old_apps == viewing_apps && old_activity == viewing_activity &&
@@ -7342,14 +7456,19 @@ void retro_run(void) {
         pill_animation_reset(&menu_pill_animation, 0);
         menu_pill_initialized = false;
     } else {
-        int target_y = menu_row_y(selected_index, scroll_offset);
+        int target_y = core_picker_active
+                     ? core_picker_row_y(core_picker_idx, core_picker_scroll)
+                     : menu_row_y(selected_index, scroll_offset);
         if (!menu_pill_initialized || !old_pill_view || !same_menu) {
             pill_animation_reset(&menu_pill_animation, target_y);
             menu_pill_initialized = true;
-        } else if (old_selected != selected_index || old_scroll != scroll_offset) {
+        } else if (old_selected != selected_index || old_scroll != scroll_offset ||
+                   old_core_picker_idx != core_picker_idx ||
+                   old_core_picker_scroll != core_picker_scroll) {
             bool catching_up = pill_animation_active(&menu_pill_animation);
-            int from_y = catching_up
-                       ? menu_pill_animation.current_y
+            int from_y = catching_up ? menu_pill_animation.current_y
+                       : old_core_picker_active
+                       ? core_picker_row_y(old_core_picker_idx, old_core_picker_scroll)
                        : menu_row_y(old_selected, old_scroll);
             pill_animation_start(&menu_pill_animation, from_y, target_y,
                                  settings_anim ? (catching_up ? 1 : MENU_PILL_FRAMES) : 0);
@@ -7594,7 +7713,7 @@ void retro_run(void) {
         redraw = first || sig != last_sig || banner_updated || banner_is_animating() ||
                  system_carousel_is_animating() ||
                  pill_animation_active(&menu_pill_animation) ||
-                 activity_marquee_active() ||
+                 activity_marquee_active() || system_grid_marquee_active() ||
                  view_transition_frame <= VIEW_TRANSITION_FRAMES ||
                  ui_toast_frames > 0 || usb_mode_confirm_active || usb_mode_initiated_active;
         last_sig = sig; first = 0;
@@ -7630,7 +7749,7 @@ void retro_run(void) {
     } else if (extf_kbd_active) {
         render_extf_kbd();
     } else if (core_picker_active) {
-        render_core_picker();
+        render_core_picker(selected_pill_y);
     } else if (gm_active) {
         render_game_menu();
     } else if (remap_wizard_active) {
