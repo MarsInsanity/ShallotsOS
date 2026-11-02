@@ -778,6 +778,7 @@ Daily TreeFrogUI merge, 2026-11-02:
 - Conflicts: frogui_libretro.c, one hunk in the draw dispatch (upstream
   passes selected_pill_y to render_core_picker; kept our gm_active
   game-menu branch next to it). frogui/ stays our copy, not the submodule
+- [x] Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/41432930523 (green, ShallotsOS fcc9658). The first try (run 41431831470) failed in FrogUI: our bold-text helpers in font.c needed the new clip arguments of upstream's text renderer
 - [ ] NOT merged (this session could not push to ShallotsOS_picoarch /
       _ebook_reader; only ShallotsOS is in its GitHub scope and there is no
       add_repo tool): picoarch r36sx now 4 commits ahead of our last merge
