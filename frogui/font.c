@@ -627,7 +627,7 @@ void font_draw_text_bold(uint16_t *framebuffer, int screen_width,
                          int screen_height, int x, int y, const char *text,
                          uint16_t color, int bold) {
   shape_and_render_text(framebuffer, screen_width, screen_height, x, y, text,
-                        color, bold, 0, NULL);
+                        color, bold, 0, 0, screen_width, screen_height, 0, NULL);
 }
 
 int font_measure_text(const char *text, ...) {
@@ -639,7 +639,8 @@ int font_measure_text(const char *text, ...) {
 
 int font_measure_text_bold(const char *text, int bold) {
   int width = 0;
-  shape_and_render_text(NULL, 0, 0, 0, 0, text, 0, bold, 1, &width);
+  shape_and_render_text(NULL, 0, 0, 0, 0, text, 0, bold, 0, 0, 0, 0, 1,
+                        &width);
   return width;
 }
 
