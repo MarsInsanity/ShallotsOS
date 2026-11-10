@@ -327,6 +327,7 @@ jobs:
           # Boot logo for 640x480 panels (R36SX, R36HD, GB350).
           cp sdcard/cubegm/xgame-logo.bmp "$out/cubegm/"
           # The "Updating ShallotsOS" screen shown while update.zip installs.
+          sudo apt-get update -qq >/dev/null
           sudo apt-get install -y -qq python3-pil >/dev/null
           python3 tools/make_update_splash.py "$out/cubegm/update_splash.bmp"
           cp -a assets/onion/Themes/. "$out/Themes/"
