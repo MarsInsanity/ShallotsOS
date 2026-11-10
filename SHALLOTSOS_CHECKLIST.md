@@ -767,6 +767,21 @@ Daily TreeFrogUI merge, 2026-11-01:
       box art while scrolling a big list
 
 
+Daily TreeFrogUI merge, 2026-11-10:
+
+- [x] Merged TreeFrogUI v1.9.0_d prerelease (upstream main 69a3240, 2 commits
+      since 7ea114b). Upstream change is refreshed emulator cores (FCEUmm,
+      SNES9x 2002/2005 Plus, GPSP, GPSP Multicore, Gambatte; Nov 9 builds)
+      plus a release-announcement workflow. We build gpSP/cores ourselves,
+      so for ShallotsOS only the workflow and release-notes.md came in.
+      FrogUI pin unchanged (4978824). No conflicts.
+- [x] Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/42803052119 (green, ShallotsOS 2a9708a). The first run (42802009301) failed on a 404 from the runner's apt mirror for python3-pil; the workflow now runs apt-get update first
+- [ ] NOT merged: picoarch (this session cannot push to ShallotsOS_picoarch /
+      _ebook_reader: only ShallotsOS is in its scope and there is no add_repo
+      tool). picoarch r36sx is still 2ab990d, 4 commits ahead of our last
+      merge f77a0d5 (see 2026-11-02). ebook_reader still 281630d, pcsx4all
+      still a980f62 (nothing new). Please add those repos with push access.
+
 Daily TreeFrogUI merge, 2026-11-02:
 
 - [x] Merged TreeFrogUI v1.9.0_c prerelease (upstream main 7ea114b, 3 commits
