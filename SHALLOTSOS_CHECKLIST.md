@@ -767,6 +767,27 @@ Daily TreeFrogUI merge, 2026-11-01:
       box art while scrolling a big list
 
 
+Daily TreeFrogUI merge, 2026-11-12:
+
+- [x] Merged TreeFrogUI v1.9.0_e/_f prereleases (upstream main 078b0bb, 3
+      commits since 69a3240: adfe2ce, 78d9d48, 078b0bb). Upstream adds FrogUI
+      per-style JSON profiles (sdcard/frogui/style-profiles/*.json: defaults
+      per style for quick resume, settings layout, fonts, battery indicator,
+      Apps-in-Settings, Start in Recents), ProMinimal style, CHANGELOG and
+      release notes. TreeFrogUI's FrogUI pin did NOT move (still 4978824), so
+      the FrogUI code that reads the profiles is not in frogui/ yet; only the
+      JSON files and docs came in (inert for now). No conflicts.
+- [ ] When the FrogUI pin moves to the profile code: upstream's profiles set
+      "stock_battery": true and other defaults that differ from ShallotsOS
+      (stock battery indicator off, animations off, gamelist names on,
+      ShallotsOS volume indicator on); adjust the shipped profiles then
+- [x] Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/43203358835 (green, ShallotsOS 2bc1497; started manually since the push touched no workflow paths)
+- [ ] NOT merged: picoarch r36sx still 2ab990d, 4 commits ahead of our last
+      merge f77a0d5 (see 2026-11-02); ebook_reader still 281630d (PDF zoom,
+      needs a manual port, see 2026-11-01). This session's GitHub scope is
+      ShallotsOS only and it has no add_repo tool. pcsx4all: nothing new
+      (a980f62).
+
 Daily TreeFrogUI merge, 2026-11-10:
 
 - [x] Merged TreeFrogUI v1.9.0_d prerelease (upstream main 69a3240, 2 commits
