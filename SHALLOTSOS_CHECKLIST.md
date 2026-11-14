@@ -775,6 +775,39 @@ Daily TreeFrogUI merge, 2026-11-01:
       box art while scrolling a big list
 
 
+Daily TreeFrogUI merge, 2026-11-14:
+
+- [x] Merged TreeFrogUI v2.0.0_a prerelease (upstream main c704bbc, 4
+      commits since 078b0bb: 3c585ed, 4ff51b6, 6ca0488, c704bbc). Upstream:
+      R36SX v3.0 reported to work with the v2.7 setup (docs), QuickNES as
+      the default NES core (ShallotsOS keeps its own system table: FCEUmm
+      first), muOS scraper install fix, and an experimental MuOS-inspired
+      theme renderer with 10+ community schemes (sdcard/frogui/schemes,
+      marked demo-only upstream pending licences; not shipped by our
+      overlay). README: kept ShallotsOS's text and system table
+- [ ] NOT merged: FrogUI copy. TreeFrogUI's pin moved 4978824 -> a4dac7d
+      (c94c1e7..a4dac7d: theme-driven ProMinimal settings profiles, Recents
+      startup in style profiles, QuickNES for nes, MuOS-inspired render
+      schemes + Switch layout, vertical artwork sizes). frogui/UPSTREAM
+      stays 4978824. Conflicts when applying the diff:
+      frogui/render.h (layout macros: upstream derives HEADER/ITEM/START_Y/
+      VISIBLE_ENTRIES from render_theme_current(); ours adds the OnionOS
+      g_list_rows_override), frogui/frogui_libretro.c (24 hunks: upstream
+      replaces RT_THEME/RT_STYLE with RT_UI_THEME/RT_SETTINGS_LAYOUT, adds
+      settings overrides per style, Apps in Settings / Open Apps rows,
+      rounded screenshots, render-scheme row disabling, flips stock battery
+      default to on; ours has the OnionOS theme row, osd/usb_debug/game keys
+      rows and onion_theme_active() checks in the same functions),
+      frogui/Makefile and build_libretro.sh (source lists: add
+      render_theme.c + theme_profile.c next to onion_theme/gamelist/
+      systems/migrate). Needs a hand port that decides how upstream's
+      UI-theme picker and schemes coexist with OnionOS themes
+- picoarch r36sx still 2ab990d (4 commits ahead of f77a0d5, see
+  2026-11-02), ebook_reader still 281630d, pcsx4all still a980f62: nothing
+  new upstream; the earlier picoarch/reader commits remain unmerged (this
+  session's GitHub scope is ShallotsOS only)
+- [ ] Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/43587036989 (running; ShallotsOS 8078ce9, started manually since the push touched no workflow paths)
+
 Daily TreeFrogUI merge, 2026-11-12:
 
 - [x] Merged TreeFrogUI v1.9.0_e/_f prereleases (upstream main 078b0bb, 3
