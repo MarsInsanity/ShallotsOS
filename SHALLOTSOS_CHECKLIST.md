@@ -806,7 +806,7 @@ Daily TreeFrogUI merge, 2026-11-14:
   2026-11-02), ebook_reader still 281630d, pcsx4all still a980f62: nothing
   new upstream; the earlier picoarch/reader commits remain unmerged (this
   session's GitHub scope is ShallotsOS only)
-- [ ] Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/43587036989 (running; ShallotsOS 8078ce9, started manually since the push touched no workflow paths)
+- [x] Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/43587036989 (green; ShallotsOS 8078ce9, started manually since the push touched no workflow paths)
 
 Daily TreeFrogUI merge, 2026-11-12:
 
