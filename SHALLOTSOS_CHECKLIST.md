@@ -574,6 +574,14 @@ Script apps (SpruceOS-style) and shallots_ui:
       confirm, progress and keyboard draw and react to the buttons; back
       in the Apps tab afterwards with nothing left on screen
 
+SF3000 tester:
+
+- [x] `docs/INSTALL-SF3000.md`: install manual for a first SF3000 test
+      (model table with backups and install folders, card backup, FAT32,
+      copy steps, log.txt, what differs on the rotated SF3000 screen, what
+      to report); package from run 43203358835 (dev-2bc1497)
+- [ ] First SF3000 report
+
 
 ## Next
 
