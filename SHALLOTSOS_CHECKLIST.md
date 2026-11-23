@@ -775,6 +775,19 @@ Daily TreeFrogUI merge, 2026-11-01:
       box art while scrolling a big list
 
 
+Daily TreeFrogUI merge, 2026-11-23:
+
+- [x] Merged TreeFrogUI upstream main b4a80b4 (PR #116, 0fd2a9c): the CC0
+      PrettyTreeFrog background theme pack (sdcard/frogui/theme-packs/) and
+      matching system-icon pack (assets/icon-packs/), plus a theme.md note.
+      Assets and docs only; no conflicts. The overlay does not ship these
+      packs, so the device build is unchanged
+- [ ] Still NOT merged: FrogUI copy. TreeFrogUI's pin is still a4dac7d;
+      frogui/UPSTREAM stays 4978824 (hand port needed, see 2026-11-14)
+- picoarch r36sx still 2ab990d, ebook_reader still 281630d, pcsx4all still
+  a980f62: nothing new upstream
+- [x] Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/45159244739 (green; ShallotsOS 0e078ea, started manually since the push touched no workflow paths)
+
 Daily TreeFrogUI merge, 2026-11-14:
 
 - [x] Merged TreeFrogUI v2.0.0_a prerelease (upstream main c704bbc, 4
