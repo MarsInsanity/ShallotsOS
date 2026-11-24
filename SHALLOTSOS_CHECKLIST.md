@@ -775,6 +775,26 @@ Daily TreeFrogUI merge, 2026-11-01:
       box art while scrolling a big list
 
 
+Daily TreeFrogUI merge, 2026-11-24:
+
+- [x] Merged TreeFrogUI upstream main 261dc56 (v2.0.0_b prerelease; 5ce931e,
+      2820078, 806d3b5, 3ff4426, b79e725, PR #117): MuOS .muxthm theme
+      installer (apps/theme_installer.sh) and a TreeFrogUI_MuOS theme,
+      FroggyThemes / FroggyHWProbe / FroggyBenchmark standalone-app build
+      scripts, display-sized background variants (640x480, 854x480),
+      release/bundle packaging and .gitignore rules for bundled theme packs,
+      README/theme.md/CHANGELOG. Only conflict: the frogui submodule pin
+      (dropped, as always). The overlay ships none of these, so the device
+      build is unchanged
+- [ ] Still NOT merged: FrogUI copy. TreeFrogUI's pin moved a4dac7d ->
+      47e9c95 ("Add MuOS theme installer and renderer fixes": Makefile,
+      frogui_libretro.c, render.c, render_theme.c). It builds on the
+      a4dac7d render_theme/theme_profile work that still needs the hand port
+      described in the 2026-11-14 entry; frogui/UPSTREAM stays 4978824
+- picoarch r36sx still 2ab990d, ebook_reader still 281630d, pcsx4all still
+  a980f62: nothing new upstream
+- [x] Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/45378140162 (green; ShallotsOS 384f0fc, started manually since the push touched no workflow paths)
+
 Daily TreeFrogUI merge, 2026-11-23:
 
 - [x] Merged TreeFrogUI upstream main b4a80b4 (PR #116, 0fd2a9c): the CC0
