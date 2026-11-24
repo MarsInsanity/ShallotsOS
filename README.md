@@ -63,6 +63,8 @@ See [cores.md](cores.md) for the full folder→core mapping table.
 - **Auto-Save/Auto-Load** - Auto-saves state on pause/quit and auto-loads it on any game launch (Quick Resume boot or a manual pick from the frontend). Independent of Quick Resume - turn it on to always pick up mid-game, however you launch.
 - **Clean, configurable menu** - Smooth background crossfades, an optional horizontal system carousel, an optional **Hide Empty Folders** setting, and right-stick drift filtering so accidental touches don't trigger phantom presses while navigating.
 - **Rich theming options** - Custom background images, fonts, and 30 built-in themes.
+- **FroggyThemes manager** - Optional Apps entry for switching installed background packs, system-icon packs, and matching presets without copying artwork.
+- **Froggy diagnostics** - Optional Apps entries for FroggyHWProbe hardware reports and FroggyBenchmark CPU/RAM measurements.
 - **Game switcher** - Optional OnionOS-style recents carousel: big box art, or a screenshot of where you left off (every game is auto-screenshotted on exit), resumes the game. Turn it on in Settings (Game Switcher), it replaces the recents list.
 - **Start in Recents** - Optional: boot straight into your recents (list or switcher) every time, in Settings.
 - **Play-time stats** - Tracks how long you play each game, shown in the browser.
@@ -221,6 +223,15 @@ handhelds have no battery-backed RTC, so they cannot track elapsed time while
 powered off. See the [Date and Time guide](docs/date-time.md).
 
 **Theme** - in TreeFrogUI: Settings → Theme, press Left/Right. There are 30 built-in colour themes. **Style** offers the standard Vertical list, an animated Horizontal carousel, or an Onion-style System View with a paged console-icon grid. **Icon Pack** changes System View artwork without changing its background or colours. **Friendly System Names** expands folder codes such as `ps` and `gba` in every style.
+
+**Install a theme on MuOS** - copy the `.muxthm` file to `MUOS/ARCHIVE`, open
+Applications → **Archive Manager** and extract it, then select it in
+Configuration → Customisation → **Theme Picker**. The release includes
+**TreeFrogUI MuOS**, a 640×480 MuOS theme using TreeFrogUI's black-and-white
+palette, BPreplay font, and screen artwork. MuOS keeps its own frontend layout;
+the theme supplies colors, typography, and wallpapers. To install a `.muxthm` in
+TreeFrogUI, copy it to `ARCHIVE/` at the SD card root and use
+Apps → **Theme Installer**; compatible themes then appear in Settings → Theme.
 
 **Background Theme Pack** - Settings → Appearance → **Background Theme Pack**. Choose **Art Book NextUI** (adapted from [Leviathanium's NextUI-Themes](https://github.com/Leviathanium/NextUI-Themes/tree/main/Catalog/Themes/ArtBookNextUI.theme)), **Nao Black** (adapted from [Leviathanium's Nao-Black theme](https://github.com/Leviathanium/NextUI-Themes/tree/main/Catalog/Themes/Nao-Black.theme)), or another installed pack. **Background Images** must be on for the selected pack to appear.
 
