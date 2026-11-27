@@ -775,6 +775,34 @@ Daily TreeFrogUI merge, 2026-11-01:
       box art while scrolling a big list
 
 
+Daily TreeFrogUI merge, 2026-11-27:
+
+- [x] Merged TreeFrogUI upstream main 0dfc1d3 ("Document MuOS theme
+      installation in the website guide": theme.md, site/guides/theming.md,
+      site/index.md). Docs only, no conflicts; device build unchanged
+- [ ] Still NOT merged: FrogUI copy. TreeFrogUI's pin is still 47e9c95;
+      frogui/UPSTREAM stays 4978824 (hand port needed, see 2026-11-14/24)
+- [ ] NOT merged: picoarch r36sx 2ab990d -> c133e23 (two new commits:
+      163620a "Skip redundant same-size aspect resampling" in hwdisp.c,
+      c133e23 "Honor the boot profile driver in PicoArch" in plat_sdl.c:
+      audio driver path from the boot env file plus logging). Two reasons:
+      (1) this session could not push to ShallotsOS_picoarch (not in its
+      sources; no way to add it); (2) a test merge of upstream into
+      claude/gameswitcher-fn-hold conflicts in hwdisp.c: panel_build()
+      aspect-fit (ours uses the target ratio with even width; upstream
+      rewrote the same block) and hwdisp_present_direct() (ours adds
+      aspect_envelope_build() for 1x game frames and the asp_fill fit
+      rule; upstream adds a separate sw_aspect path with
+      aspect_frame_build() and forces hw_scale=0 for nearest). Both sides
+      reworked R36SX aspect presentation, so picking either loses
+      behaviour; needs a hand merge and a device test of every aspect /
+      scaling mode. main.c, menu.c and plat_sdl.c merge cleanly
+      (c133e23's driver path must keep using the device-derived driver, no
+      stock driver files shipped). Earlier cbeb463..2ab990d also still
+      unmerged
+- ebook_reader still 281630d, pcsx4all still a980f62: nothing new upstream
+- [x] Build: https://github.com/MarsInsanity/ShallotsOS/actions/runs/45985128146 (green; ShallotsOS 7c0d7a8, started manually since the push touched no workflow paths)
+
 Daily TreeFrogUI merge, 2026-11-24:
 
 - [x] Merged TreeFrogUI upstream main 261dc56 (v2.0.0_b prerelease; 5ce931e,
